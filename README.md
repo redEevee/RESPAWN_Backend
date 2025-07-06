@@ -1,6 +1,6 @@
 [협업] RESPAWN.
 
-임에 관련된 편리하고 안전한 온라인 거래 시스템을 구축
+게임에 관련된 편리하고 안전한 온라인 거래 시스템을 구축
 👉 최종 결과물 : 🌐
 
 
@@ -19,8 +19,8 @@
 
 💾Back-end
 
-Java 8
-SpringBoot 3.5.2
+Java 21
+SpringBoot 3.5.3
 Gradle 7.0.2
 Spring data JPA
 MySQL 8.0
