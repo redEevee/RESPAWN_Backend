@@ -17,7 +17,8 @@ public class Delivery {
     @OneToOne(mappedBy = "delivery", fetch = LAZY)
     private Order order;
 
-    @Embedded
+    @OneToOne(fetch = LAZY)
+    @JoinColumn(name = "address_id")
     private Address address;
 
     @Enumerated(EnumType.STRING)

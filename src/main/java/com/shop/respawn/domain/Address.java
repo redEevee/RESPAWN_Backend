@@ -21,6 +21,9 @@ public class Address {
     @JoinColumn(name = "buyer_id")
     private Buyer buyer;
 
+    @OneToOne(mappedBy = "address",  fetch = LAZY)
+    private Delivery delivery;
+
     private String addressName;
     private String city;
     private String street;
