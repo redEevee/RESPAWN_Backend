@@ -39,4 +39,12 @@ public class Buyer {
     @OneToMany(mappedBy = "buyer")
     private List<Order> orders = new ArrayList<Order>();
 
+    public Buyer(String name) {
+        this.name = name;
+    }
+
+    public void addAddress(Address address) {
+        addresses.add(address);
+        address.setBuyer(this);
+    }
 }

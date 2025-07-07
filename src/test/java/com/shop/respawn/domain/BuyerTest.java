@@ -24,8 +24,12 @@ class BuyerTest {
         Address address1 = new Address("A", "A", "A", "A");
         Address address2 = new Address("B", "B", "B", "B");
 
-        Buyer buyer = new Buyer("강지원", address1);
-        buyer.setAddress(address2);
+        em.persist(address1);
+        em.persist(address2);
+
+        Buyer buyer = new Buyer("강지원");
+        buyer.addAddress(address1);
+        buyer.addAddress(address2);
         em.persist(buyer);
 
         em.flush();
