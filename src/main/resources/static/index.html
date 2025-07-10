@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>메인 배너 업로드</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        form { max-width: 400px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input[type="text"], input[type="file"] { width: 100%; padding: 8px; }
+        .preview { margin-top: 10px; }
+        button { padding: 10px 20px; background: #4CAF50; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #45a049; }
+        .required { color: red; }
+    </style>
+</head>
+<body>
+<h1>메인 배너 등록</h1>
+<form th:action="@{/MainBanner/upload}" th:object="${MainBannerForm}" method="post" enctype="multipart/form-data">
+    <label for="file">배너 이미지 선택</label>
+    <input type="file" id="file" name="file" accept="image/*" required>
+
+    <label for="title">배너 타이틀 입력</label>
+    <input type="text" th:field="*{title}" id="title" name="title" required>
+
+    <button type="submit">업로드</button>
+</form>
+<!--<form action="/mainBanner/upload" method="post" enctype="multipart/form-data">-->
+<!--    <div class="form-group">-->
+<!--        <label th:for="name">배너 이름</label>-->
+<!--        <input type="text" id="title" name="title" required placeholder="배너 제목을 입력하세요">-->
+<!--    </div>-->
+<!--    <div class="form-group">-->
+<!--        <label for="file">이미지 파일 <span class="required">*</span></label>-->
+<!--        <input type="file" id="file" name="file" accept="image/*" required>-->
+<!--        <div class="preview" id="preview"></div>-->
+<!--    </div>-->
+<!--    <button type="submit">업로드</button>-->
+<!--</form>-->
+<script>
+    // 이미지 미리보기 기능
+    document.getElementById('file').addEventListener('change', function(event) {
+        const preview = document.getElementById('preview');
+        preview.innerHTML = '';
+        const file = event.target.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = '200px';
+                preview.appendChild(img);
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
+</body>
+</html>

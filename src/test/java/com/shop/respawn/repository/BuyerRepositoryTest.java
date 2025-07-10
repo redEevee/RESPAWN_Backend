@@ -40,20 +40,4 @@ class BuyerRepositoryTest {
         }
     }
 
-    @Test
-    public void listUsername() throws Exception {
-        Buyer buyer = new Buyer("buyer1");
-        Buyer buyer1 = new Buyer("buyer2");
-
-        buyerRepository.save(buyer);
-        buyerRepository.save(buyer1);
-
-
-        List<Buyer> buyer2 = buyerRepository.findListByName("buyer1");
-        for (Buyer buyer3 : buyer2) {
-            System.out.println("buyer3 = " + buyer3.getName());
-        }
-    }
-
-
 }
