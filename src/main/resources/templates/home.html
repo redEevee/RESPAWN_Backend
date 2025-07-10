@@ -7,6 +7,19 @@
 
 <body>
 
+<div th:if="${successMessage}" id="successMessage" th:data-msg="${successMessage}"></div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var msgDiv = document.getElementById("successMessage");
+        if (msgDiv) {
+            var msg = msgDiv.dataset.msg;
+            // 브라우저 기본 팝업 알림
+            alert(msg);
+            // 또는 직접 만든 토스트/모달로 대체 가능
+        }
+    });
+</script>
+
 <div class="container">
 
     <div class="jumbotron">
