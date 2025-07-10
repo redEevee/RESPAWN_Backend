@@ -18,7 +18,6 @@ public class MongoConfig {
 
     private final MongoMappingContext mongoMappingContext;
 
-
     @Bean
     public MappingMongoConverter mappingMongoConverter(
             MongoDatabaseFactory mongoDatabaseFactory,
