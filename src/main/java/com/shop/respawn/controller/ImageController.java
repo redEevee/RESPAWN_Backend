@@ -34,7 +34,7 @@ public class ImageController {
     }
 
     @PostMapping("/mainBanner/upload")
-    public ResponseEntity<String> uploadImage(
+    public String uploadImage(
             @RequestParam("file") MultipartFile file,
             @ModelAttribute MainBannerForm mainBannerForm) throws IOException {
 
@@ -49,7 +49,7 @@ public class ImageController {
         mainBanner.setTitle(mainBannerForm.getTitle()); // 입력받은 타이틀 저장
         mainBannerRepository.save(mainBanner);
 
-        return ResponseEntity.ok(fileId.toString());
+        return "redirect:/";
     }
 
     @GetMapping("/mainBanner/view")
