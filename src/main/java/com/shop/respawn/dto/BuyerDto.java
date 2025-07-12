@@ -1,5 +1,6 @@
 package com.shop.respawn.dto;
 
+import com.shop.respawn.domain.Role;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -17,12 +18,21 @@ public class BuyerDto {
 
     private String phoneNumber;
 
-    public BuyerDto(String name, String username, String password, String email, String phoneNumber) {
+    private String provider;
+
+    private String providerId;
+
+    private Role role;
+
+    public BuyerDto(String name, String username, String password, String email, String phoneNumber, String provider, String providerId, Role role) {
         this.name = name;
         this.username = username;
         this.password = password;
         this.email = email;
         this.phoneNumber = phoneNumber;
+        this.provider = provider;
+        this.providerId = providerId;
+        this.role = role;
     }
 
     public BuyerDto(String name, String username, String password, String email) {
