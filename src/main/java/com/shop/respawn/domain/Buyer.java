@@ -12,7 +12,7 @@ import java.util.List;
 import static lombok.AccessLevel.*;
 
 @Entity
-@Getter @Setter
+@Getter
 @NoArgsConstructor(access = PROTECTED)
 public class Buyer {
 
@@ -46,5 +46,13 @@ public class Buyer {
     public void addAddress(Address address) {
         addresses.add(address);
         address.setBuyer(this);
+    }
+
+    public Buyer(String name, String username, String password, String email, String phoneNumber) {
+        this.name = name;
+        this.username = username;
+        this.password = password;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
     }
 }

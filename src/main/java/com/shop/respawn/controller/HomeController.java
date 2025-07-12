@@ -8,9 +8,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Slf4j
 public class HomeController {
 
-    @RequestMapping("/")
+    @RequestMapping({"", "/"})
     public String home() {
-        log.info("home controller");
         return "home";
     }
+
+    @RequestMapping({"", "/login"})
+    public String login() {
+        return "login";
+    }
+
+    @RequestMapping({"", "/join"})
+    public String join() {
+        return "join";
+    }
+
 }
