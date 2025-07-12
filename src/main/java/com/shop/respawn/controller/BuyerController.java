@@ -7,9 +7,7 @@ import com.shop.respawn.service.BuyerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,6 +24,11 @@ public class BuyerController {
 
         buyerService.join(buyer);
         return ResponseEntity.ok("회원가입에 성공하였습니다.");
+    }
+
+    @GetMapping("buyers/signup/{username}")
+    public Boolean checkUsernameDuplicate(@PathVariable String username) {
+        return buyerService.checkUsernameDuplicate(username);
     }
 
 }
