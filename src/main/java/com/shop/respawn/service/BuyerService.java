@@ -30,6 +30,10 @@ public class BuyerService {
         }
     }
 
-
-
+    /**
+     * 아이디 중복확인
+     */
+    public boolean checkUsernameDuplicate(String username) {
+        return buyerRepository.existsByUsername(username);
+    }
 }
