@@ -1,5 +1,6 @@
 package com.shop.respawn.config;
 
+import com.shop.respawn.config.oauth.PrincipalOauth2UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -19,7 +20,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, PrincipalOauth2UserService principalOauth2UserService) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable);
 
         http.authorizeHttpRequests(authorize -> {
@@ -31,8 +32,26 @@ public class SecurityConfig {
         });
 
         http.formLogin(form -> {
-            form.loginPage("/login");
+            form.loginPage("/loginForm")
+                    .loginProcessingUrl("/login")
+                    .defaultSuccessUrl("/home");
         });
+
+        http.oauth2Login(form -> {
+            form
+                    .loginPage("/loginForm")
+                    .userInfoEndpoint(userInfoEndpointConfig -> {
+                        userInfoEndpointConfig.userService(principalOauth2UserService);
+                    });
+        });
+
+        http
+                .logout(logout -> logout
+                        .logoutUrl("/logout")                  // 로그아웃 요청 URL (기본값: "/logout")
+                        .logoutSuccessUrl("/")                 // 로그아웃 성공 후 리다이렉트 URL (기본값: "/login?logout")
+                        .invalidateHttpSession(true)           // 세션 무효화 (기본값: true)
+                        .deleteCookies("JSESSIONID")           // 쿠키 삭제
+                );
 
         return http.build();
     }

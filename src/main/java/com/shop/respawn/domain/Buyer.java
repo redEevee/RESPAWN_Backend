@@ -1,18 +1,18 @@
 package com.shop.respawn.domain;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static jakarta.persistence.EnumType.STRING;
 import static lombok.AccessLevel.*;
 
 @Entity
 @Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor(access = PROTECTED)
 public class Buyer {
 
@@ -29,6 +29,13 @@ public class Buyer {
     private String email;
 
     private String phoneNumber;
+
+    private String provider;
+
+    private String providerId;
+
+    @Enumerated(STRING)
+    private Role role;
 
     @OneToMany(mappedBy = "buyer")
     private List<Address> addresses = new ArrayList<Address>();

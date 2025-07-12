@@ -1,26 +1,64 @@
 package com.shop.respawn.controller;
 
+import com.shop.respawn.auth.PrincipalDetails;
+import com.shop.respawn.domain.Buyer;
+import com.shop.respawn.repository.BuyerRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
 @Slf4j
+@RequiredArgsConstructor
 public class HomeController {
 
-    @RequestMapping({"", "/"})
+    private final BuyerRepository buyerRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
+
+    @GetMapping({"", "/"})
     public String home() {
         return "home";
     }
 
-    @RequestMapping({"", "/login"})
-    public String login() {
-        return "login";
+    @GetMapping("/buyer")
+    public @ResponseBody String buyer(@AuthenticationPrincipal PrincipalDetails principalDetails) {
+        System.out.println("principalDetails = " + principalDetails.getBuyer());
+        return "buyer";
     }
 
-    @RequestMapping({"", "/join"})
-    public String join() {
-        return "join";
+    @GetMapping("/admin")
+    public @ResponseBody String admin() {
+        return "admin";
+    }
+
+    @GetMapping("/manager")
+    public @ResponseBody String manager() {
+        return "manager";
+    }
+
+    @GetMapping("/loginForm")
+    public String loginForm() {
+        return "loginForm";
+    }
+
+    @GetMapping("/joinForm")
+    public String joinForm() {
+        return "joinForm";
+    }
+
+    @PostMapping("/join")
+    public String join(Buyer buyer) {
+        return "redirect:/loginForm";
     }
 
 }
