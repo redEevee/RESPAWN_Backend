@@ -32,9 +32,11 @@ public class SecurityConfig {
         });
 
         http.formLogin(form -> {
-            form.loginPage("/loginForm")
+            form
+                    .loginPage("/loginForm") // 또는 존재하지 않는 dummy URL
                     .loginProcessingUrl("/login")
-                    .defaultSuccessUrl("/home");
+                    .defaultSuccessUrl("http://localhost:3000") // 로그인 성공 후 프론트 주소로 이동
+                    .permitAll();
         });
 
         http.oauth2Login(form -> {
