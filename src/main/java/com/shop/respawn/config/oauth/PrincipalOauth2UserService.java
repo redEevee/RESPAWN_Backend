@@ -61,7 +61,7 @@ public class PrincipalOauth2UserService extends DefaultOAuth2UserService {
         String password = bCryptPasswordEncoder.encode("social_login");
         String email = oAuth2UserInfo.getEmail();
         String phoneNumber = oAuth2UserInfo.getPhoneNumber();
-        String role = Role.ROLE_USER.toString();
+        String role = Role.USER.getRole();
 
         Buyer userEntity = buyerRepository.findAuthByUsername(username);
 

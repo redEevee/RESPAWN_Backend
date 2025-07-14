@@ -17,11 +17,14 @@ public class PrincipalDetailsService implements UserDetailsService {
     // 시큐리티 session(내부 Authentication(내부 UserDetails))
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        System.out.println("username = " + username);
-        Buyer userEntity = buyerRepository.findAuthByUsername(username);
-        if (userEntity != null) {
-            return new PrincipalDetails(userEntity);
+
+        Buyer buyer = buyerRepository.findAuthByUsername(username);
+
+        if (buyer == null) {
+            System.out.println("Username not found");
+            throw new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + username);
         }
-        return null;
+        System.out.println("Username found: " + username);
+        return new PrincipalDetails(buyer);
     }
 }

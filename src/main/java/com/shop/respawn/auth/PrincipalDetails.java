@@ -2,6 +2,7 @@ package com.shop.respawn.auth;
 
 import com.shop.respawn.domain.Buyer;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -16,7 +17,6 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
     private final Buyer buyer; // 콤포지션
     private Map<String, Object> attributes;
 
-    // 일반 로그인
     public PrincipalDetails(Buyer buyer) {
         this.buyer = buyer;
     }
@@ -30,15 +30,14 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
     // 해당 유저의 권한을 리턴하는 곳
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        Collection<GrantedAuthority> collect = new ArrayList<>();
-        collect.add(new GrantedAuthority() {
+        Collection<GrantedAuthority> collection = new ArrayList<>();
+        collection.add(new GrantedAuthority() {
             @Override
             public String getAuthority() {
-                return String.valueOf(buyer.getRole());
+                return buyer.getRole().name();
             }
         });
-
-        return collect;
+        return collection;
     }
 
     @Override

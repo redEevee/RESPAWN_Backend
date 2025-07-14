@@ -46,11 +46,7 @@ public class Buyer {
     @OneToMany(mappedBy = "buyer")
     private List<Order> orders = new ArrayList<Order>();
 
-    public Buyer(String name) {
-        this.name = name;
-    }
-
-    public Buyer(String name, String username, String password, String email, String phoneNumber, String provider, String providerId, Role role) {
+    private Buyer(String name, String username, String password, String email, String phoneNumber, String provider, String providerId, Role role) {
         this.name = name;
         this.username = username;
         this.password = password;
@@ -59,6 +55,33 @@ public class Buyer {
         this.provider = provider;
         this.providerId = providerId;
         this.role = role;
+    }
+
+    //정적 팩토리 메서드
+    public static Buyer createBuyer(String username, Role role) {
+        Buyer buyer = new Buyer();
+        buyer.username = username;
+        buyer.role = role;
+        return buyer;
+    }
+
+    public static Buyer createBuyer(String name, String username, String password, String email, String phoneNumber, Role role) {
+        Buyer buyer = new Buyer();
+        buyer.name = name;
+        buyer.username = username;
+        buyer.password = password;
+        buyer.email = email;
+        buyer.phoneNumber = phoneNumber;
+        buyer.role = role;
+        return buyer;
+    }
+
+    public static Buyer createBuyer(String name, String username, String password, String email, String phoneNumber,
+                                    Role role,  String provider, String providerId) {
+        Buyer buyer = createBuyer(name, username, password, email, phoneNumber, role);
+        buyer.provider = provider;
+        buyer.providerId = providerId;
+        return buyer;
     }
 
     public void addAddress(Address address) {

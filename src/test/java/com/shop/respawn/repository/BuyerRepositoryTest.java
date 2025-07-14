@@ -25,19 +25,4 @@ class BuyerRepositoryTest {
     @Autowired
     private BuyerRepository buyerRepository;
 
-
-    @Test
-    public void testBuyer() throws Exception {
-        Buyer buyer = new Buyer("buyer1");
-        buyerRepository.save(buyer);
-
-        Buyer buyer1 = buyerRepository.findById(buyer.getId()).get();
-        List<Buyer> all = buyerRepository.findAll();
-
-        System.out.println("buyer1 = " + buyer1.getName());
-        for (Buyer buyer2 : all) {
-            System.out.println("buyer2 = " + buyer2.getName());
-        }
-    }
-
 }

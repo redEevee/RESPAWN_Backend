@@ -35,10 +35,8 @@ public class BuyerDto {
         this.role = role;
     }
 
-    public BuyerDto(String name, String username, String password, String email) {
-        this.name = name;
+    public BuyerDto(String username, String password) {
         this.username = username;
         this.password = password;
-        this.email = email;
     }
 }

@@ -1,33 +1,45 @@
 package com.shop.respawn.service;
 
 import com.shop.respawn.domain.Buyer;
+import com.shop.respawn.domain.QBuyer;
+import com.shop.respawn.domain.Role;
+import com.shop.respawn.dto.BuyerDto;
+import com.shop.respawn.exception.ApiException;
+import com.shop.respawn.exception.ErrorCode;
 import com.shop.respawn.repository.BuyerRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import static com.shop.respawn.domain.QBuyer.buyer;
 
 @Service
-@Transactional(readOnly=true)
+@Transactional
 @RequiredArgsConstructor
 public class BuyerService {
 
     private final BuyerRepository buyerRepository;
+    private final BCryptPasswordEncoder encoder;
 
     /**
      * 회원가입
      */
-    @Transactional
-    public void join(Buyer buyer){
-        buyerRepository.save(buyer);
-    }
+    public void join(BuyerDto buyerDto){
+        String name = buyerDto.getName();
+        String username = buyerDto.getUsername();
+        String password = buyerDto.getPassword();
+        String email = buyerDto.getEmail();
+        String phoneNumber = buyerDto.getPhoneNumber();
 
-    private void validateDuplicateBuyer(Buyer buyer) {
-        List<Buyer> findByUsername = buyerRepository.findByUsername(buyer.getUsername());
-        if (!findByUsername.isEmpty()) {
-            throw new IllegalStateException("이미 사용 중인 아이디입니다.");
+        Boolean isExist = buyerRepository.existsByUsername(username);
+        if (isExist) {
+            throw new ApiException(ErrorCode.ALREADY_EXIST_USERNAME);
         }
+
+        Buyer buyer = Buyer.createBuyer(name, username, encoder.encode(password), email, phoneNumber, Role.USER);
+
+        buyerRepository.save(buyer);
     }
 
     /**

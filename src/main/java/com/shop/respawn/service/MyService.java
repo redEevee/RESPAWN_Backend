@@ -4,6 +4,7 @@ import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.repository.BuyerRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,7 +18,9 @@ public class MyService {
 
     @Transactional
     public void initData() {
-        Buyer buyer = new Buyer("a", "a", "a", "a", "a");
+
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        Buyer buyer = new Buyer("a", "a", encoder.encode("a"), "a", "a");
         // JPA 저장
         buyerRepository.save(buyer);
         em.persist(buyer);

@@ -3,11 +3,19 @@ package com.shop.respawn.config;
 import com.shop.respawn.config.oauth.PrincipalOauth2UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity // 스프링 시큐리티 필터가 스프링 필터체인에 등록됨
@@ -21,21 +29,39 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, PrincipalOauth2UserService principalOauth2UserService) throws Exception {
-        http.csrf(AbstractHttpConfigurer::disable);
 
-        http.authorizeHttpRequests(authorize -> {
-            authorize
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())); // ⭐️ CORS 설정 추가
+//                .formLogin(AbstractHttpConfigurer::disable)
+//                .httpBasic(AbstractHttpConfigurer::disable);
+
+        http
+                .authorizeHttpRequests(auth -> auth
+                    .requestMatchers("/", "/login", "/join").permitAll()
                     .requestMatchers("/mainBanner/**").authenticated()
                     .requestMatchers("/manager/**").hasAnyRole("MANAGER", "ADMIN")
                     .requestMatchers("/admin/**").hasAnyRole("ADMIN")
-                    .anyRequest().permitAll();
-        });
+                    .anyRequest().permitAll());
+
+//        http
+//                .sessionManagement(session -> session
+//                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         http.formLogin(form -> {
             form
-                    .loginPage("/loginForm") // 또는 존재하지 않는 dummy URL
+                    .loginPage("/dummy") // 또는 존재하지 않는 dummy URL
                     .loginProcessingUrl("/login")
-                    .defaultSuccessUrl("http://localhost:3000") // 로그인 성공 후 프론트 주소로 이동
+                    .successHandler((request, response, authentication) -> {
+                        response.setStatus(200);
+                        response.setContentType("application/json;charset=UTF-8");
+                        response.getWriter().write("{\"message\": \"Login successful\"}");
+                    })
+                    .failureHandler((request, response, exception) -> {
+                        response.setStatus(401);
+                        response.setContentType("application/json;charset=UTF-8");
+                        response.getWriter().write("{\"message\": \"Login failed\"}");
+                    })
                     .permitAll();
         });
 
@@ -57,4 +83,24 @@ public class SecurityConfig {
 
         return http.build();
     }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of("http://localhost:3000")); // * 사용하지 말고 정확하게 지정
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true); // ★ withCredentials: true와 같이 사용하려면 꼭 true로 설정
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+
+        return source;
+    }
+
 }
