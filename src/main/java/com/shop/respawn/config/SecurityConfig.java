@@ -32,9 +32,9 @@ public class SecurityConfig {
 
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())); // ⭐️ CORS 설정 추가
-//                .formLogin(AbstractHttpConfigurer::disable)
-//                .httpBasic(AbstractHttpConfigurer::disable);
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ⭐️ CORS 설정 추가
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable);
 
         http
                 .authorizeHttpRequests(auth -> auth
@@ -44,24 +44,16 @@ public class SecurityConfig {
                     .requestMatchers("/admin/**").hasAnyRole("ADMIN")
                     .anyRequest().permitAll());
 
-//        http
-//                .sessionManagement(session -> session
-//                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+        http
+                .sessionManagement(sessionManagement -> sessionManagement
+                        .maximumSessions(1)
+                        .maxSessionsPreventsLogin(true)
+                );
 
         http.formLogin(form -> {
             form
                     .loginPage("/dummy") // 또는 존재하지 않는 dummy URL
                     .loginProcessingUrl("/login")
-                    .successHandler((request, response, authentication) -> {
-                        response.setStatus(200);
-                        response.setContentType("application/json;charset=UTF-8");
-                        response.getWriter().write("{\"message\": \"Login successful\"}");
-                    })
-                    .failureHandler((request, response, exception) -> {
-                        response.setStatus(401);
-                        response.setContentType("application/json;charset=UTF-8");
-                        response.getWriter().write("{\"message\": \"Login failed\"}");
-                    })
                     .permitAll();
         });
 
@@ -70,7 +62,8 @@ public class SecurityConfig {
                     .loginPage("/loginForm")
                     .userInfoEndpoint(userInfoEndpointConfig -> {
                         userInfoEndpointConfig.userService(principalOauth2UserService);
-                    });
+                    })
+                    .defaultSuccessUrl("http://localhost:3000", true);
         });
 
         http
@@ -92,10 +85,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true); // ★ withCredentials: true와 같이 사용하려면 꼭 true로 설정
         config.setAllowedOrigins(List.of("http://localhost:3000")); // * 사용하지 말고 정확하게 지정
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true); // ★ withCredentials: true와 같이 사용하려면 꼭 true로 설정
+        config.setExposedHeaders(List.of("*"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
