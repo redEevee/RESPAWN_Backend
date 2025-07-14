@@ -12,4 +12,8 @@ public interface BuyerRepository extends JpaRepository<Buyer, Long>, BuyerReposi
     Buyer findAuthByUsername(String username);
 
     Boolean existsByUsername(String username);
+
+    Boolean existsByPhoneNumber(String phoneNumber);
+
+    Boolean existsByEmail(String email);
 }

@@ -31,4 +31,14 @@ public class BuyerController {
         return buyerService.checkUsernameDuplicate(username);
     }
 
+    @GetMapping("buyers/signup/{phoneNumber}")
+    public Boolean checkPhoneNumberDuplicate(@PathVariable String phoneNumber) {
+        return buyerService.checkPhoneNumberDuplicate(phoneNumber);
+    }
+
+    @GetMapping("buyers/signup/{email}")
+    public Boolean checkEmailDuplicate(@PathVariable String email) {
+        return buyerService.checkUsernameDuplicate(email);
+    }
+
 }

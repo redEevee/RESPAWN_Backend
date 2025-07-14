@@ -36,4 +36,18 @@ public class BuyerService {
     public boolean checkUsernameDuplicate(String username) {
         return buyerRepository.existsByUsername(username);
     }
+
+    /**
+     * 전화번호 중복확인
+     */
+    public boolean checkPhoneNumberDuplicate(String phoneNumber) {
+        return buyerRepository.existsByPhoneNumber(phoneNumber);
+    }
+
+    /**
+     * 이메일 중복확인
+     */
+    public boolean checkEmailDuplicate(String email) {
+        return buyerRepository.existsByEmail(email);
+    }
 }
