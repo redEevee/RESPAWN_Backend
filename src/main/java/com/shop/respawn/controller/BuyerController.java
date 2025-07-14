@@ -26,19 +26,19 @@ public class BuyerController {
         return ResponseEntity.ok("회원가입에 성공하였습니다.");
     }
 
-    @GetMapping("buyers/signup/{username}")
+    @GetMapping("buyers/signup/username/{username}")
     public Boolean checkUsernameDuplicate(@PathVariable String username) {
         return buyerService.checkUsernameDuplicate(username);
     }
 
-    @GetMapping("buyers/signup/{phoneNumber}")
+    @GetMapping("buyers/signup/phoneNumber/{phoneNumber}")
     public Boolean checkPhoneNumberDuplicate(@PathVariable String phoneNumber) {
         return buyerService.checkPhoneNumberDuplicate(phoneNumber);
     }
 
-    @GetMapping("buyers/signup/{email}")
+    @GetMapping("buyers/signup/email/{email}")
     public Boolean checkEmailDuplicate(@PathVariable String email) {
-        return buyerService.checkUsernameDuplicate(email);
+        return buyerService.checkEmailDuplicate(email);
     }
 
 }
