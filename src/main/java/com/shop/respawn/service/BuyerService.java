@@ -1,18 +1,13 @@
 package com.shop.respawn.service;
 
 import com.shop.respawn.domain.Buyer;
-import com.shop.respawn.domain.QBuyer;
 import com.shop.respawn.domain.Role;
 import com.shop.respawn.dto.BuyerDto;
-import com.shop.respawn.exception.ApiException;
-import com.shop.respawn.exception.ErrorCode;
 import com.shop.respawn.repository.BuyerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import static com.shop.respawn.domain.QBuyer.buyer;
 
 @Service
 @Transactional
@@ -22,24 +17,34 @@ public class BuyerService {
     private final BuyerRepository buyerRepository;
     private final BCryptPasswordEncoder encoder;
 
+//    public Buyer login(String username, String rawPassword) {
+//        return buyerRepository.findListByUsername(username)
+//                .stream()
+//                .filter(b -> encoder.matches(rawPassword, b.getPassword())) // ← 암호화된 비밀번호 비교
+//                .findFirst()
+//                .orElse(null);
+//    }
+
     /**
      * 회원가입
      */
     public void join(BuyerDto buyerDto){
         String name = buyerDto.getName();
         String username = buyerDto.getUsername();
-        String password = buyerDto.getPassword();
+        String password = encoder.encode(buyerDto.getPassword());
+        System.out.println("비밀번호 인코딩:" + password);
         String email = buyerDto.getEmail();
         String phoneNumber = buyerDto.getPhoneNumber();
 
-        Boolean isExist = buyerRepository.existsByUsername(username);
-        if (isExist) {
-            throw new ApiException(ErrorCode.ALREADY_EXIST_USERNAME);
-        }
-
-        Buyer buyer = Buyer.createBuyer(name, username, encoder.encode(password), email, phoneNumber, Role.USER);
+        Buyer buyer = Buyer.createBuyer(name, username, password, email, phoneNumber, Role.ROLE_USER);
 
         buyerRepository.save(buyer);
+    }
+
+    public Buyer getBuyerInfo(String username){
+        Buyer findBuyer = buyerRepository.findByUsername(username);
+
+        return findBuyer;
     }
 
     /**

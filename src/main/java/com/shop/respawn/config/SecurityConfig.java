@@ -1,6 +1,7 @@
 package com.shop.respawn.config;
 
-import com.shop.respawn.config.oauth.PrincipalOauth2UserService;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,50 +29,58 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, PrincipalOauth2UserService principalOauth2UserService) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
-                .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ⭐️ CORS 설정 추가
-                .formLogin(AbstractHttpConfigurer::disable)
-                .httpBasic(AbstractHttpConfigurer::disable);
+                .csrf(AbstractHttpConfigurer::disable) //csrf 검증 비활성화
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()));// ⭐️ CORS 설정 추가
 
+        /*
+            requestMatchers에 특정 url을 입력하면 해당 url에 대한 접근 권한을 설정
+            permitAll(): 인증받지 않은 유저(로그인 하지 않은 유저)에게도 접근을 허용
+            hasRole(): 특정 권한을 갖고 있는 유저에게만 접근을 허용
+            hasAnyRole(): 인수에 전달한 여러 권한 중 하나라도 가진 유저에게 접근을 허용
+         */
         http
                 .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/", "/login", "/join").permitAll()
-                    .requestMatchers("/mainBanner/**").authenticated()
-                    .requestMatchers("/manager/**").hasAnyRole("MANAGER", "ADMIN")
-                    .requestMatchers("/admin/**").hasAnyRole("ADMIN")
-                    .anyRequest().permitAll());
-
-        http
-                .sessionManagement(sessionManagement -> sessionManagement
-                        .maximumSessions(1)
-                        .maxSessionsPreventsLogin(true)
+                        .requestMatchers("/user/**").authenticated()
+                        .requestMatchers("/admin/**").hasAnyRole("ADMIN")
+                        .anyRequest().permitAll()
                 );
 
-        http.formLogin(form -> {
-            form
-                    .loginPage("/dummy") // 또는 존재하지 않는 dummy URL
-                    .loginProcessingUrl("/login")
-                    .permitAll();
-        });
+        http //일반 로그인
+                .formLogin(auth -> auth
+                        .loginPage("/login")
+                        .loginProcessingUrl("/loginProc")
+                        .usernameParameter("username")
+                        .passwordParameter("password")
+                        .defaultSuccessUrl("/loginOk")
+                        .permitAll()
+                );
 
-        http.oauth2Login(form -> {
-            form
-                    .loginPage("/loginForm")
-                    .userInfoEndpoint(userInfoEndpointConfig -> {
-                        userInfoEndpointConfig.userService(principalOauth2UserService);
-                    })
-                    .defaultSuccessUrl("http://localhost:3000", true);
-        });
-
-        http
+        http //로그아웃
                 .logout(logout -> logout
                         .logoutUrl("/logout")                  // 로그아웃 요청 URL (기본값: "/logout")
-                        .logoutSuccessUrl("/")                 // 로그아웃 성공 후 리다이렉트 URL (기본값: "/login?logout")
+                        .logoutSuccessUrl("/logoutOk")          // 로그아웃 성공 후 리다이렉트 URL (기본값: "/login?logout")
                         .invalidateHttpSession(true)           // 세션 무효화 (기본값: true)
                         .deleteCookies("JSESSIONID")           // 쿠키 삭제
+                );
+
+        http
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"error\":\"Unauthorized\"}");
+                        })
+                );
+
+        http
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)  // 필요한 경우만 세션 생성
+                        .sessionFixation().changeSessionId()                      // 세션 고정 공격 방지
+                        .maximumSessions(1)                                       // 최대 동시 로그인 1개
+                        .maxSessionsPreventsLogin(true)                       // 기존 세션 유지, 새 로그인 차단
                 );
 
         return http.build();

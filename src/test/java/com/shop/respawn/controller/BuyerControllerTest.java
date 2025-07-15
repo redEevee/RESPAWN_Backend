@@ -30,7 +30,7 @@ class BuyerControllerTest {
     @WithMockUser
     void createNewBuyer_정상_회원가입() throws Exception {
         BuyerDto dto = new BuyerDto("홍길동", "hong123", "password123", "hong@example.com",
-                "010-1234-5678", "11", "11", Role.USER);
+                "010-1234-5678", "11", "11", Role.ROLE_USER);
 
         mockMvc.perform(post("/buyers/createNewBuyer")
                         .contentType(MediaType.APPLICATION_JSON)

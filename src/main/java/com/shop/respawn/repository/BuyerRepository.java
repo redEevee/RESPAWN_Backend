@@ -7,13 +7,13 @@ import java.util.List;
 
 public interface BuyerRepository extends JpaRepository<Buyer, Long>, BuyerRepositoryCustom {
 
-    List<Buyer> findByUsername(String username);
-
-    Buyer findAuthByUsername(String username);
+    Buyer findByUsername(String username);
 
     Boolean existsByUsername(String username);
 
     Boolean existsByPhoneNumber(String phoneNumber);
 
     Boolean existsByEmail(String email);
+
+    Buyer findByName(String name);
 }

@@ -22,6 +22,7 @@ public class Buyer {
 
     private String name;
 
+    @Column(unique = true)
     private String username;
 
     private String password;
@@ -89,11 +90,12 @@ public class Buyer {
         address.setBuyer(this);
     }
 
-    public Buyer(String name, String username, String password, String email, String phoneNumber) {
+    public Buyer(String name, String username, String password, String email, String phoneNumber, Role role) {
         this.name = name;
         this.username = username;
         this.password = password;
         this.email = email;
         this.phoneNumber = phoneNumber;
+        this.role = role;
     }
 }
