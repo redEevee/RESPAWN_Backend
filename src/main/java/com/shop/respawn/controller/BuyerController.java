@@ -39,7 +39,9 @@ public class BuyerController {
         userInfo.put("username", username);
         userInfo.put("authorities", authorities);
 
-        return ResponseEntity.ok(userInfo);
+        ResponseEntity<Map<String, String>> ok = ResponseEntity.ok(userInfo);
+        System.out.println("ok = " + ok);
+        return ok;
     }
 
     @GetMapping("/logoutOk")

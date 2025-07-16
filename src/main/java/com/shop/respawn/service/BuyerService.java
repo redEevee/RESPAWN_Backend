@@ -17,6 +17,7 @@ public class BuyerService {
     private final BuyerRepository buyerRepository;
     private final BCryptPasswordEncoder encoder;
 
+
     /**
      * 회원가입
      */

@@ -1,4 +1,4 @@
-package com.shop.respawn.security;
+package com.shop.respawn.security.auth;
 
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.repository.BuyerRepository;

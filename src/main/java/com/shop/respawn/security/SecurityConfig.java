@@ -1,16 +1,17 @@
 package com.shop.respawn.security;
 
+import com.shop.respawn.security.oauth.PrincipalOauth2UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -20,16 +21,11 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity // 스프링 시큐리티 필터가 스프링 필터체인에 등록됨
+@EnableMethodSecurity(securedEnabled = true, prePostEnabled = true) // secured 어노테이션 활성화, preAuthorize 어노테이션 활성화
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-//    private final PrincipalOauth2UserService principalOauth2UserService;
-
-    // 해당 메서드의 리턴되는 오브젝트를 IOC로 등록해준다.
-    @Bean
-    public BCryptPasswordEncoder encodePwd() {
-        return new BCryptPasswordEncoder();
-    }
+    private final PrincipalOauth2UserService principalOauth2UserService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -61,13 +57,15 @@ public class SecurityConfig {
                         .permitAll()
                 );
 
-//        http
-//                .oauth2Login(oauth2 -> oauth2
-//                        .loginPage("/login")
-//                        .userInfoEndpoint(userInfo -> userInfo
-//                                .userService(principalOauth2UserService)
-//                        )
-//                );
+        http
+                .oauth2Login(oauth2 -> oauth2
+                        .loginPage("/login")
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(principalOauth2UserService)
+                        )
+                        .defaultSuccessUrl("http://localhost:3000/loginOk")
+                        .permitAll()
+                );
 
 
         http //로그아웃
