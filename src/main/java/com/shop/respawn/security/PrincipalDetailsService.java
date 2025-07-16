@@ -1,28 +1,26 @@
-package com.shop.respawn.service;
+package com.shop.respawn.security;
 
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.repository.BuyerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 
-@Setter
-@RequiredArgsConstructor
 @Service
-public class BuyerDetailsServiceImpl implements UserDetailsService {
+@RequiredArgsConstructor
+@Setter
+public class PrincipalDetailsService implements UserDetailsService {
 
     private final BuyerRepository buyerRepository;
 
+    // 시큐리티 session(내부 Authentication(내부 UserDetails))
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        System.out.println("넘어온 이메일: " + username);
+        System.out.println("넘어온 유저네임: " + username);
         System.out.println("loadUserByUsername 실행");
 
         // 사용자 조회, 없으면 예외 발생
@@ -32,10 +30,8 @@ public class BuyerDetailsServiceImpl implements UserDetailsService {
         }
 
         // 사용자가 있다면 UserDetails 객체 생성
-        return new User(
-                buyer.getUsername(),
-                buyer.getPassword(),
-                Collections.singleton(new SimpleGrantedAuthority(buyer.getRole().name()))
-        );
+        return new PrincipalDetails(buyer);
+
     }
+
 }

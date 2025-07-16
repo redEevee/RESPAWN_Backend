@@ -1,4 +1,4 @@
-package com.shop.respawn.config;
+package com.shop.respawn.security;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +20,10 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity // 스프링 시큐리티 필터가 스프링 필터체인에 등록됨
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+//    private final PrincipalOauth2UserService principalOauth2UserService;
 
     // 해당 메서드의 리턴되는 오브젝트를 IOC로 등록해준다.
     @Bean
@@ -57,6 +60,15 @@ public class SecurityConfig {
                         .defaultSuccessUrl("/loginOk")
                         .permitAll()
                 );
+
+//        http
+//                .oauth2Login(oauth2 -> oauth2
+//                        .loginPage("/login")
+//                        .userInfoEndpoint(userInfo -> userInfo
+//                                .userService(principalOauth2UserService)
+//                        )
+//                );
+
 
         http //로그아웃
                 .logout(logout -> logout

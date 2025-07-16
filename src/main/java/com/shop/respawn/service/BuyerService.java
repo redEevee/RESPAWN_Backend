@@ -17,14 +17,6 @@ public class BuyerService {
     private final BuyerRepository buyerRepository;
     private final BCryptPasswordEncoder encoder;
 
-//    public Buyer login(String username, String rawPassword) {
-//        return buyerRepository.findListByUsername(username)
-//                .stream()
-//                .filter(b -> encoder.matches(rawPassword, b.getPassword())) // ← 암호화된 비밀번호 비교
-//                .findFirst()
-//                .orElse(null);
-//    }
-
     /**
      * 회원가입
      */
@@ -42,9 +34,8 @@ public class BuyerService {
     }
 
     public Buyer getBuyerInfo(String username){
-        Buyer findBuyer = buyerRepository.findByUsername(username);
 
-        return findBuyer;
+        return buyerRepository.findByUsername(username);
     }
 
     /**
