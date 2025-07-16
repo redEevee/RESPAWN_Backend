@@ -27,7 +27,7 @@ MySQL 8.0
 
 🎬Front-end
 
-React (React Repository이동)
+React ([React Repository](https://github.com/Yuyeseul/RESPAWN_Frontend)이동)
 
 🛠deploy
 
