@@ -17,7 +17,6 @@ public class BuyerService {
     private final BuyerRepository buyerRepository;
     private final BCryptPasswordEncoder encoder;
 
-
     /**
      * 회원가입
      */
@@ -34,8 +33,16 @@ public class BuyerService {
         buyerRepository.save(buyer);
     }
 
-    public Buyer getBuyerInfo(String username){
+    @Transactional
+    public void updatePhoneNumber(String username, String newPhoneNumber) {
+        Buyer buyer = buyerRepository.findOptionalByUsername(username)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
+        buyer.updatePhoneNumber(newPhoneNumber);
+        // userRepository.save(user); // 트랜잭션 내 변경감지로 자동 업데이트 됩니다.
+    }
+
+    public Buyer getBuyerInfo(String username){
         return buyerRepository.findByUsername(username);
     }
 

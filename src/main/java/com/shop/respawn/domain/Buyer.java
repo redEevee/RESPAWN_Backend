@@ -98,4 +98,8 @@ public class Buyer {
         this.phoneNumber = phoneNumber;
         this.role = role;
     }
+
+    public void updatePhoneNumber(String newPhoneNumber) {
+        this.phoneNumber = newPhoneNumber;
+    }
 }

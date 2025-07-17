@@ -78,6 +78,22 @@ public class BuyerController {
         return ok;
     }
 
+    // 전화번호 수정 엔드포인트
+    @PutMapping("/myPage/setPhoneNumber")
+    public Map<String, String> updatePhoneNumber(Authentication authentication,
+                                                 @RequestBody Map<String, String> request) {
+        String username = authentication.getName(); // 현재 로그인한 사용자 아이디 조회
+        String newPhoneNumber = request.get("phoneNumber");
+
+        if (newPhoneNumber == null || newPhoneNumber.trim().isEmpty()) {
+            throw new IllegalArgumentException("전화번호를 입력하세요.");
+        }
+
+        buyerService.updatePhoneNumber(username, newPhoneNumber);
+
+        return Map.of("message", "전화번호가 성공적으로 변경되었습니다.");
+    }
+
     @GetMapping("buyers/signup/username/{username}")
     public Boolean checkUsernameDuplicate(@PathVariable String username) {
         return buyerService.checkUsernameDuplicate(username);
