@@ -29,10 +29,13 @@ public class VerificationCode {
 
         return String.format(
                 """
-                        이도은 이녀석 너의 폰은 해킹 당했다 힣힣힣힣힣힣
-                        %s
-                        Expired At : %s
-                                """,
+                [RESPAWN] 본인확인 인증번호 안내
+                
+                인증번호: %s
+                
+                ※ 타인에게 절대 공유하지 마세요.
+                만료시각: %s
+                """,
                 code, formattedExpiredAt
         );
     }
