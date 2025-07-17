@@ -2,6 +2,7 @@ package com.shop.respawn.api.api_payload.status_code;
 
 import org.springframework.http.HttpStatus;
 
+//전화번호 인증에 대한 Status 타입
 public enum SuccessStatus implements BaseCode{
 
     _OK(HttpStatus.OK, "COMMON200", "성공입니다."),
