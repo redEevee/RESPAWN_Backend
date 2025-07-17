@@ -34,9 +34,4 @@ public class BuyerDto {
         this.providerId = providerId;
         this.role = role;
     }
-
-    public BuyerDto(String username, String password) {
-        this.username = username;
-        this.password = password;
-    }
 }

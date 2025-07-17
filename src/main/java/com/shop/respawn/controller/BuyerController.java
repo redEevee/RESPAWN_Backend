@@ -2,6 +2,7 @@ package com.shop.respawn.controller;
 
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.dto.BuyerDto;
+import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.service.BuyerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import java.util.Map;
 public class BuyerController {
 
     private final BuyerService buyerService;
+    private final BuyerRepository buyerRepository;
 
     @PostMapping("/join")
     public ResponseEntity<?> join(@RequestBody BuyerDto buyerDto) {
@@ -32,10 +34,13 @@ public class BuyerController {
         String username = authentication.getName();
         String authorities = authentication.getAuthorities().toString();
 
+        Buyer buyer = buyerRepository.findByUsername(username);
+
         System.out.println("로그인한 유저네임:" + username);
         System.out.println("유저 권한:" + authentication.getAuthorities());
 
         Map<String, String> userInfo = new HashMap<>();
+        userInfo.put("name", buyer.getName());
         userInfo.put("username", username);
         userInfo.put("authorities", authorities);
 
@@ -47,7 +52,9 @@ public class BuyerController {
     @GetMapping("/logoutOk")
     public ResponseEntity<?> logoutOk() {
         System.out.println("로그아웃 성공");
-        return ResponseEntity.ok().build();
+        ResponseEntity<Object> build = ResponseEntity.ok().build();
+        System.out.println("build = " + build);
+        return build;
     }
 
     @GetMapping("/admin")
@@ -66,7 +73,9 @@ public class BuyerController {
         // 유저 정보
         Buyer buyer = buyerService.getBuyerInfo(username);
 
-        return ResponseEntity.ok(buyer);
+        ResponseEntity<Buyer> ok = ResponseEntity.ok(buyer);
+        System.out.println("ok = " + ok);
+        return ok;
     }
 
     @GetMapping("buyers/signup/username/{username}")
