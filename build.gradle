@@ -31,16 +31,18 @@ dependencies {
 	implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.11.0'
 	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-	implementation 'org.springframework.boot:spring-boot-starter-security' // 사이트 보안
-	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client' //소셜로그인
-	compileOnly 'org.projectlombok:lombok'
-	runtimeOnly 'com.h2database:h2'
+	implementation 'org.springframework.boot:spring-boot-starter-security' //서버 보안
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client' //소셜 로그인 서비스
+	compileOnly 'org.projectlombok:lombok' //어노테이션 기반 코딩
+	runtimeOnly 'com.h2database:h2' //개발용 데이터 베이스
 	runtimeOnly 'com.mysql:mysql-connector-j'
-	annotationProcessor 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok' //어노테이션 기반 코딩
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	implementation 'net.nurigo:sdk:4.3.2' //전화번호 인증
+	implementation 'net.nurigo:sdk:4.3.2' //전화번호 인증 서비스
+	implementation 'org.springframework.boot:spring-boot-starter-mail' //메일 인증 서비스
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis' //레디스
 
 	//test 롬복 사용
 	testCompileOnly 'org.projectlombok:lombok'

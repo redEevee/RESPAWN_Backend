@@ -38,12 +38,15 @@ public class Buyer {
     @Enumerated(STRING)
     private Role role;
 
+    @Builder.Default
     @OneToMany(mappedBy = "buyer")
     private List<Address> addresses = new ArrayList<Address>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "buyer")
     private List<Cart> cart = new ArrayList<Cart>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "buyer")
     private List<Order> orders = new ArrayList<Order>();
 

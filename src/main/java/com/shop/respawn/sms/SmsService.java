@@ -32,6 +32,9 @@ public class SmsService {
 
     private final VerificationCodeRepository verificationCodeRepository;
 
+    /**
+     * coolSms 키값 세팅
+     */
     @PostConstruct
     public void init(){
         messageService = NurigoApp.INSTANCE.initialize(
@@ -42,9 +45,9 @@ public class SmsService {
     }
 
     public void sendVerificationMessage(String to, LocalDateTime sentAt){
-        Message message = new Message();
-        message.setFrom(smsSender);
-        message.setTo(to);
+        Message message = new Message(); //메시지 객체 생성
+        message.setFrom(smsSender); //메시지 보내는 사람 전화번호 등록
+        message.setTo(to); //메시지 내용 등록
 
         VerificationCode verificationCode = VerificationCodeGenerator
                 .generateVerificationCode(sentAt);
