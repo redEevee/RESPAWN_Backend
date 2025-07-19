@@ -7,8 +7,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailSendException;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Service
@@ -21,19 +23,19 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final RedisUtil redisUtil;
 
-    public EmailAuthResponseDto sendEmail(String toEmail) {
-        System.out.println("toEmail = " + toEmail);
+    @Async
+    public void sendEmailAsync(String toEmail) {
         if (redisUtil.existData(toEmail)) {
             redisUtil.deleteData(toEmail);
         }
 
         try {
             MimeMessage emailForm = createEmailForm(toEmail);
-            System.out.println("emailForm = " + emailForm);
             mailSender.send(emailForm);
-            return new EmailAuthResponseDto(true, "인증번호가 메일로 전송되었습니다.");
+            System.out.println("이메일이 전송 되었습니다.");
         } catch (MessagingException | MailSendException e) {
-            return new EmailAuthResponseDto(false, "메일 전송 중 오류가 발생하였습니다. 다시 시도해주세요.");
+            e.printStackTrace();
+            System.out.println("\"메일 전송 중 오류가 발생하였습니다. 다시 시도해주세요.\"e = " + e);
         }
     }
 
