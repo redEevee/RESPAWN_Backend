@@ -25,7 +25,7 @@ application-security.yml
 *.iml
 *.ipr
 out/
-uplooads/
+src/main/resources/static/uploads/*
 !**/src/main/**/out/
 !**/src/test/**/out/
 
