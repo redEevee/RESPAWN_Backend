@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.bson.types.Binary;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class ItemService {
@@ -17,7 +19,6 @@ public class ItemService {
         Item newItem = new Item();
         newItem.setName(itemDto.getName());
         newItem.setDescription(itemDto.getDescription());
-        newItem.setWireless(itemDto.getWireless());
         newItem.setDeliveryType(itemDto.getDeliveryType());
         newItem.setDeliveryFee(itemDto.getDeliveryFee());
         newItem.setPrice(itemDto.getPrice());
@@ -27,5 +28,14 @@ public class ItemService {
         newItem.setCategoryIds(itemDto.getCategoryIds());
 
         return itemRepository.save(newItem); // MongoDB에 저장
+    }
+
+    public Item getItemById(String id) {
+        return itemRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + id));
+    }
+
+    public List<Item> getAllItems() {
+        return itemRepository.findAll();
     }
 }

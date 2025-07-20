@@ -22,7 +22,6 @@ public class Item {
 
     private String name;
     private String description;
-    private String wireless;
     private String deliveryType;
     private String deliveryFee;
     private int price;

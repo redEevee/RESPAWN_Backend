@@ -11,8 +11,6 @@ public class ItemDto {
 
     private String description;
 
-    private String wireless;
-
     private String deliveryType;
 
     private String deliveryFee;

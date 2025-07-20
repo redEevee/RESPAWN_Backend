@@ -21,6 +21,6 @@ public class ImageService {
         Files.copy(file.getInputStream(), savePath);
 
         // 예시: 서버가 http://localhost:8080/uploads/ 를 static으로 제공한다고 가정
-        return "/static/uploads/" + fileName;
+        return "/uploads/" + fileName;
     }
 }
