@@ -2,7 +2,9 @@ package com.shop.respawn.service;
 
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.domain.Role;
+import com.shop.respawn.domain.Seller;
 import com.shop.respawn.repository.BuyerRepository;
+import com.shop.respawn.repository.SellerRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MyService {
 
     private final BuyerRepository buyerRepository;
+    private final SellerRepository sellerRepository;
 
     private final EntityManager em;
 
@@ -24,8 +27,11 @@ public class MyService {
         Buyer buyer = new Buyer("이지은", "a", encoder.encode("a"), "iu@naver.com", "01012345678", Role.ROLE_USER);
         buyerRepository.save(buyer);
         em.persist(buyer);
+        Seller seller = new Seller("가나디", "b", encoder.encode("b"), "gana@naver.com", "01023456789", Role.ROLE_USER);
+        sellerRepository.save(seller);
+        em.persist(seller);
 
-        Buyer buyer1 = new Buyer("test", "testUser", encoder.encode("testPassword"), "test@test.com", "01012345678",Role.ROLE_USER);
+        Buyer buyer1 = new Buyer("test", "testUser", encoder.encode("testPassword"), "test@test.com", "01012345678", Role.ROLE_USER);
         buyerRepository.save(buyer1);
         em.persist(buyer1);
 

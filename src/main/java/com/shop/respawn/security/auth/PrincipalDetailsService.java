@@ -1,7 +1,9 @@
 package com.shop.respawn.security.auth;
 
 import com.shop.respawn.domain.Buyer;
+import com.shop.respawn.domain.Seller;
 import com.shop.respawn.repository.BuyerRepository;
+import com.shop.respawn.repository.SellerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 public class PrincipalDetailsService implements UserDetailsService {
 
     private final BuyerRepository buyerRepository;
+    private final SellerRepository sellerRepository;
 
     // 시큐리티 session(내부 Authentication(내부 UserDetails))
     @Override
@@ -25,12 +28,14 @@ public class PrincipalDetailsService implements UserDetailsService {
 
         // 사용자 조회, 없으면 예외 발생
         Buyer buyer = buyerRepository.findByUsername(username);
-        if(buyer == null){
+        Seller seller = sellerRepository.findByUsername(username);
+        if (buyer != null) {
+            return new PrincipalDetails(buyer);
+        } else if (seller != null) {
+            return new PrincipalDetails(seller);
+        } else {
             throw new UsernameNotFoundException("User not found with username: " + username);
         }
-
-        // 사용자가 있다면 UserDetails 객체 생성
-        return new PrincipalDetails(buyer);
 
     }
 

@@ -1,6 +1,7 @@
 package com.shop.respawn.security.auth;
 
 import com.shop.respawn.domain.Buyer;
+import com.shop.respawn.domain.Seller;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -13,12 +14,18 @@ import java.util.*;
 public class PrincipalDetails implements UserDetails, OAuth2User {
 
     private Buyer buyer;
+    private Seller seller;
     private Map<String, Object> attributes;
 
     // 일반 로그인
     public PrincipalDetails(Buyer buyer) {
         this.buyer = buyer;
     }
+
+    public PrincipalDetails(Seller seller) {
+        this.seller = seller;
+    }
+
     // OAuth 로그인
     public PrincipalDetails(Buyer buyer, Map<String, Object> attributes) {
         this.buyer = buyer;
@@ -28,17 +35,32 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
     // 해당 유저의 권한을 리턴하는 곳
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(buyer.getRole().name()));
+        if (buyer != null) {
+            return List.of(new SimpleGrantedAuthority(buyer.getRole().name()));
+        } else if (seller != null) {
+            return List.of(new SimpleGrantedAuthority(seller.getRole().name()));
+        }
+        return List.of();
     }
 
     @Override
     public String getPassword() {
-        return buyer.getPassword();
+        if (buyer != null) {
+            return buyer.getPassword();
+        } else if (seller != null) {
+            return seller.getPassword();
+        }
+        return null;
     }
 
     @Override
     public String getUsername() {
-        return buyer.getUsername();
+        if (buyer != null) {
+            return buyer.getUsername();
+        } else if (seller != null) {
+            return seller.getUsername();
+        }
+        return null;
     }
 
     @Override
