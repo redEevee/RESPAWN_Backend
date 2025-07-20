@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class BuyerService {
+public class UserService {
 
     private final BuyerRepository buyerRepository;
     private final SellerRepository sellerRepository;
@@ -54,24 +54,28 @@ public class BuyerService {
         return buyerRepository.findByUsername(username);
     }
 
+    public Seller getSellerInfo(String username){
+        return sellerRepository.findByUsername(username);
+    }
+
     /**
      * 아이디 중복확인
      */
     public boolean checkUsernameDuplicate(String username) {
-        return buyerRepository.existsByUsername(username);
+        return buyerRepository.existsByUsername(username) || sellerRepository.existsByUsername(username);
     }
 
     /**
      * 전화번호 중복확인
      */
     public boolean checkPhoneNumberDuplicate(String phoneNumber) {
-        return buyerRepository.existsByPhoneNumber(phoneNumber);
+        return buyerRepository.existsByPhoneNumber(phoneNumber) || sellerRepository.existsByPhoneNumber(phoneNumber);
     }
 
     /**
      * 이메일 중복확인
      */
     public boolean checkEmailDuplicate(String email) {
-        return buyerRepository.existsByEmail(email);
+        return buyerRepository.existsByEmail(email) || sellerRepository.existsByEmail(email);
     }
 }
