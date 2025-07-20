@@ -1,6 +1,7 @@
 package com.shop.respawn.controller;
 
 import com.shop.respawn.domain.Buyer;
+import com.shop.respawn.domain.Seller;
 import com.shop.respawn.dto.UserDto;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.SellerRepository;
@@ -37,12 +38,21 @@ public class UserController {
         String authorities = authentication.getAuthorities().toString();
 
         Buyer buyer = buyerRepository.findByUsername(username);
+        String name = null;
+        if (buyer != null) {
+            name = buyer.getName();
+        } else {
+            Seller seller = sellerRepository.findByUsername(username);
+            if (seller != null) {
+                name = seller.getName();
+            }
+        }
 
         System.out.println("로그인한 유저네임:" + username);
         System.out.println("유저 권한:" + authentication.getAuthorities());
 
         Map<String, String> userInfo = new HashMap<>();
-        userInfo.put("name", buyer.getName());
+        userInfo.put("name", name != null ? name : "Unknown");
         userInfo.put("username", username);
         userInfo.put("authorities", authorities);
 
