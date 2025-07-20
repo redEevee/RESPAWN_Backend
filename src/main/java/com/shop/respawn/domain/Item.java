@@ -1,11 +1,10 @@
-package com.shop.respawn.domain.item;
+package com.shop.respawn.domain;
 
-import com.shop.respawn.domain.Category;
-import com.shop.respawn.domain.Seller;
 import com.shop.respawn.exception.NotEnoughStockException;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,27 +12,21 @@ import java.util.List;
 import static jakarta.persistence.FetchType.*;
 import static jakarta.persistence.InheritanceType.*;
 
-@Entity
-@Inheritance(strategy = SINGLE_TABLE)
-@DiscriminatorColumn
+@Document(collection = "item")
 @Getter @Setter
-public abstract class Item {
+public class Item {
 
-    @Id @GeneratedValue
-    @Column(name = "item_id")
-    private Long id;
+    @Id
+    private String id;
 
     private String name;
+    private String description;
     private String wireless;
     private int price;
     private int stockQuantity;
+    private String sellerId;
 
-    @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "seller_id")
-    private Seller seller;
-
-    @ManyToMany(mappedBy = "items")
-    private List<Category> categories = new ArrayList<Category>();
+    private List<String> categoryIds = new ArrayList<String>();
 
     //==비즈니스 로직==//
     public void addStock(int quantity) {
