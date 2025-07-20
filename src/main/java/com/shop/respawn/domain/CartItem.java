@@ -1,6 +1,5 @@
 package com.shop.respawn.domain;
 
-import com.shop.respawn.domain.item.Item;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,10 +16,6 @@ public class CartItem {
     private Long id;
 
     @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "item_id")
-    private Item item;
-
-    @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "cart_id")
     private Cart cart;
 
@@ -34,7 +29,7 @@ public class CartItem {
     //==생성 메서드==//
     public static CartItem createCartItem(Item item, int cartPrice, int count) {
         CartItem cartItem = new CartItem();
-        cartItem.setItem(item);
+//        cartItem.setItem(item);
         cartItem.setCartPrice(cartPrice);
         cartItem.setCount(count);
         return cartItem;

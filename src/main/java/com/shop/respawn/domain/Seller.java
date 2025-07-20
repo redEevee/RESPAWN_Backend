@@ -1,6 +1,5 @@
 package com.shop.respawn.domain;
 
-import com.shop.respawn.domain.item.Item;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -41,9 +40,6 @@ public class Seller {
 
     @Enumerated(STRING)
     private Role role;
-
-    @OneToMany(mappedBy = "seller")
-    private List<Item> items =  new ArrayList<Item>();
 
     private Seller(String name, String username, String password, String email, String phoneNumber, String provider, String providerId, Role role) {
         this.name = name;

@@ -19,7 +19,7 @@ public class RedisUtil {
     }
 
     public boolean existData(String key) {
-        return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+        return redisTemplate.hasKey(key);
     }
 
     public void setDataExpire(String key, String value, long duration) {
