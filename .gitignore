@@ -26,6 +26,7 @@ application-security.yml
 *.ipr
 out/
 src/main/resources/static/uploads/*
+service/ImageService.java
 !**/src/main/**/out/
 !**/src/test/**/out/
 
