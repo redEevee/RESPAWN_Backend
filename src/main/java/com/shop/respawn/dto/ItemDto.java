@@ -13,11 +13,17 @@ public class ItemDto {
 
     private String wireless;
 
+    private String deliveryType;
+
+    private String deliveryFee;
+
     private int price;
 
     private int stockQuantity;
 
     private String sellerId;
+
+    private String imageUrl;
 
     private List<String> categoryIds;
 

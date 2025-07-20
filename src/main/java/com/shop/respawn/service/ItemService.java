@@ -4,6 +4,7 @@ import com.shop.respawn.domain.Item;
 import com.shop.respawn.dto.ItemDto;
 import com.shop.respawn.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
+import org.bson.types.Binary;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -17,9 +18,12 @@ public class ItemService {
         newItem.setName(itemDto.getName());
         newItem.setDescription(itemDto.getDescription());
         newItem.setWireless(itemDto.getWireless());
+        newItem.setDeliveryType(itemDto.getDeliveryType());
+        newItem.setDeliveryFee(itemDto.getDeliveryFee());
         newItem.setPrice(itemDto.getPrice());
         newItem.setStockQuantity(itemDto.getStockQuantity());
         newItem.setSellerId(itemDto.getSellerId());
+        newItem.setImageUrl(itemDto.getImageUrl()); // 대표 사진 경로만 저장
         newItem.setCategoryIds(itemDto.getCategoryIds());
 
         return itemRepository.save(newItem); // MongoDB에 저장
