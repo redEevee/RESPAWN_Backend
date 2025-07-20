@@ -2,7 +2,7 @@ package com.shop.respawn.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shop.respawn.domain.Role;
-import com.shop.respawn.dto.BuyerDto;
+import com.shop.respawn.dto.UserDto;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -29,7 +29,7 @@ class BuyerControllerTest {
     @Test
     @WithMockUser
     void createNewBuyer_정상_회원가입() throws Exception {
-        BuyerDto dto = new BuyerDto("홍길동", "hong123", "password123", "hong@example.com",
+        UserDto dto = new UserDto("홍길동", "hong123", "password123", "hong@example.com",
                 "010-1234-5678", "11", "11", Role.ROLE_USER);
 
         mockMvc.perform(post("/buyers/createNewBuyer")

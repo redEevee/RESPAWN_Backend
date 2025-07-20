@@ -1,9 +1,10 @@
 package com.shop.respawn.controller;
 
 import com.shop.respawn.domain.Buyer;
-import com.shop.respawn.dto.BuyerDto;
+import com.shop.respawn.dto.UserDto;
 import com.shop.respawn.repository.BuyerRepository;
-import com.shop.respawn.service.BuyerService;
+import com.shop.respawn.repository.SellerRepository;
+import com.shop.respawn.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -15,15 +16,16 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-public class BuyerController {
+public class UserController {
 
-    private final BuyerService buyerService;
+    private final UserService userService;
     private final BuyerRepository buyerRepository;
+    private final SellerRepository sellerRepository;
 
-    @PostMapping("/join")
-    public ResponseEntity<?> join(@RequestBody BuyerDto buyerDto) {
-        System.out.println("회원가입 컨트롤러 실행" + buyerDto);
-        buyerService.join(buyerDto);
+    @PostMapping("/join/{userType}")
+    public ResponseEntity<?> join(@RequestBody UserDto userDto) {
+        System.out.println("회원가입 컨트롤러 실행" + userDto);
+        userService.join(userDto);
         System.out.println("회원가입 완료");
         return ResponseEntity.ok().build();
     }
@@ -71,7 +73,7 @@ public class BuyerController {
         String username = authentication.getName();
 
         // 유저 정보
-        Buyer buyer = buyerService.getBuyerInfo(username);
+        Buyer buyer = userService.getBuyerInfo(username);
 
         ResponseEntity<Buyer> ok = ResponseEntity.ok(buyer);
         System.out.println("ok = " + ok);
@@ -89,24 +91,24 @@ public class BuyerController {
             throw new IllegalArgumentException("전화번호를 입력하세요.");
         }
 
-        buyerService.updatePhoneNumber(username, newPhoneNumber);
+        userService.updatePhoneNumber(username, newPhoneNumber);
 
         return Map.of("message", "전화번호가 성공적으로 변경되었습니다.");
     }
 
-    @GetMapping("buyers/signup/username/{username}")
+    @GetMapping("signup/username/{username}")
     public Boolean checkUsernameDuplicate(@PathVariable String username) {
-        return buyerService.checkUsernameDuplicate(username);
+        return userService.checkUsernameDuplicate(username);
     }
 
-    @GetMapping("buyers/signup/phoneNumber/{phoneNumber}")
+    @GetMapping("signup/phoneNumber/{phoneNumber}")
     public Boolean checkPhoneNumberDuplicate(@PathVariable String phoneNumber) {
-        return buyerService.checkPhoneNumberDuplicate(phoneNumber);
+        return userService.checkPhoneNumberDuplicate(phoneNumber);
     }
 
-    @GetMapping("buyers/signup/email/{email}")
+    @GetMapping("signup/email/{email}")
     public Boolean checkEmailDuplicate(@PathVariable String email) {
-        return buyerService.checkEmailDuplicate(email);
+        return userService.checkEmailDuplicate(email);
     }
 
 }

@@ -21,7 +21,7 @@ public class MyService {
     public void initData() {
 
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        Buyer buyer = new Buyer("a", "a", encoder.encode("a"), "a", "a", Role.ROLE_USER);
+        Buyer buyer = new Buyer("이지은", "a", encoder.encode("a"), "iu@naver.com", "01012345678", Role.ROLE_USER);
         buyerRepository.save(buyer);
         em.persist(buyer);
 

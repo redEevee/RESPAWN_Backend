@@ -6,7 +6,9 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class BuyerDto {
+public class UserDto {
+
+    private String userType;
 
     private String name;
 
@@ -24,7 +26,7 @@ public class BuyerDto {
 
     private Role role;
 
-    public BuyerDto(String name, String username, String password, String email, String phoneNumber, String provider, String providerId, Role role) {
+    public UserDto(String name, String username, String password, String email, String phoneNumber, String provider, String providerId, Role role) {
         this.name = name;
         this.username = username;
         this.password = password;

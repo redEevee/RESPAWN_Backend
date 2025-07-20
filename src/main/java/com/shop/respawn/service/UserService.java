@@ -2,8 +2,10 @@ package com.shop.respawn.service;
 
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.domain.Role;
-import com.shop.respawn.dto.BuyerDto;
+import com.shop.respawn.domain.Seller;
+import com.shop.respawn.dto.UserDto;
 import com.shop.respawn.repository.BuyerRepository;
+import com.shop.respawn.repository.SellerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -12,25 +14,31 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class BuyerService {
+public class UserService {
 
     private final BuyerRepository buyerRepository;
+    private final SellerRepository sellerRepository;
     private final BCryptPasswordEncoder encoder;
 
     /**
      * 회원가입
      */
-    public void join(BuyerDto buyerDto){
-        String name = buyerDto.getName();
-        String username = buyerDto.getUsername();
-        String password = encoder.encode(buyerDto.getPassword());
+    public void join(UserDto userDto){
+        String userType = userDto.getUserType();
+        String name = userDto.getName();
+        String username = userDto.getUsername();
+        String password = encoder.encode(userDto.getPassword());
         System.out.println("비밀번호 인코딩:" + password);
-        String email = buyerDto.getEmail();
-        String phoneNumber = buyerDto.getPhoneNumber();
+        String email = userDto.getEmail();
+        String phoneNumber = userDto.getPhoneNumber();
 
-        Buyer buyer = Buyer.createBuyer(name, username, password, email, phoneNumber, Role.ROLE_USER);
-
-        buyerRepository.save(buyer);
+        if(userType.equals("buyer")){
+            Buyer buyer = Buyer.createBuyer(name, username, password, email, phoneNumber, Role.ROLE_USER);
+            buyerRepository.save(buyer);
+        } else if (userType.equals("seller")){
+            Seller seller = Seller.createSeller(name, username, password, email, phoneNumber, Role.ROLE_USER);
+            sellerRepository.save(seller);
+        }
     }
 
     @Transactional
@@ -46,24 +54,28 @@ public class BuyerService {
         return buyerRepository.findByUsername(username);
     }
 
+    public Seller getSellerInfo(String username){
+        return sellerRepository.findByUsername(username);
+    }
+
     /**
      * 아이디 중복확인
      */
     public boolean checkUsernameDuplicate(String username) {
-        return buyerRepository.existsByUsername(username);
+        return buyerRepository.existsByUsername(username) || sellerRepository.existsByUsername(username);
     }
 
     /**
      * 전화번호 중복확인
      */
     public boolean checkPhoneNumberDuplicate(String phoneNumber) {
-        return buyerRepository.existsByPhoneNumber(phoneNumber);
+        return buyerRepository.existsByPhoneNumber(phoneNumber) || sellerRepository.existsByPhoneNumber(phoneNumber);
     }
 
     /**
      * 이메일 중복확인
      */
     public boolean checkEmailDuplicate(String email) {
-        return buyerRepository.existsByEmail(email);
+        return buyerRepository.existsByEmail(email) || sellerRepository.existsByEmail(email);
     }
 }
