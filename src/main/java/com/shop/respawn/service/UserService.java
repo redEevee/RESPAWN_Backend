@@ -33,10 +33,10 @@ public class UserService {
         String phoneNumber = userDto.getPhoneNumber();
 
         if(userType.equals("buyer")){
-            Buyer buyer = Buyer.createBuyer(name, username, password, email, phoneNumber, Role.ROLE_USER);
+            Buyer buyer = Buyer.createBuyer(name, username, password, email, phoneNumber, Role.ROLE_USER_BUYER);
             buyerRepository.save(buyer);
         } else if (userType.equals("seller")){
-            Seller seller = Seller.createSeller(name, username, password, email, phoneNumber, Role.ROLE_USER);
+            Seller seller = Seller.createSeller(name, username, password, email, phoneNumber, Role.ROLE_USER_SELLER);
             sellerRepository.save(seller);
         }
     }

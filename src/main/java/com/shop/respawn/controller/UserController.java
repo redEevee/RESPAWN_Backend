@@ -76,18 +76,26 @@ public class UserController {
     }
 
     @GetMapping("/user")
-    public ResponseEntity<Buyer> getUserPage() {
+    public ResponseEntity<?> getUserPage() {
         System.out.println("일반 인증 성공");
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
 
-        // 유저 정보
+        // 구매자 먼저 조회
         Buyer buyer = userService.getBuyerInfo(username);
+        if (buyer != null) {
+            return ResponseEntity.ok(buyer);
+        }
 
-        ResponseEntity<Buyer> ok = ResponseEntity.ok(buyer);
-        System.out.println("ok = " + ok);
-        return ok;
+        // 판매자 조회
+        Seller seller = userService.getSellerInfo(username);
+        if (seller != null) {
+            return ResponseEntity.ok(seller);
+        }
+
+        // 사용자 없을 경우
+        return ResponseEntity.notFound().build();
     }
 
     // 전화번호 수정 엔드포인트
