@@ -4,6 +4,7 @@ import com.shop.respawn.exception.NotEnoughStockException;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.bson.types.Binary;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
@@ -22,9 +23,13 @@ public class Item {
     private String name;
     private String description;
     private String wireless;
+    private String deliveryType;
+    private String deliveryFee;
     private int price;
     private int stockQuantity;
     private String sellerId;
+
+    private String imageUrl;
 
     private List<String> categoryIds = new ArrayList<String>();
 

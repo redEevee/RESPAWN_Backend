@@ -25,6 +25,7 @@ application-security.yml
 *.iml
 *.ipr
 out/
+uplooads/
 !**/src/main/**/out/
 !**/src/test/**/out/
 
