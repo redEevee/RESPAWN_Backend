@@ -15,6 +15,8 @@ public class ItemDto {
 
     private String deliveryFee;
 
+    private String company;
+
     private int price;
 
     private int stockQuantity;
@@ -25,4 +27,16 @@ public class ItemDto {
 
     private List<String> categoryIds;
 
+    public ItemDto(String name, String description, String deliveryType, String deliveryFee, String company, int price, int stockQuantity, String sellerId, String imageUrl, List<String> categoryIds) {
+        this.name = name;
+        this.description = description;
+        this.deliveryType = deliveryType;
+        this.deliveryFee = deliveryFee;
+        this.company = company;
+        this.price = price;
+        this.stockQuantity = stockQuantity;
+        this.sellerId = sellerId;
+        this.imageUrl = imageUrl;
+        this.categoryIds = categoryIds;
+    }
 }

@@ -50,10 +50,10 @@ public class Order {
         orderItem.setOrder(this);
     }
 
-    public void addOrderCartItem(CartItem cartItem) {
-        cartItems.add(cartItem);
-        cartItem.setOrder(this);
-    }
+//    public void addOrderCartItem(CartItem cartItem) {
+//        cartItems.add(cartItem);
+//        cartItem.setOrder(this);
+//    }
 
     public void setDelivery(Delivery delivery) {
         this.delivery = delivery;
@@ -81,7 +81,7 @@ public class Order {
         order.setBuyer(buyer);
         order.setDelivery(delivery);
         for (CartItem cartItem : cartItems) {
-            order.addOrderCartItem(cartItem);
+//            order.addOrderCartItem(cartItem);
         }
         order.setStatus(OrderStatus.ORDERED);
         order.setOrderDate(LocalDateTime.now());

@@ -4,7 +4,6 @@ import com.shop.respawn.domain.Item;
 import com.shop.respawn.dto.ItemDto;
 import com.shop.respawn.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
-import org.bson.types.Binary;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,6 +20,7 @@ public class ItemService {
         newItem.setDescription(itemDto.getDescription());
         newItem.setDeliveryType(itemDto.getDeliveryType());
         newItem.setDeliveryFee(itemDto.getDeliveryFee());
+        newItem.setCompany(itemDto.getCompany());
         newItem.setPrice(itemDto.getPrice());
         newItem.setStockQuantity(itemDto.getStockQuantity());
         newItem.setSellerId(itemDto.getSellerId());

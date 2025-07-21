@@ -1,0 +1,116 @@
+package com.shop.respawn.service;
+
+import com.shop.respawn.domain.Buyer;
+import com.shop.respawn.domain.Cart;
+import com.shop.respawn.domain.CartItem;
+import com.shop.respawn.domain.Item;
+import com.shop.respawn.repository.BuyerRepository;
+import com.shop.respawn.repository.CartRepository;
+import com.shop.respawn.repository.ItemRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class CartService {
+
+    private final CartRepository cartRepository;
+    private final BuyerRepository buyerRepository;
+    private final ItemRepository itemRepository;
+
+    /**
+     * 장바구니에 상품 추가
+     */
+    public void addItemToCart(Long buyerId, String itemId, int count) {
+        // 구매자 조회
+        Buyer buyer = buyerRepository.findById(buyerId)
+                .orElseThrow(() -> new RuntimeException("구매자를 찾을 수 없습니다: " + buyerId));
+
+        // 상품 조회
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + itemId));
+
+        // 재고 확인
+        if (item.getStockQuantity() < count) {
+            throw new RuntimeException("재고가 부족합니다. 현재 재고: " + item.getStockQuantity());
+        }
+
+        // 구매자의 장바구니 조회 또는 생성
+        Cart cart = cartRepository.findByBuyerId(buyerId)
+                .orElseGet(() -> {
+                    Cart newCart = new Cart();
+                    newCart.setBuyer(buyer);
+                    return cartRepository.save(newCart);
+                });
+
+        // 이미 장바구니에 있는 상품인지 확인
+        boolean itemExists = false;
+        for (CartItem cartItem : cart.getCartItems()) {
+            if (cartItem.getItemId().equals(itemId)) {
+                // 기존 수량에 추가
+                cartItem.increaseQuantity(count);
+                itemExists = true;
+                break;
+            }
+        }
+
+        // 새로운 상품이면 장바구니에 추가
+        if (!itemExists) {
+            CartItem cartItem = CartItem.createCartItem(cart, itemId, item.getPrice(), count);
+            cart.addCartItem(cartItem);
+        }
+
+        cartRepository.save(cart);
+    }
+
+    /**
+     * 장바구니 조회
+     */
+    @Transactional(readOnly = true)
+    public Cart getCartByBuyerId(Long buyerId) {
+        return cartRepository.findByBuyerId(buyerId)
+                .orElse(null);
+    }
+
+    /**
+     * 장바구니 아이템 수량 변경
+     */
+    public void updateCartItemQuantity(Long buyerId, Long cartItemId, int newCount) {
+        Cart cart = cartRepository.findByBuyerId(buyerId)
+                .orElseThrow(() -> new RuntimeException("장바구니를 찾을 수 없습니다"));
+
+        CartItem cartItem = cart.getCartItems().stream()
+                .filter(item -> item.getId().equals(cartItemId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("장바구니 아이템을 찾을 수 없습니다"));
+
+        cartItem.changeQuantity(newCount);
+        cartRepository.save(cart);
+    }
+
+    /**
+     * 장바구니에서 아이템 제거
+     */
+    public void removeCartItem(Long buyerId, Long cartItemId) {
+        Cart cart = cartRepository.findByBuyerId(buyerId)
+                .orElseThrow(() -> new RuntimeException("장바구니를 찾을 수 없습니다"));
+
+        cart.getCartItems().removeIf(item -> item.getId().equals(cartItemId));
+        cartRepository.save(cart);
+    }
+
+    /**
+     * 장바구니 전체 금액 계산
+     */
+    @Transactional(readOnly = true)
+    public int calculateTotalPrice(Long buyerId) {
+        Cart cart = getCartByBuyerId(buyerId);
+        if (cart == null) return 0;
+
+        return cart.getCartItems().stream()
+                .mapToInt(CartItem::getTotalPrice)
+                .sum();
+    }
+}
