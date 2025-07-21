@@ -26,4 +26,9 @@ public class Cart {
     @OneToMany(mappedBy = "cart", cascade = ALL)
     private List<CartItem> cartItems = new ArrayList<CartItem>();
 
+
+    public void addCartItem(CartItem cartItem) {
+        cartItems.add(cartItem);
+        cartItem.assignCart(this);  // 양방향 연관 관계 세팅
+    }
 }

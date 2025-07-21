@@ -24,14 +24,14 @@ public class MyService {
     public void initData() {
 
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        Buyer buyer = new Buyer("이지은", "a", encoder.encode("a"), "iu@naver.com", "01012345678", Role.ROLE_USER_BUYER);
+        Buyer buyer = new Buyer("이지은", "a", encoder.encode("a"), "iu@naver.com", "01012345678", Role.ROLE_USER);
         buyerRepository.save(buyer);
         em.persist(buyer);
-        Seller seller = new Seller("가나디", "b", encoder.encode("b"), "gana@naver.com", "01023456789", Role.ROLE_USER_SELLER);
+        Seller seller = new Seller("가나디", "b", encoder.encode("b"), "gana@naver.com", "01023456789", Role.ROLE_USER);
         sellerRepository.save(seller);
         em.persist(seller);
 
-        Buyer buyer1 = new Buyer("test", "testUser", encoder.encode("testPassword"), "test@test.com", "01012345678", Role.ROLE_USER_BUYER);
+        Buyer buyer1 = new Buyer("test", "testUser", encoder.encode("testPassword"), "test@test.com", "01012345678", Role.ROLE_USER);
         buyerRepository.save(buyer1);
         em.persist(buyer1);
 

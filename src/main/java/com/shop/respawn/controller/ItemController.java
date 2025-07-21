@@ -6,7 +6,6 @@ import com.shop.respawn.dto.ItemDto;
 import com.shop.respawn.service.ImageService;
 import com.shop.respawn.service.ItemService;
 import lombok.RequiredArgsConstructor;
-import org.bson.types.Binary;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -38,21 +37,20 @@ public class ItemController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Item> getItem(@PathVariable String id) {
-        System.out.println("id = " + id);
+    public ResponseEntity<ItemDto> getItem(@PathVariable String id) {
         Item item = itemService.getItemById(id);
-        ResponseEntity<Item> ok = ResponseEntity.ok(item);
-        System.out.println("ok = " + ok);
-        return ok;
+        ItemDto itemDto = new ItemDto(item.getName(), item.getDescription(), item.getDeliveryType(), item.getDeliveryFee(), item.getCompany(),
+                item.getPrice(), item.getStockQuantity(), item.getSellerId(), item.getImageUrl(), item.getCategoryIds());
+        return ResponseEntity.ok(itemDto);
     }
 
     @GetMapping
-    public ResponseEntity<List<Item>> getAllItems() {
+    public ResponseEntity<List<ItemDto>> getAllItems() {
         List<Item> items = itemService.getAllItems();
-        ResponseEntity<List<Item>> ok = ResponseEntity.ok(items);
-        for (Item item : items) {
-            System.out.println("item.getId() = " + item.getId());
-        }
-        return ok;
+        List<ItemDto> itemDtos = items.stream()
+                .map(item -> new ItemDto(item.getName(), item.getDescription(), item.getDeliveryType(), item.getDeliveryFee(), item.getCompany(),
+                        item.getPrice(), item.getStockQuantity(), item.getSellerId(), item.getImageUrl(), item.getCategoryIds()))
+                .toList();
+        return ResponseEntity.ok(itemDtos);
     }
 }

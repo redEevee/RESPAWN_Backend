@@ -4,14 +4,10 @@ import com.shop.respawn.exception.NotEnoughStockException;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.bson.types.Binary;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static jakarta.persistence.FetchType.*;
-import static jakarta.persistence.InheritanceType.*;
 
 @Document(collection = "item")
 @Getter @Setter
@@ -24,6 +20,7 @@ public class Item {
     private String description;
     private String deliveryType;
     private String deliveryFee;
+    private String company;
     private int price;
     private int stockQuantity;
     private String sellerId;
