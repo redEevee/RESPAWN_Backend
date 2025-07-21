@@ -7,6 +7,8 @@ import java.util.List;
 @Data
 public class ItemDto {
 
+    private String id;
+
     private String name;
 
     private String description;
@@ -27,7 +29,8 @@ public class ItemDto {
 
     private List<String> categoryIds;
 
-    public ItemDto(String name, String description, String deliveryType, String deliveryFee, String company, int price, int stockQuantity, String sellerId, String imageUrl, List<String> categoryIds) {
+    public ItemDto(String id, String name, String description, String deliveryType, String deliveryFee, String company, int price, int stockQuantity, String sellerId, String imageUrl, List<String> categoryIds) {
+        this.id = id;
         this.name = name;
         this.description = description;
         this.deliveryType = deliveryType;
