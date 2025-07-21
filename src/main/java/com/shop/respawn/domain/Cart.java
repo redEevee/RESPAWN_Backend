@@ -23,7 +23,7 @@ public class Cart {
     @JoinColumn(name = "buyer_id")
     private Buyer buyer; //주문 회원
 
-    @OneToMany(mappedBy = "cart", cascade = ALL)
+    @OneToMany(mappedBy = "cart", cascade = ALL, orphanRemoval = true)
     private List<CartItem> cartItems = new ArrayList<CartItem>();
 
 

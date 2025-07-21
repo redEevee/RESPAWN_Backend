@@ -39,7 +39,7 @@ public class ItemController {
     @GetMapping("/{id}")
     public ResponseEntity<ItemDto> getItem(@PathVariable String id) {
         Item item = itemService.getItemById(id);
-        ItemDto itemDto = new ItemDto(item.getName(), item.getDescription(), item.getDeliveryType(), item.getDeliveryFee(), item.getCompany(),
+        ItemDto itemDto = new ItemDto(item.getId(), item.getName(), item.getDescription(), item.getDeliveryType(), item.getDeliveryFee(), item.getCompany(),
                 item.getPrice(), item.getStockQuantity(), item.getSellerId(), item.getImageUrl(), item.getCategoryIds());
         return ResponseEntity.ok(itemDto);
     }
@@ -48,7 +48,7 @@ public class ItemController {
     public ResponseEntity<List<ItemDto>> getAllItems() {
         List<Item> items = itemService.getAllItems();
         List<ItemDto> itemDtos = items.stream()
-                .map(item -> new ItemDto(item.getName(), item.getDescription(), item.getDeliveryType(), item.getDeliveryFee(), item.getCompany(),
+                .map(item -> new ItemDto(item.getId(), item.getName(), item.getDescription(), item.getDeliveryType(), item.getDeliveryFee(), item.getCompany(),
                         item.getPrice(), item.getStockQuantity(), item.getSellerId(), item.getImageUrl(), item.getCategoryIds()))
                 .toList();
         return ResponseEntity.ok(itemDtos);

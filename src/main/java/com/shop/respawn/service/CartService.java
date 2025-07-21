@@ -7,6 +7,7 @@ import com.shop.respawn.domain.Item;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.CartRepository;
 import com.shop.respawn.repository.ItemRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -97,8 +98,12 @@ public class CartService {
         Cart cart = cartRepository.findByBuyerId(buyerId)
                 .orElseThrow(() -> new RuntimeException("장바구니를 찾을 수 없습니다"));
 
-        cart.getCartItems().removeIf(item -> item.getId().equals(cartItemId));
-        cartRepository.save(cart);
+        boolean removed = cart.getCartItems().removeIf(item ->
+                item.getId().equals(cartItemId));
+
+        if (!removed) {
+            throw new EntityNotFoundException("장바구니 아이템을 찾을 수 없습니다");
+        }
     }
 
     /**
