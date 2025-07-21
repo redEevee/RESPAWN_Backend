@@ -6,7 +6,10 @@ import com.shop.respawn.dto.UserDto;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.SellerRepository;
 import com.shop.respawn.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,21 +35,27 @@ public class UserController {
     }
 
     @GetMapping("/loginOk")
-    public ResponseEntity<Map<String, String>> loginOk() {
+    public ResponseEntity<Map<String, String>> loginOk(HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         String authorities = authentication.getAuthorities().toString();
 
         Buyer buyer = buyerRepository.findByUsername(username);
         String name = null;
+        Long userId = null;
         if (buyer != null) {
             name = buyer.getName();
+            userId = buyer.getId();
         } else {
             Seller seller = sellerRepository.findByUsername(username);
             if (seller != null) {
                 name = seller.getName();
+                userId = seller.getId();
             }
         }
+
+        HttpSession session = request.getSession();
+        session.setAttribute("userId", userId);
 
         System.out.println("로그인한 유저네임:" + username);
         System.out.println("유저 권한:" + authentication.getAuthorities());
