@@ -36,4 +36,12 @@ public class UserDto {
         this.providerId = providerId;
         this.role = role;
     }
+
+    public UserDto(String name, String username, String email, String phoneNumber, Role role) {
+        this.name = name;
+        this.username = username;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
+        this.role = role;
+    }
 }

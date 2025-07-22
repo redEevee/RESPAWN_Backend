@@ -9,6 +9,8 @@ import com.shop.respawn.service.ItemService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpSession;
@@ -91,26 +93,7 @@ public class CartController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 장바구니 아이템 수량 변경
-     */
-    @PutMapping("/items/{cartItemId}/quantity")
-    public ResponseEntity<String> updateQuantity(
-            @PathVariable Long cartItemId,
-            @RequestParam int quantity,
-            HttpSession session) {
-
-        Long buyerId = getBuyerIdFromSession(session);
-
-        try {
-            cartService.updateCartItemQuantity(buyerId, cartItemId, quantity);
-            return ResponseEntity.ok("수량이 변경되었습니다.");
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    @PatchMapping("/items/{cartItemId}/increase")
+    @PostMapping("/items/{cartItemId}/increase")
     public ResponseEntity<String> increaseCartItemQuantity(
             @PathVariable Long cartItemId,
             @RequestBody @Valid QuantityChangeRequest request,
@@ -129,7 +112,7 @@ public class CartController {
         }
     }
 
-    @PatchMapping("/items/{cartItemId}/decrease")
+    @PostMapping("/items/{cartItemId}/decrease")
     public ResponseEntity<String> decreaseCartItemQuantity(
             @PathVariable Long cartItemId,
             @RequestBody @Valid QuantityChangeRequest request,
@@ -170,10 +153,12 @@ public class CartController {
      * 세션에서 buyerId를 가져오는 헬퍼 메서드
      */
     private Long getBuyerIdFromSession(HttpSession session) {
-        Long buyerId = (Long) session.getAttribute("userId");
-        if (buyerId == null) {
-            throw new RuntimeException("로그인이 필요합니다.");
-        }
-        return buyerId;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String authorities = authentication.getAuthorities().toString();
+
+        if(authorities.equals("[ROLE_USER]")){
+            System.out.println("구매자 권한의 아이디 : " + authorities);
+            return (Long) session.getAttribute("userId");
+        } else throw new RuntimeException("로그인이 필요하거나 판매자 아이디 입니다.");
     }
 }

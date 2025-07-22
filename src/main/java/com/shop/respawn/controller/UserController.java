@@ -1,6 +1,7 @@
 package com.shop.respawn.controller;
 
 import com.shop.respawn.domain.Buyer;
+import com.shop.respawn.domain.Role;
 import com.shop.respawn.domain.Seller;
 import com.shop.respawn.dto.UserDto;
 import com.shop.respawn.repository.BuyerRepository;
@@ -9,6 +10,7 @@ import com.shop.respawn.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -61,7 +63,7 @@ public class UserController {
         System.out.println("유저 권한:" + authentication.getAuthorities());
 
         Map<String, String> userInfo = new HashMap<>();
-        userInfo.put("name", name != null ? name : "Unknown");
+        userInfo.put("name", name);
         userInfo.put("username", username);
         userInfo.put("authorities", authorities);
 
@@ -91,18 +93,19 @@ public class UserController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
 
-        // 구매자 먼저 조회
+        // User 먼저 조회
         Buyer buyer = userService.getBuyerInfo(username);
-        if (buyer != null) {
-            return ResponseEntity.ok(buyer);
-        }
-
-        // 판매자 조회
         Seller seller = userService.getSellerInfo(username);
-        if (seller != null) {
-            return ResponseEntity.ok(seller);
-        }
 
+        if (buyer != null) {
+            return ResponseEntity.ok(
+                    new UserDto(buyer.getName(), buyer.getUsername(), buyer.getEmail(), buyer.getPhoneNumber(), buyer.getRole())
+            );
+        } else if (seller != null) {
+            return ResponseEntity.ok(
+                    new UserDto(seller.getName(), seller.getUsername(), seller.getEmail(), seller.getPhoneNumber(), seller.getRole())
+            );
+        }
         // 사용자 없을 경우
         return ResponseEntity.notFound().build();
     }

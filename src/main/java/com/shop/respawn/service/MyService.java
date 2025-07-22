@@ -27,7 +27,7 @@ public class MyService {
         Buyer buyer = new Buyer("이지은", "a", encoder.encode("a"), "iu@naver.com", "01012345678", Role.ROLE_USER);
         buyerRepository.save(buyer);
         em.persist(buyer);
-        Seller seller = new Seller("가나디", "b", encoder.encode("b"), "gana@naver.com", "01023456789", Role.ROLE_USER);
+        Seller seller = new Seller("가나디", "b", encoder.encode("b"), "gana@naver.com", "01023456789", Role.ROLE_SELLER);
         sellerRepository.save(seller);
         em.persist(seller);
 
