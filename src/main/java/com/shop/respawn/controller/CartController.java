@@ -3,13 +3,12 @@ package com.shop.respawn.controller;
 import com.shop.respawn.domain.Cart;
 import com.shop.respawn.domain.Item;
 import com.shop.respawn.dto.CartItemDto;
+import com.shop.respawn.dto.QuantityChangeRequest;
 import com.shop.respawn.service.CartService;
 import com.shop.respawn.service.ItemService;
-import com.shop.respawn.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpSession;
@@ -108,6 +107,44 @@ public class CartController {
             return ResponseEntity.ok("수량이 변경되었습니다.");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/items/{cartItemId}/increase")
+    public ResponseEntity<String> increaseCartItemQuantity(
+            @PathVariable Long cartItemId,
+            @RequestBody @Valid QuantityChangeRequest request,
+            HttpSession session) {
+
+        try {
+            Long buyerId = getBuyerIdFromSession(session);
+            cartService.increaseCartItemQuantity(buyerId, cartItemId, request.getAmount());
+            return ResponseEntity.ok("장바구니 아이템 수량이 증가되었습니다.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("잘못된 요청입니다: " + e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("서버 내부 오류가 발생했습니다.");
+        }
+    }
+
+    @PatchMapping("/items/{cartItemId}/decrease")
+    public ResponseEntity<String> decreaseCartItemQuantity(
+            @PathVariable Long cartItemId,
+            @RequestBody @Valid QuantityChangeRequest request,
+            HttpSession session) {
+
+        try {
+            Long buyerId = getBuyerIdFromSession(session);
+            cartService.decreaseCartItemQuantity(buyerId, cartItemId, request.getAmount());
+            return ResponseEntity.ok("장바구니 아이템 수량이 감소되었습니다.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("잘못된 요청입니다: " + e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("서버 내부 오류가 발생했습니다.");
         }
     }
 
