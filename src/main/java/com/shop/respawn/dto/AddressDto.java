@@ -5,6 +5,8 @@ import lombok.Data;
 @Data
 public class AddressDto {
 
+    private Long id;
+
     private String addressName;
 
     private String recipient;
@@ -21,7 +23,8 @@ public class AddressDto {
 
     private boolean basic;
 
-    public AddressDto(String addressName, String recipient, String zoneCode, String baseAddress, String detailAddress, String phone, String subPhone, boolean basic) {
+    public AddressDto(Long id, String addressName, String recipient, String zoneCode, String baseAddress, String detailAddress, String phone, String subPhone, boolean basic) {
+        this.id = id;
         this.addressName = addressName;
         this.recipient = recipient;
         this.zoneCode = zoneCode;

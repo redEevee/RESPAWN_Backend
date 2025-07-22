@@ -42,8 +42,8 @@ public class MyService {
         em.flush();
         em.clear();
 
-        AddressDto addressDto1 = new AddressDto("기본주소", "강지원", "06234", "서울시 강남구 선릉로 123", "101동 1204호", "010-9876-5432", "063-533-6832", true);
-        AddressDto addressDto2 = new AddressDto("너네집", "김철수", "06234", "서울시 강남구 선릉로 123", "101동 1204호", "010-9876-5432", "063-533-6832", false);
+        AddressDto addressDto1 = new AddressDto(1L,"기본주소", "강지원", "06234", "서울시 강남구 선릉로 123", "101동 1204호", "010-9876-5432", "063-533-6832", true);
+        AddressDto addressDto2 = new AddressDto(2L,"너네집", "김철수", "06234", "서울시 강남구 선릉로 123", "101동 1204호", "010-9876-5432", "063-533-6832", false);
 
         addressService.createAddress(1L, addressDto1);
         addressService.createAddress(1L, addressDto2);

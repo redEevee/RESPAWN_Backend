@@ -160,6 +160,7 @@ public class AddressService {
      */
     private AddressDto convertToDto(Address address) {
         return new AddressDto(
+                address.getId(),
                 address.getAddressName(),
                 address.getRecipient(),
                 address.getZoneCode(),
