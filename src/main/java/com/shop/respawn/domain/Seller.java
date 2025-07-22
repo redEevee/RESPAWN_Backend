@@ -53,13 +53,6 @@ public class Seller {
     }
 
     //정적 팩토리 메서드
-    public static Seller createSeller(String username, Role role) {
-        Seller seller = new Seller();
-        seller.username = username;
-        seller.role = role;
-        return seller;
-    }
-
     public static Seller createSeller(String name, String username, String password, String email, String phoneNumber, Role role) {
         Seller seller = new Seller();
         seller.name = name;
@@ -69,23 +62,6 @@ public class Seller {
         seller.phoneNumber = phoneNumber;
         seller.role = role;
         return seller;
-    }
-
-    public static Seller createSeller(String name, String username, String password, String email, String phoneNumber,
-                                    Role role,  String provider, String providerId) {
-        Seller seller = createSeller(name, username, password, email, phoneNumber, role);
-        seller.provider = provider;
-        seller.providerId = providerId;
-        return seller;
-    }
-
-    public Seller(String name, String username, String password, String email, String phoneNumber, Role role) {
-        this.name = name;
-        this.username = username;
-        this.password = password;
-        this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.role = role;
     }
 
     public void updatePhoneNumber(String newPhoneNumber) {

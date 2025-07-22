@@ -50,59 +50,31 @@ public class Buyer {
     @OneToMany(mappedBy = "buyer")
     private List<Order> orders = new ArrayList<Order>();
 
-    private Buyer(String name, String username, String password, String email, String phoneNumber, String provider, String providerId, Role role) {
+    private Buyer(String name, String username, String password, String email, String phoneNumber, Role role) {
         this.name = name;
         this.username = username;
         this.password = password;
         this.email = email;
         this.phoneNumber = phoneNumber;
-        this.provider = provider;
-        this.providerId = providerId;
         this.role = role;
     }
 
     //정적 팩토리 메서드
-    public static Buyer createBuyer(String username, Role role) {
-        Buyer buyer = new Buyer();
-        buyer.username = username;
-        buyer.role = role;
-        return buyer;
-    }
-
     public static Buyer createBuyer(String name, String username, String password, String email, String phoneNumber, Role role) {
-        Buyer buyer = new Buyer();
-        buyer.name = name;
-        buyer.username = username;
-        buyer.password = password;
-        buyer.email = email;
-        buyer.phoneNumber = phoneNumber;
-        buyer.role = role;
-        return buyer;
-    }
-
-    public static Buyer createBuyer(String name, String username, String password, String email, String phoneNumber,
-                                    Role role,  String provider, String providerId) {
-        Buyer buyer = createBuyer(name, username, password, email, phoneNumber, role);
-        buyer.provider = provider;
-        buyer.providerId = providerId;
-        return buyer;
-    }
-
-    public void addAddress(Address address) {
-        addresses.add(address);
-        address.setBuyer(this);
-    }
-
-    public Buyer(String name, String username, String password, String email, String phoneNumber, Role role) {
-        this.name = name;
-        this.username = username;
-        this.password = password;
-        this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.role = role;
+        return new Buyer(name, username, password, email, phoneNumber, role);
     }
 
     public void updatePhoneNumber(String newPhoneNumber) {
         this.phoneNumber = newPhoneNumber;
+    }
+
+    // 연관관계 편의 메서드
+    /**
+     * 주소를 추가하는 편의 메서드
+     * 양방향 연관관계를 안전하게 설정합니다
+     */
+    public void addAddress(Address address) {
+        this.addresses.add(address);
+        address.setBuyer(this); // 패키지 레벨 세터 사용
     }
 }

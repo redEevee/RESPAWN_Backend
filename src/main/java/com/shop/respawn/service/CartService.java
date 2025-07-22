@@ -76,22 +76,6 @@ public class CartService {
     }
 
     /**
-     * 장바구니 아이템 수량 변경
-     */
-    public void updateCartItemQuantity(Long buyerId, Long cartItemId, int newCount) {
-        Cart cart = cartRepository.findByBuyerId(buyerId)
-                .orElseThrow(() -> new RuntimeException("장바구니를 찾을 수 없습니다"));
-
-        CartItem cartItem = cart.getCartItems().stream()
-                .filter(item -> item.getId().equals(cartItemId))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("장바구니 아이템을 찾을 수 없습니다"));
-
-        cartItem.changeQuantity(newCount);
-        cartRepository.save(cart);
-    }
-
-    /**
      * 장바구니 아이템 수량 증가
      */
     public void increaseCartItemQuantity(Long buyerId, Long cartItemId, int amount) {
