@@ -40,15 +40,15 @@ public class Buyer {
 
     @Builder.Default
     @OneToMany(mappedBy = "buyer")
-    private List<Address> addresses = new ArrayList<Address>();
+    private List<Address> addresses = new ArrayList<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "buyer")
-    private List<Cart> cart = new ArrayList<Cart>();
+    private List<Cart> cart = new ArrayList<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "buyer")
-    private List<Order> orders = new ArrayList<Order>();
+    private List<Order> orders = new ArrayList<>();
 
     private Buyer(String name, String username, String password, String email, String phoneNumber, Role role) {
         this.name = name;

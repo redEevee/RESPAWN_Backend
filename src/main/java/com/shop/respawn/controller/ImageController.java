@@ -18,7 +18,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 
 @Controller
 @RequiredArgsConstructor
@@ -67,6 +66,7 @@ public class ImageController {
         GridFSFile file = gridFsTemplate.findOne(Query.query(Criteria.where("_id").is(id)));
         if (file != null) {
             GridFsResource resource = gridFsTemplate.getResource(file);
+            assert file.getMetadata() != null;
             response.setContentType(file.getMetadata().get("_contentType").toString());
             StreamUtils.copy(resource.getInputStream(), response.getOutputStream());
         } else {

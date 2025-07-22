@@ -24,7 +24,7 @@ public class Cart {
     private Buyer buyer; //주문 회원
 
     @OneToMany(mappedBy = "cart", cascade = ALL, orphanRemoval = true)
-    private List<CartItem> cartItems = new ArrayList<CartItem>();
+    private List<CartItem> cartItems = new ArrayList<>();
 
 
     public void addCartItem(CartItem cartItem) {

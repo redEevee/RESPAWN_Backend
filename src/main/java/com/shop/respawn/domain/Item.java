@@ -27,7 +27,7 @@ public class Item {
 
     private String imageUrl;
 
-    private List<String> categoryIds = new ArrayList<String>();
+    private List<String> categoryIds = new ArrayList<>();
 
     //==비즈니스 로직==//
     public void addStock(int quantity) {

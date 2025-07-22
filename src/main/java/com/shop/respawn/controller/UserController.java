@@ -1,7 +1,6 @@
 package com.shop.respawn.controller;
 
 import com.shop.respawn.domain.Buyer;
-import com.shop.respawn.domain.Role;
 import com.shop.respawn.domain.Seller;
 import com.shop.respawn.dto.UserDto;
 import com.shop.respawn.repository.BuyerRepository;
@@ -10,8 +9,6 @@ import com.shop.respawn.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

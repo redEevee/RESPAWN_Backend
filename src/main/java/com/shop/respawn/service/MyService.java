@@ -1,17 +1,14 @@
 package com.shop.respawn.service;
 
-import com.shop.respawn.domain.Address;
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.domain.Role;
 import com.shop.respawn.domain.Seller;
 import com.shop.respawn.dto.AddressDto;
-import com.shop.respawn.repository.AddressRepository;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.SellerRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
