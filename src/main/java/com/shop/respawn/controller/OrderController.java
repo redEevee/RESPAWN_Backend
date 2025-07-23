@@ -20,18 +20,18 @@ public class OrderController {
     private final OrderService orderService;
 
     /**
-     * 장바구니 전체 상품 주문
+     * 장바구니 선택 상품 주문
      */
     @PostMapping("/cart")
-    public ResponseEntity<Map<String, Object>> orderFromCart(
+    public ResponseEntity<Map<String, Object>> orderSelectedFromCart(
             @RequestBody @Valid OrderRequestDto orderRequest,
             HttpSession session) {
         try {
             Long buyerId = getBuyerIdFromSession(session);
-            Long orderId = orderService.orderFromCart(buyerId, orderRequest);
+            Long orderId = orderService.prepareOrderSelectedFromCart(buyerId, orderRequest);
 
             return ResponseEntity.ok(Map.of(
-                    "message", "주문이 성공적으로 생성되었습니다.",
+                    "message", "선택한 상품의 주문이 성공적으로 생성되었습니다.",
                     "orderId", orderId
             ));
         } catch (RuntimeException e) {
@@ -40,19 +40,19 @@ public class OrderController {
     }
 
     /**
-     * 장바구니 선택 상품 주문
+     * 선택된 상품 주문 완료 처리
      */
-    @PostMapping("/cart/selected")
-    public ResponseEntity<Map<String, Object>> orderSelectedFromCart(
+    @PostMapping("/{orderId}/complete")
+    public ResponseEntity<Map<String, Object>> completeSelectedOrder(
+            @PathVariable Long orderId,
             @RequestBody @Valid OrderRequestDto orderRequest,
             HttpSession session) {
         try {
-            Long buyerId = getBuyerIdFromSession(session);
-            Long orderId = orderService.orderSelectedFromCart(buyerId, orderRequest);
+            getBuyerIdFromSession(session);
+            orderService.completeSelectedOrder(orderId, orderRequest);
 
             return ResponseEntity.ok(Map.of(
-                    "message", "선택한 상품의 주문이 성공적으로 생성되었습니다.",
-                    "orderId", orderId
+                    "message", "선택된 상품의 주문이 성공적으로 완료되었습니다."
             ));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
