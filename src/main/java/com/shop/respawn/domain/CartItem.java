@@ -40,6 +40,11 @@ public class CartItem {
         this.cart = cart;
     }
 
+    // 카트 아이템으로 오더 생성 시 사용
+    public void connectToOrder(Order order) {
+        this.order = order;
+    }
+
     // 정적 팩토리 메서드 (의도 강조 가능)
     public static CartItem createCartItem(Cart cart, String itemId, int cartPrice, int count) {
         CartItem cartItem = new CartItem(itemId, cartPrice, count);

@@ -34,10 +34,10 @@ public class Item {
         this.stockQuantity += quantity;
     }
 
-    public void removeStock(int orderQuantity) {
-        int restStock = this.stockQuantity - orderQuantity;
+    public void removeStock(int quantity) {
+        int restStock = this.stockQuantity - quantity;
         if (restStock < 0) {
-            throw new NotEnoughStockException("need more stock");
+            throw new RuntimeException("재고가 부족합니다");
         }
         this.stockQuantity = restStock;
     }

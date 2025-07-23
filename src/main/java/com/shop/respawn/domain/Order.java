@@ -32,12 +32,23 @@ public class Order {
     private List<CartItem> cartItems = new ArrayList<CartItem>();
 
     @OneToOne(cascade = ALL, fetch = LAZY)
+    @JoinColumn(name = "delivery_id")
     private Delivery delivery;
 
     private LocalDateTime orderDate;
 
     @Enumerated(STRING)
     private OrderStatus status;
+
+    private String tossOrderId;    // 토스페이먼츠용 주문번호
+
+    private String orderName;      // 구매상품명 (예: "상품명 외 2건")
+
+    private Integer totalAmount;   // 총 결제 금액
+
+    private String paymentKey;     // 토스페이먼츠 결제 키
+
+    private String paymentStatus;  // 결제 상태 (READY, SUCCESS, FAIL 등)
 
     //==연관관계 메서드==//
     public void setBuyer(Buyer buyer) {
@@ -49,11 +60,6 @@ public class Order {
         orderItems.add(orderItem);
         orderItem.setOrder(this);
     }
-
-//    public void addOrderCartItem(CartItem cartItem) {
-//        cartItems.add(cartItem);
-//        cartItem.setOrder(this);
-//    }
 
     public void setDelivery(Delivery delivery) {
         this.delivery = delivery;
@@ -71,42 +77,36 @@ public class Order {
         }
         order.setStatus(OrderStatus.ORDERED);
         order.setOrderDate(LocalDateTime.now());
+        // 토스페이먼츠 필드는 OrderService에서 별도로 설정
         return order;
     }
 
-    //==생성 메서드==//
-    public static Order createCartOrder(Buyer buyer, Delivery delivery,
-                                    CartItem... cartItems) {
-        Order order = new Order();
-        order.setBuyer(buyer);
-        order.setDelivery(delivery);
-        for (CartItem cartItem : cartItems) {
-//            order.addOrderCartItem(cartItem);
-        }
-        order.setStatus(OrderStatus.ORDERED);
-        order.setOrderDate(LocalDateTime.now());
-        return order;
+    // 총 금액 계산 메서드 추가
+    public int calculateTotalAmount() {
+        return orderItems.stream()
+                .mapToInt(item -> item.getOrderPrice() * item.getCount())
+                .sum();
     }
 
-    //==비즈니스 로직==//
-    /** 주문 취소 */
-//    public void cancel() {
-//        if (delivery.getStatus() == DeliveryStatus.SHIPPING) {
-//            throw new IllegalStateException("이미 배송완료된 상품은 취소가 불가능합니다.");
-//        }
-//        this.setStatus(OrderStatus.CANCELED);
-//        for (OrderItem orderItem : orderItems) {
-//            orderItem.cancel();
-//        }
-//    }
+    // 주문명 생성 메서드 추가
+    public String generateOrderName() {
+        if (orderItems.isEmpty()) return "상품";
 
-    //==조회 로직==//
-    /** 전체 주문 가격 조회 */
-    public int getTotalPrice() {
-        int totalPrice = 0;
-        for (OrderItem orderItem : orderItems) {
-            totalPrice += orderItem.getTotalPrice();
-        }
-        return totalPrice;
+        // 첫 번째 상품 정보 조회 (ItemRepository가 필요하므로 Service에서 처리)
+        int itemCount = orderItems.size();
+        return itemCount == 1 ? "상품 1건" : "상품 " + itemCount + "건";
+    }
+
+    // tossOrderId 생성 메서드 추가
+    public String generateTossOrderId() {
+        return "ORDER_" + System.currentTimeMillis() + "_" + this.id;
+    }
+
+    // 토스페이먼츠 필드 설정 메서드 추가
+    public void setTossPaymentInfo(String orderName, int totalAmount) {
+        this.orderName = orderName;
+        this.totalAmount = totalAmount;
+        this.paymentStatus = "READY";
+        // tossOrderId는 주문 저장 후 ID가 생성된 다음에 설정
     }
 }

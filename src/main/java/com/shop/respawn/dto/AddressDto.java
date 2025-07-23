@@ -34,4 +34,14 @@ public class AddressDto {
         this.subPhone = subPhone;
         this.basic = basic;
     }
+
+    public AddressDto(String addressName, String recipient, String zoneCode, String baseAddress, String detailAddress, String phone, String subPhone) {
+        this.addressName = addressName;
+        this.recipient = recipient;
+        this.zoneCode = zoneCode;
+        this.baseAddress = baseAddress;
+        this.detailAddress = detailAddress;
+        this.phone = phone;
+        this.subPhone = subPhone;
+    }
 }

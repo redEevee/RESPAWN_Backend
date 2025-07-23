@@ -69,7 +69,6 @@ public class CartService {
     /**
      * 장바구니 조회
      */
-    @Transactional(readOnly = true)
     public Cart getCartByBuyerId(Long buyerId) {
         return cartRepository.findByBuyerId(buyerId)
                 .orElse(null);
@@ -133,5 +132,16 @@ public class CartService {
         return cart.getCartItems().stream()
                 .mapToInt(CartItem::getTotalPrice)
                 .sum();
+    }
+
+    /**
+     * 장바구니 비우기 (아이템만 제거, 장바구니는 유지)
+     */
+    public void clearCart(Long buyerId) {
+        Cart cart = cartRepository.findByBuyerId(buyerId)
+                .orElseThrow(() -> new RuntimeException("장바구니를 찾을 수 없습니다"));
+
+        cart.getCartItems().clear();
+        cartRepository.save(cart);
     }
 }
