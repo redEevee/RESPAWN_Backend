@@ -1,6 +1,7 @@
 package com.shop.respawn.service;
 
 import com.shop.respawn.domain.*;
+import com.shop.respawn.dto.OrderItemDetailDto;
 import com.shop.respawn.dto.OrderRequestDto;
 import com.shop.respawn.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -8,7 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +23,43 @@ public class OrderService {
     private final BuyerRepository buyerRepository;
     private final ItemRepository itemRepository;
     private final AddressRepository addressRepository;
+
+    /**
+     * 임시 주문 상세 조회
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getOrderDetails(Long orderId, Long buyerId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다"));
+
+        // 주문 소유권 확인
+        if (!order.getBuyer().getId().equals(buyerId)) {
+            throw new RuntimeException("해당 주문을 조회할 권한이 없습니다");
+        }
+
+        // OrderItemDetailDto 리스트로 변환
+        List<OrderItemDetailDto> orderItemDetails = order.getOrderItems().stream()
+                .map(orderItem -> {
+                    Item item = itemRepository.findById(orderItem.getItemId())
+                            .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + orderItem.getItemId()));
+                    return OrderItemDetailDto.from(orderItem, item);
+                })
+                .toList();
+
+        // 총 금액 계산
+        int totalAmount = orderItemDetails.stream()
+                .mapToInt(OrderItemDetailDto::getTotalPrice)
+                .sum();
+
+        // 응답 데이터 구성
+        Map<String, Object> response = new HashMap<>();
+        response.put("orderId", order.getId());
+        response.put("orderItems", orderItemDetails); // DTO 객체 그대로 반환
+        response.put("totalAmount", totalAmount);
+        response.put("itemCount", orderItemDetails.size());
+
+        return response;
+    }
 
     /**
      * 장바구니 선택 상품으로 주문페이지 이동 (선택된 CartItem을 OrderItem으로 복사만)

@@ -60,6 +60,23 @@ public class OrderController {
     }
 
     /**
+     * 임시 주문 상세 조회 (주문 페이지용)
+     */
+    @GetMapping("/{orderId}")
+    public ResponseEntity<Map<String, Object>> getOrderDetails(
+            @PathVariable Long orderId,
+            HttpSession session) {
+        try {
+            Long buyerId = getBuyerIdFromSession(session);
+            Map<String, Object> orderDetails = orderService.getOrderDetails(orderId, buyerId);
+
+            return ResponseEntity.ok(orderDetails);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
      * 세션에서 buyerId를 가져오는 헬퍼 메서드
      */
     private Long getBuyerIdFromSession(HttpSession session) {
