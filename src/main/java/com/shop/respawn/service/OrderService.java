@@ -5,6 +5,7 @@ import com.shop.respawn.dto.OrderItemDetailDto;
 import com.shop.respawn.dto.OrderRequestDto;
 import com.shop.respawn.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -205,53 +207,6 @@ public class OrderService {
     }
 
     /**
-     * 주문명 생성 (상품명 기반)
-     */
-    private String generateOrderName(List<CartItem> cartItems) {
-        if (cartItems.isEmpty()) {
-            return "상품";
-        }
-
-        // 첫 번째 상품 정보 조회
-        CartItem firstItem = cartItems.getFirst();
-        Item item = itemRepository.findById(firstItem.getItemId())
-                .orElse(null);
-
-        String firstItemName = (item != null) ? item.getName() : "상품";
-        int itemCount = cartItems.size();
-
-        if (itemCount == 1) {
-            return firstItemName;
-        } else {
-            return firstItemName + " 외 " + (itemCount - 1) + "건";
-        }
-    }
-
-
-    /**
-     * 토스페이먼츠 관련 정보 설정
-     */
-    private void setTossPaymentInfo(Order order, List<CartItem> cartItems) {
-        // 총 금액 계산
-        int totalAmount = cartItems.stream()
-                .mapToInt(CartItem::getTotalPrice)
-                .sum();
-
-        // 주문명 생성 (첫 번째 상품명 + 외 N건)
-        String orderName = generateOrderName(cartItems);
-
-        // tossOrderId 생성 (주문번호 + 타임스탬프)
-        String tossOrderId = "ORDER_" + order.getId() + "_" + System.currentTimeMillis();
-
-        // 토스페이먼츠 필드 설정
-        order.setTossOrderId(tossOrderId);
-        order.setOrderName(orderName);
-        order.setTotalAmount(totalAmount);
-        order.setPaymentStatus("READY");
-        // paymentKey는 null로 유지 (결제 완료 후 설정)
-    }
-
-    /**
      * 주소 ID로 Delivery 생성
      */
     private Delivery createDeliveryWithAddressId(Long buyerId, Long addressId) {
@@ -269,6 +224,37 @@ public class OrderService {
         delivery.setStatus(DeliveryStatus.READY);
         return delivery;
     }
+
+    /**
+     * 주문 ID로 구매자 ID 조회
+     */
+    @Transactional(readOnly = true)
+    public Long getBuyerIdByOrderId(Long orderId) {
+        log.debug("주문 ID로 구매자 ID 조회 시작 - orderId: {}", orderId);
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> {
+                    log.error("주문을 찾을 수 없습니다 - orderId: {}", orderId);
+                    return new RuntimeException("주문을 찾을 수 없습니다: " + orderId);
+                });
+
+        if (order.getBuyer() == null) {
+            log.error("주문에 구매자 정보가 없습니다 - orderId: {}", orderId);
+            throw new RuntimeException("주문에 구매자 정보가 없습니다: " + orderId);
+        }
+
+        Long buyerId = order.getBuyer().getId();
+        log.debug("구매자 ID 조회 완료 - orderId: {}, buyerId: {}", orderId, buyerId);
+
+        return buyerId;
+    }
+
+//    @Transactional(readOnly = true)
+//    public Long getBuyerIdByOrderId(Long orderId) {
+//        Order order = orderRepository.findById(orderId)
+//                .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다: " + orderId));
+//        return order.getBuyer().getId();
+//    }
 
     private OrderItem convertCartItemToOrderItem(CartItem cartItem) {
         OrderItem orderItem = new OrderItem();

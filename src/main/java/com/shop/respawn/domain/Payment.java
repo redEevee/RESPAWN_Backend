@@ -20,7 +20,7 @@ public class Payment {
     @Column(name = "payment_id")
     private Long id;
 
-    @OneToOne(fetch = LAZY)
+    @ManyToOne(fetch = LAZY)  // ← 변경된 부분
     @JoinColumn(name = "buyer_id")
     private Buyer buyer;
 

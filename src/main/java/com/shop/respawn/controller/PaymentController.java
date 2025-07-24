@@ -6,9 +6,12 @@ import com.shop.respawn.dto.VerifyRequest;
 import com.shop.respawn.service.OrderService;
 import com.shop.respawn.service.PaymentService;
 import com.siot.IamportRestClient.exception.IamportResponseException;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -22,6 +25,7 @@ import java.util.Map;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final OrderService orderService;
 
     // 사전 검증 API
     @PostMapping("/prepare")
@@ -47,10 +51,19 @@ public class PaymentController {
                 return ResponseEntity.badRequest().body(response);
             }
 
+            if (request.getOrderId() == null) {
+                response.put("success", false);
+                response.put("message", "orderId가 필요합니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
             log.info("결제 검증 요청 - impUid: {}, merchantUid: {}, orderId: {}",
                     request.getImpUid(), request.getMerchantUid(), request.getOrderId());
 
-            PaymentDto result = paymentService.verifyPayment(request.getImpUid());
+            // Order를 통해 buyerId 조회
+            Long buyerId = getBuyerIdFromOrder(request.getOrderId());
+
+            PaymentDto result = paymentService.verifyPayment(request.getImpUid(), buyerId, request.getOrderId());
 
             response.put("success", true);
             response.put("data", result);
@@ -78,6 +91,18 @@ public class PaymentController {
             response.put("message", "결제 검증 실패: " + e.getMessage());
             response.put("errorCode", "VERIFICATION_ERROR");
             return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 주문 ID로 구매자 ID 조회 (OrderService 사용)
+     */
+    private Long getBuyerIdFromOrder(Long orderId) {
+        try {
+            return orderService.getBuyerIdByOrderId(orderId);
+        } catch (Exception e) {
+            log.error("주문에서 구매자 ID 조회 실패 - orderId: {}", orderId, e);
+            throw new RuntimeException("주문 정보를 조회할 수 없습니다: " + e.getMessage());
         }
     }
 }
