@@ -1,6 +1,8 @@
 package com.shop.respawn.service;
 
 import com.shop.respawn.domain.*;
+import com.shop.respawn.dto.OrderHistoryDto;
+import com.shop.respawn.dto.OrderHistoryItemDto;
 import com.shop.respawn.dto.OrderItemDetailDto;
 import com.shop.respawn.dto.OrderRequestDto;
 import com.shop.respawn.repository.*;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +28,7 @@ public class OrderService {
     private final BuyerRepository buyerRepository;
     private final ItemRepository itemRepository;
     private final AddressRepository addressRepository;
+    private final ItemService itemService;
 
     /**
      * 임시 주문 상세 조회
@@ -247,6 +251,42 @@ public class OrderService {
         log.debug("구매자 ID 조회 완료 - orderId: {}, buyerId: {}", orderId, buyerId);
 
         return buyerId;
+    }
+
+    /**
+     * 구매자의 주문 내역을 최신순으로 조회하여 DTO 리스트로 반환
+     */
+    public List<OrderHistoryDto> getOrderHistory(Long buyerId) {
+        // 1. 주문 목록 조회
+        List<Order> orders = orderRepository.findByBuyer_IdOrderByOrderDateDesc(buyerId);
+
+        // 2. 반환할 DTO 리스트 준비
+        List<OrderHistoryDto> orderHistoryDtos = new ArrayList<>();
+
+        for (Order order : orders) {
+            // 2-1. 해당 주문의 아이템 목록 조회 및 DTO 변환
+            List<OrderHistoryItemDto> itemDtos = new ArrayList<>();
+
+            for (OrderItem orderItem : order.getOrderItems()) {
+                try {
+                    // MongoDB에서 Item 정보 조회
+                    Item item = itemService.getItemById(orderItem.getItemId());
+
+                    // DTO 변환 후 리스트에 추가
+                    OrderHistoryItemDto itemDto = OrderHistoryItemDto.from(orderItem, item);
+                    itemDtos.add(itemDto);
+                } catch (Exception e) {
+                    e.printStackTrace(); // 혹은 로그 찍기
+                    // 필요하면 기본값 세팅 or 예외 무시
+                }
+            }
+
+            // 2-2. 주문 단위 DTO 생성 후 최종 리스트에 추가
+            OrderHistoryDto orderDto = new OrderHistoryDto(order, itemDtos);
+            orderHistoryDtos.add(orderDto);
+        }
+
+        return orderHistoryDtos;
     }
 
 //    @Transactional(readOnly = true)

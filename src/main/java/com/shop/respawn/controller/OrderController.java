@@ -77,6 +77,19 @@ public class OrderController {
     }
 
     /**
+     * 로그인한 구매자의 주문 내역 조회 API
+     */
+    @GetMapping("/history")
+    public ResponseEntity<?> getOrderHistory(HttpSession session) {
+        try {
+            Long buyerId = getBuyerIdFromSession(session);
+            return ResponseEntity.ok(orderService.getOrderHistory(buyerId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
      * 세션에서 buyerId를 가져오는 헬퍼 메서드
      */
     private Long getBuyerIdFromSession(HttpSession session) {
