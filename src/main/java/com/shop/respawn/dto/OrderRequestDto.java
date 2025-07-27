@@ -14,4 +14,8 @@ public class OrderRequestDto {
 
     // 선택 주문 시 사용할 장바구니 아이템 ID 목록
     private List<Long> cartItemIds;
+
+    // 상품 바로 주문용
+    private String itemId;
+    private Integer count;
 }

@@ -40,6 +40,26 @@ public class OrderController {
     }
 
     /**
+     * 상품페이지에서 상품 주문
+     */
+    @PostMapping("/prepare")
+    public ResponseEntity<Map<String, Object>> prepareOrder(
+            @RequestBody OrderRequestDto orderRequest, HttpSession session) {
+        try {
+            Long buyerId = getBuyerIdFromSession(session);  // 로그인된 사용자 ID 가져오기
+
+            // 주문 생성 서비스 호출 (itemId, count, buyerId 전달)
+            Long orderId = orderService.createTemporaryOrder(buyerId, orderRequest.getItemId(), orderRequest.getCount());
+
+            // 결과 응답
+            return ResponseEntity.ok(Map.of("orderId", orderId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+
+    /**
      * 선택된 상품 주문 완료 처리
      */
     @PostMapping("/{orderId}/complete")

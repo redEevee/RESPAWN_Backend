@@ -108,6 +108,40 @@ public class OrderService {
         return savedOrder.getId();
     }
 
+    @Transactional
+    public Long createTemporaryOrder(Long buyerId, String itemId, Integer count) {
+        Buyer buyer = buyerRepository.findById(buyerId)
+                .orElseThrow(() -> new RuntimeException("구매자를 찾을 수 없습니다"));
+
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다"));
+
+        if (count <= 0) {
+            throw new RuntimeException("수량은 1 이상이어야 합니다.");
+        }
+
+        if (item.getStockQuantity() < count) {
+            throw new RuntimeException("재고가 부족합니다.");
+        }
+
+        // 임시 주문 생성
+        Order order = new Order();
+        order.setBuyer(buyer);
+        order.setOrderDate(LocalDateTime.now());
+        order.setStatus(OrderStatus.ORDERED); // 또는 임시 상태가 있으면 사용
+
+        // 주문 아이템 생성
+        OrderItem orderItem = new OrderItem();
+        orderItem.setItemId(item.getId());
+        orderItem.setCount(count);
+        orderItem.setOrderPrice(item.getPrice());
+        order.addOrderItem(orderItem);
+
+        Order savedOrder = orderRepository.save(order);
+
+        return savedOrder.getId();
+    }
+
     /**
      * 선택된 상품 주문 완료 처리
      */
@@ -134,16 +168,17 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
 
         // 장바구니에서 주문된 아이템들 제거
-        Cart cart = cartRepository.findByBuyerId(buyerId)
-                .orElseThrow(() -> new RuntimeException("장바구니를 찾을 수 없습니다"));
+        if (orderRequest.getCartItemIds() != null && !orderRequest.getCartItemIds().isEmpty()) {
+            Cart cart = cartRepository.findByBuyerId(buyerId)
+                    .orElseThrow(() -> new RuntimeException("장바구니를 찾을 수 없습니다"));
 
-        // 주문된 아이템들과 일치하는 카트 아이템들 제거
-        cart.getCartItems().removeIf(cartItem ->
-                order.getOrderItems().stream().anyMatch(orderItem ->
-                        orderItem.getItemId().equals(cartItem.getItemId())
-                )
-        );
-        cartRepository.save(cart);
+            cart.getCartItems().removeIf(cartItem ->
+                    order.getOrderItems().stream().anyMatch(orderItem ->
+                            orderItem.getItemId().equals(cartItem.getItemId())
+                    )
+            );
+            cartRepository.save(cart);
+        }
 
     }
 
