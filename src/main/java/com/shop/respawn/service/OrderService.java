@@ -324,6 +324,24 @@ public class OrderService {
         return orderHistoryDtos;
     }
 
+    public OrderHistoryDto getLatestOrderByBuyerId(Long buyerId) {
+        Order order = orderRepository.findTop1ByBuyerIdOrderByOrderDateDesc(buyerId);
+
+        if (order == null) {  // 주문 없으면 null임
+            return null;       // null 반환해서 컨트롤러에서 204 No Content 처리 가능
+        }
+
+        // 주문 있으면 DTO 변환 진행
+        List<OrderHistoryItemDto> itemDtos = order.getOrderItems().stream()
+                .map(orderItem -> {
+                    Item item = itemService.getItemById(orderItem.getItemId());
+                    return OrderHistoryItemDto.from(orderItem, item);
+                }).toList();
+
+        return new OrderHistoryDto(order, itemDtos);
+    }
+
+
 //    @Transactional(readOnly = true)
 //    public Long getBuyerIdByOrderId(Long orderId) {
 //        Order order = orderRepository.findById(orderId)

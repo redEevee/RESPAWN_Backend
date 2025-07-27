@@ -9,4 +9,5 @@ public interface OrderRepository extends JpaRepository<Order,Long> {
 
     List<Order> findByBuyer_IdOrderByOrderDateDesc(Long buyerId);
 
+    Order findTop1ByBuyerIdOrderByOrderDateDesc(Long buyerId);
 }

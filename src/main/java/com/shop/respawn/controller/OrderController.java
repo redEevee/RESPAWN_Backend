@@ -1,5 +1,6 @@
 package com.shop.respawn.controller;
 
+import com.shop.respawn.dto.OrderHistoryDto;
 import com.shop.respawn.dto.OrderRequestDto;
 import com.shop.respawn.service.OrderService;
 import jakarta.servlet.http.HttpSession;
@@ -107,6 +108,19 @@ public class OrderController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @GetMapping("/latest")
+    public ResponseEntity<OrderHistoryDto> getLatestOrder(HttpSession session) {
+        Long buyerId = getBuyerIdFromSession(session);  // 로그인 사용자 아이디
+
+        OrderHistoryDto latestOrder = orderService.getLatestOrderByBuyerId(buyerId);
+
+        if (latestOrder == null) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(latestOrder);
     }
 
     /**
