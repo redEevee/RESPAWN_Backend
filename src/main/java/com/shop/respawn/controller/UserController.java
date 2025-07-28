@@ -107,6 +107,33 @@ public class UserController {
         return ResponseEntity.notFound().build();
     }
 
+    @PostMapping("/myPage/checkPassword")
+    public ResponseEntity<Boolean> checkPassword(@RequestBody Map<String, String> request) {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        String inputPassword = request.get("password");
+
+        Buyer buyer = buyerRepository.findByUsername(username);
+        Seller seller = sellerRepository.findByUsername(username);
+
+        String encodedPassword = null;
+
+        if (buyer != null) {
+            encodedPassword = buyer.getPassword();
+        } else if (seller != null) {
+            encodedPassword = seller.getPassword();
+        }
+
+        if (encodedPassword == null || inputPassword == null) {
+            return ResponseEntity.ok(false);
+        }
+
+        boolean match = userService.passwordMatches(inputPassword, encodedPassword);
+        return ResponseEntity.ok(match);
+    }
+
     // 전화번호 수정 엔드포인트
     @PutMapping("/myPage/setPhoneNumber")
     public Map<String, String> updatePhoneNumber(Authentication authentication,
