@@ -325,7 +325,7 @@ public class OrderService {
     }
 
     public OrderHistoryDto getLatestOrderByBuyerId(Long buyerId) {
-        Order order = orderRepository.findTop1ByBuyerIdOrderByOrderDateDesc(buyerId);
+        Order order = orderRepository.findTop1ByBuyer_IdAndStatusOrderByOrderDateDesc(buyerId, OrderStatus.ORDERED);
 
         if (order == null) {  // 주문 없으면 null임
             return null;       // null 반환해서 컨트롤러에서 204 No Content 처리 가능
