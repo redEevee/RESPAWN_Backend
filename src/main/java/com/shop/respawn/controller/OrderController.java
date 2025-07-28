@@ -110,6 +110,24 @@ public class OrderController {
         }
     }
 
+    /**
+     * 현재 사용자의 모든 임시 주문 삭제 (TEMPORARY 상태인 주문들을 일괄 삭제)
+     */
+    @DeleteMapping("/temporary")
+    public ResponseEntity<Map<String, Object>> deleteAllTemporaryOrders(HttpSession session) {
+        try {
+            Long buyerId = getBuyerIdFromSession(session);
+            int deletedCount = orderService.deleteAllTemporaryOrders(buyerId);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "임시 주문이 성공적으로 삭제되었습니다.",
+                    "deletedCount", deletedCount
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @GetMapping("/latest")
     public ResponseEntity<OrderHistoryDto> getLatestOrder(HttpSession session) {
         Long buyerId = getBuyerIdFromSession(session);  // 로그인 사용자 아이디

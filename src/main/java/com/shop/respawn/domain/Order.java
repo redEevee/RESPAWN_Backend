@@ -40,7 +40,7 @@ public class Order {
     @Enumerated(STRING)
     private OrderStatus status;
 
-    private String tossOrderId;    // 토스페이먼츠용 주문번호
+    private String pgOrderId;    // 토스페이먼츠용 주문번호
 
     private String orderName;      // 구매상품명 (예: "상품명 외 2건")
 

@@ -97,7 +97,7 @@ public class OrderService {
         Order order = new Order();
         order.setBuyer(buyer);
         order.setOrderDate(LocalDateTime.now());
-        order.setStatus(OrderStatus.ORDERED);
+        order.setStatus(OrderStatus.TEMPORARY);
 
         for (OrderItem orderItem : orderItemArray) {
             order.addOrderItem(orderItem);
@@ -128,7 +128,7 @@ public class OrderService {
         Order order = new Order();
         order.setBuyer(buyer);
         order.setOrderDate(LocalDateTime.now());
-        order.setStatus(OrderStatus.ORDERED); // 또는 임시 상태가 있으면 사용
+        order.setStatus(OrderStatus.TEMPORARY); // 또는 임시 상태가 있으면 사용
 
         // 주문 아이템 생성
         OrderItem orderItem = new OrderItem();
@@ -216,10 +216,10 @@ public class OrderService {
         String orderName = generateOrderNameFromOrderItems(orderItems);
 
         // tossOrderId 생성
-        String tossOrderId = "ORDER_" + order.getId() + "_" + System.currentTimeMillis();
+        String pgOrderId = "ORDER_" + order.getId() + "_" + System.currentTimeMillis();
 
         // 토스페이먼츠 필드 설정
-        order.setTossOrderId(tossOrderId);
+        order.setPgOrderId(pgOrderId);
         order.setOrderName(orderName);
         order.setTotalAmount(totalAmount);
         order.setPaymentStatus("READY");
@@ -341,13 +341,27 @@ public class OrderService {
         return new OrderHistoryDto(order, itemDtos);
     }
 
+    /**
+     * 현재 사용자의 모든 임시 주문 삭제 (TEMPORARY 상태인 주문들을 일괄 삭제)
+     */
+    @Transactional
+    public int deleteAllTemporaryOrders(Long buyerId) {
+        // 해당 구매자의 TEMPORARY 상태인 모든 주문 조회
+        List<Order> temporaryOrders = orderRepository.findByBuyerIdAndStatus(buyerId, OrderStatus.TEMPORARY);
 
-//    @Transactional(readOnly = true)
-//    public Long getBuyerIdByOrderId(Long orderId) {
-//        Order order = orderRepository.findById(orderId)
-//                .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다: " + orderId));
-//        return order.getBuyer().getId();
-//    }
+        if (temporaryOrders.isEmpty()) {
+            log.info("삭제할 임시 주문이 없습니다. buyerId: {}", buyerId);
+            return 0;
+        }
+
+        // 모든 임시 주문 삭제
+        orderRepository.deleteAll(temporaryOrders);
+
+        int deletedCount = temporaryOrders.size();
+        log.info("임시 주문 {}건이 삭제되었습니다. buyerId: {}", deletedCount, buyerId);
+
+        return deletedCount;
+    }
 
     private OrderItem convertCartItemToOrderItem(CartItem cartItem) {
         OrderItem orderItem = new OrderItem();
