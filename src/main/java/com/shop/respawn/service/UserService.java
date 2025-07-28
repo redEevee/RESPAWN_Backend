@@ -78,4 +78,11 @@ public class UserService {
     public boolean checkEmailDuplicate(String email) {
         return buyerRepository.existsByEmail(email) || sellerRepository.existsByEmail(email);
     }
+
+    /**
+     * 비밀번호 확인
+     */
+    public boolean passwordMatches(String rawPassword, String encodedPassword) {
+        return encoder.matches(rawPassword, encodedPassword);
+    }
 }

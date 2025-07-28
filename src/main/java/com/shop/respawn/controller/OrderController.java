@@ -1,5 +1,6 @@
 package com.shop.respawn.controller;
 
+import com.shop.respawn.dto.OrderHistoryDto;
 import com.shop.respawn.dto.OrderRequestDto;
 import com.shop.respawn.service.OrderService;
 import jakarta.servlet.http.HttpSession;
@@ -40,6 +41,26 @@ public class OrderController {
     }
 
     /**
+     * 상품페이지에서 상품 주문
+     */
+    @PostMapping("/prepare")
+    public ResponseEntity<Map<String, Object>> prepareOrder(
+            @RequestBody OrderRequestDto orderRequest, HttpSession session) {
+        try {
+            Long buyerId = getBuyerIdFromSession(session);  // 로그인된 사용자 ID 가져오기
+
+            // 주문 생성 서비스 호출 (itemId, count, buyerId 전달)
+            Long orderId = orderService.createTemporaryOrder(buyerId, orderRequest.getItemId(), orderRequest.getCount());
+
+            // 결과 응답
+            return ResponseEntity.ok(Map.of("orderId", orderId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+
+    /**
      * 선택된 상품 주문 완료 처리
      */
     @PostMapping("/{orderId}/complete")
@@ -74,6 +95,32 @@ public class OrderController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    /**
+     * 로그인한 구매자의 주문 내역 조회 API
+     */
+    @GetMapping("/history")
+    public ResponseEntity<?> getOrderHistory(HttpSession session) {
+        try {
+            Long buyerId = getBuyerIdFromSession(session);
+            return ResponseEntity.ok(orderService.getOrderHistory(buyerId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/latest")
+    public ResponseEntity<OrderHistoryDto> getLatestOrder(HttpSession session) {
+        Long buyerId = getBuyerIdFromSession(session);  // 로그인 사용자 아이디
+
+        OrderHistoryDto latestOrder = orderService.getLatestOrderByBuyerId(buyerId);
+
+        if (latestOrder == null) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(latestOrder);
     }
 
     /**
