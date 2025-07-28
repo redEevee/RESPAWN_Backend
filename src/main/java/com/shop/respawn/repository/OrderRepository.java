@@ -10,7 +10,7 @@ public interface OrderRepository extends JpaRepository<Order,Long> {
 
     List<Order> findByBuyer_IdOrderByOrderDateDesc(Long buyerId);
 
-    Order findTop1ByBuyerIdOrderByOrderDateDesc(Long buyerId);
+    Order findTop1ByBuyer_IdAndStatusOrderByOrderDateDesc(Long buyerId, OrderStatus status);
 
     List<Order> findByBuyerIdAndStatus(Long buyerId, OrderStatus status);
 }
