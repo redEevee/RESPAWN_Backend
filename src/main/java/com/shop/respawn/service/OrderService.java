@@ -363,6 +363,138 @@ public class OrderService {
         return deletedCount;
     }
 
+    /**
+     * 주문 환불 처리
+     */
+    @Transactional
+    public void processRefund(Long orderId, Long buyerId) {
+        // 1. 주문 조회 및 권한 확인
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다"));
+
+        if (!order.getBuyer().getId().equals(buyerId)) {
+            throw new RuntimeException("해당 주문을 환불할 권한이 없습니다");
+        }
+
+        // 2. 환불 가능 상태 확인
+        if (!isRefundableStatus(order.getStatus())) {
+            throw new RuntimeException("환불이 불가능한 주문 상태입니다: " + order.getStatus());
+        }
+
+        // 3. 결제 상태 확인
+        if (!"SUCCESS".equals(order.getPaymentStatus())) {
+            throw new RuntimeException("결제 완료된 주문만 환불 가능합니다");
+        }
+
+        try {
+            // 4. 재고 복원
+            restoreStockFromOrder(order);
+
+            // 5. 주문 상태를 환불로 변경
+            order.setStatus(OrderStatus.REFUNDED);
+            order.setPaymentStatus("REFUNDED");
+
+            // 6. 주문 저장
+            orderRepository.save(order);
+
+            log.info("환불 처리 완료 - orderId: {}, buyerId: {}", orderId, buyerId);
+
+        } catch (Exception e) {
+            log.error("환불 처리 중 오류 발생 - orderId: {}, error: {}", orderId, e.getMessage());
+            throw new RuntimeException("환불 처리 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 환불 가능한 상태인지 확인
+     */
+    private boolean isRefundableStatus(OrderStatus status) {
+        return status == OrderStatus.ORDERED || status == OrderStatus.PAID;
+    }
+
+    /**
+     * 주문에서 재고 복원
+     */
+    private void restoreStockFromOrder(Order order) {
+        for (OrderItem orderItem : order.getOrderItems()) {
+            Item item = itemRepository.findById(orderItem.getItemId())
+                    .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + orderItem.getItemId()));
+
+            // 재고 복원
+            item.addStock(orderItem.getCount());
+            itemRepository.save(item);
+
+            log.debug("재고 복원 완료 - itemId: {}, quantity: {}", item.getId(), orderItem.getCount());
+        }
+    }
+
+    /**
+     * 환불 가능한 주문 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<OrderHistoryDto> getRefundableOrders(Long buyerId) {
+        // ORDERED 또는 PAID 상태이면서 결제 완료된 주문들을 조회
+        List<Order> refundableOrders = orderRepository.findByBuyerIdAndStatusInAndPaymentStatus(
+                buyerId,
+                List.of(OrderStatus.ORDERED, OrderStatus.PAID),
+                "SUCCESS"
+        );
+
+        List<OrderHistoryDto> orderHistoryDtos = new ArrayList<>();
+
+        for (Order order : refundableOrders) {
+            List<OrderHistoryItemDto> itemDtos = new ArrayList<>();
+
+            for (OrderItem orderItem : order.getOrderItems()) {
+                try {
+                    Item item = itemService.getItemById(orderItem.getItemId());
+                    OrderHistoryItemDto itemDto = OrderHistoryItemDto.from(orderItem, item);
+                    itemDtos.add(itemDto);
+                } catch (Exception e) {
+                    log.error("환불 가능 주문 조회 중 아이템 정보 로드 실패 - itemId: {}", orderItem.getItemId());
+                }
+            }
+
+            OrderHistoryDto orderDto = new OrderHistoryDto(order, itemDtos);
+            orderHistoryDtos.add(orderDto);
+        }
+
+        return orderHistoryDtos;
+    }
+
+    /**
+     * 환불 내역 조회
+     */
+    @Transactional(readOnly = true)
+    public List<OrderHistoryDto> getRefundHistory(Long buyerId) {
+        List<Order> refundedOrders = orderRepository.findByBuyer_IdAndStatusOrderByOrderDateDesc(
+                buyerId, OrderStatus.REFUNDED);
+
+        List<OrderHistoryDto> refundHistoryDtos = new ArrayList<>();
+
+        for (Order order : refundedOrders) {
+            List<OrderHistoryItemDto> itemDtos = new ArrayList<>();
+
+            for (OrderItem orderItem : order.getOrderItems()) {
+                try {
+                    Item item = itemService.getItemById(orderItem.getItemId());
+                    OrderHistoryItemDto itemDto = OrderHistoryItemDto.from(orderItem, item);
+                    itemDtos.add(itemDto);
+                } catch (Exception e) {
+                    log.error("환불 내역 조회 중 아이템 정보 로드 실패 - itemId: {}", orderItem.getItemId());
+                }
+            }
+
+            OrderHistoryDto orderDto = new OrderHistoryDto(order, itemDtos);
+            refundHistoryDtos.add(orderDto);
+        }
+
+        return refundHistoryDtos;
+    }
+
+    /**
+     * 카트아이템에서 오더아이템으로 변환
+     */
     private OrderItem convertCartItemToOrderItem(CartItem cartItem) {
         OrderItem orderItem = new OrderItem();
         orderItem.setItemId(cartItem.getItemId());
