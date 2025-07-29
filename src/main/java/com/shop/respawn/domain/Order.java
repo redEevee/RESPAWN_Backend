@@ -46,8 +46,6 @@ public class Order {
 
     private Integer totalAmount;   // 총 결제 금액
 
-    private String paymentKey;     // 토스페이먼츠 결제 키
-
     private String paymentStatus;  // 결제 상태 (READY, SUCCESS, FAIL 등)
 
     //==연관관계 메서드==//
@@ -77,7 +75,6 @@ public class Order {
         }
         order.setStatus(OrderStatus.ORDERED);
         order.setOrderDate(LocalDateTime.now());
-        // 토스페이먼츠 필드는 OrderService에서 별도로 설정
         return order;
     }
 
@@ -98,15 +95,15 @@ public class Order {
     }
 
     // tossOrderId 생성 메서드 추가
-    public String generateTossOrderId() {
-        return "ORDER_" + System.currentTimeMillis() + "_" + this.id;
-    }
+//    public String generateTossOrderId() {
+//        return "ORDER_" + System.currentTimeMillis() + "_" + this.id;
+//    }
 
     // 토스페이먼츠 필드 설정 메서드 추가
-    public void setTossPaymentInfo(String orderName, int totalAmount) {
-        this.orderName = orderName;
-        this.totalAmount = totalAmount;
-        this.paymentStatus = "READY";
-        // tossOrderId는 주문 저장 후 ID가 생성된 다음에 설정
-    }
+//    public void setTossPaymentInfo(String orderName, int totalAmount) {
+//        this.orderName = orderName;
+//        this.totalAmount = totalAmount;
+//        this.paymentStatus = "READY";
+//        // tossOrderId는 주문 저장 후 ID가 생성된 다음에 설정
+//    }
 }

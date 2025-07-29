@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -128,6 +129,9 @@ public class OrderController {
         }
     }
 
+    /**
+     * 현재 사용자의 최근 주문 조회
+     */
     @GetMapping("/latest")
     public ResponseEntity<OrderHistoryDto> getLatestOrder(HttpSession session) {
         Long buyerId = getBuyerIdFromSession(session);  // 로그인 사용자 아이디
@@ -139,6 +143,118 @@ public class OrderController {
         }
 
         return ResponseEntity.ok(latestOrder);
+    }
+
+    /**
+     * 주문 환불 처리
+     */
+    @PostMapping("/{orderId}/refund")
+    public ResponseEntity<Map<String, Object>> refundOrder(
+            @PathVariable Long orderId,
+            HttpSession session) {
+        try {
+            Long buyerId = getBuyerIdFromSession(session);
+            orderService.processRefund(orderId, buyerId);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "환불이 성공적으로 처리되었습니다.",
+                    "orderId", orderId
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * 환불 가능한 주문 목록 조회
+     */
+    @GetMapping("/refundable")
+    public ResponseEntity<Map<String, Object>> getRefundableOrders(HttpSession session) {
+        try {
+            Long buyerId = getBuyerIdFromSession(session);
+            List<OrderHistoryDto> refundableOrders = orderService.getRefundableOrders(buyerId);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "환불 가능한 주문 목록을 조회했습니다.",
+                    "orders", refundableOrders
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * 환불 내역 조회
+     */
+    @GetMapping("/refund-history")
+    public ResponseEntity<Map<String, Object>> getRefundHistory(HttpSession session) {
+        try {
+            Long buyerId = getBuyerIdFromSession(session);
+            List<OrderHistoryDto> refundHistory = orderService.getRefundHistory(buyerId);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "환불 내역을 조회했습니다.",
+                    "refunds", refundHistory
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * 주문 취소 처리
+     */
+    @PostMapping("/{orderId}/cancel")
+    public ResponseEntity<Map<String, Object>> cancelOrder(
+            @PathVariable Long orderId,
+            HttpSession session) {
+        try {
+            Long buyerId = getBuyerIdFromSession(session);
+            orderService.processOrderCancel(orderId, buyerId);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "주문이 성공적으로 취소되었습니다.",
+                    "orderId", orderId
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * 취소 가능한 주문 목록 조회
+     */
+    @GetMapping("/cancellable")
+    public ResponseEntity<Map<String, Object>> getCancellableOrders(HttpSession session) {
+        try {
+            Long buyerId = getBuyerIdFromSession(session);
+            List<OrderHistoryDto> cancellableOrders = orderService.getCancellableOrders(buyerId);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "취소 가능한 주문 목록을 조회했습니다.",
+                    "orders", cancellableOrders
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * 취소 내역 조회
+     */
+    @GetMapping("/cancel-history")
+    public ResponseEntity<Map<String, Object>> getCancelHistory(HttpSession session) {
+        try {
+            Long buyerId = getBuyerIdFromSession(session);
+            List<OrderHistoryDto> cancelHistory = orderService.getCancelHistory(buyerId);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "취소 내역을 조회했습니다.",
+                    "cancellations", cancelHistory
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     /**

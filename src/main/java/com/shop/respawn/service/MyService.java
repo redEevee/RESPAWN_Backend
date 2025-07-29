@@ -72,7 +72,7 @@ public class MyService {
             order.setBuyer(buyer);
             order.setDelivery(delivery);
             order.setOrderDate(orderDate);
-            order.setStatus(OrderStatus.ORDERED);
+            order.setStatus(OrderStatus.PAID);
 
             OrderItem oi1 = OrderItem.createOrderItem(item1, 30, 1);
             order.addOrderItem(oi1);
@@ -87,7 +87,7 @@ public class MyService {
 
             order.setOrderName(order.generateOrderName());
             order.setPgOrderId("ORDER_" + System.currentTimeMillis() + "_" + i);
-            order.setPaymentStatus("READY");
+            order.setPaymentStatus("SUCCESS");
 
             em.persist(delivery);
             em.persist(order);
