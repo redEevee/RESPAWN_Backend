@@ -17,6 +17,7 @@ public class Item {
     private String id;
 
     private String name;
+    @Column(columnDefinition = "TEXT")
     private String description;
     private String deliveryType;
     private String deliveryFee;
