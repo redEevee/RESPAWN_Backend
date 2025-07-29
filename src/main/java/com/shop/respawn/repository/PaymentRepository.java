@@ -9,6 +9,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     Optional<Payment> findByImpUid(String impUid);
 
-    boolean existsByImpUid(String impUid);
-
+    /**
+     * 주문 ID로 결제 정보 조회
+     */
+    Optional<Payment> findByOrderId(Long orderId);
 }
