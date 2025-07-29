@@ -77,4 +77,13 @@ public class Buyer {
         this.addresses.add(address);
         address.setBuyer(this); // 패키지 레벨 세터 사용
     }
+
+    // initData 용도
+    public static Buyer createBuyerWithInitLists(String name, String username, String password, String email, String phoneNumber, Role role) {
+        Buyer buyer = new Buyer(name, username, password, email, phoneNumber, role);
+        buyer.orders = new ArrayList<>();
+        buyer.addresses = new ArrayList<>();
+        buyer.cart = new ArrayList<>();
+        return buyer;
+    }
 }
