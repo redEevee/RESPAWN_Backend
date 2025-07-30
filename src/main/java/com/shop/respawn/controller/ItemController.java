@@ -24,6 +24,9 @@ public class ItemController {
     private final ItemService itemService;
     private final ImageService imageService;
 
+    /**
+     * 상품 등록
+     */
     @PostMapping("/register")
     public ResponseEntity<?> registerItem(
             @RequestPart("itemDto") ItemDto itemDto,
@@ -42,6 +45,9 @@ public class ItemController {
         return ResponseEntity.ok(created);
     }
 
+    /**
+     * Id 값으로 상품 조회
+     */
     @GetMapping("/{id}")
     public ResponseEntity<ItemDto> getItem(@PathVariable String id) {
         Item item = itemService.getItemById(id);
@@ -50,6 +56,9 @@ public class ItemController {
         return ResponseEntity.ok(itemDto);
     }
 
+    /**
+     * 전체 상품 조회
+     */
     @GetMapping
     public ResponseEntity<List<ItemDto>> getAllItems() {
         List<Item> items = itemService.getAllItems();
@@ -60,6 +69,36 @@ public class ItemController {
         return ResponseEntity.ok(itemDtos);
     }
 
+    /**
+     * 자신이 등록한 아이템 조회
+     */
+    @GetMapping("/my-items")
+    public ResponseEntity<List<ItemDto>> getItemsOfLoggedInSeller(HttpSession session) {
+        Long sellerId = getSellerIdFromSession(session);  // 세션에서 로그인된 판매자 ID 조회
+
+        List<Item> items = itemService.getItemsBySellerId(String.valueOf(sellerId));
+
+        List<ItemDto> itemDtos = items.stream()
+                .map(item -> new ItemDto(item.getId(),
+                        item.getName(),
+                        item.getDescription(),
+                        item.getDeliveryType(),
+                        item.getDeliveryFee(),
+                        item.getCompany(),
+                        item.getCompanyNumber(),
+                        item.getPrice(),
+                        item.getStockQuantity(),
+                        item.getSellerId(),
+                        item.getImageUrl(),
+                        item.getCategoryIds()))
+                .toList();
+
+        return ResponseEntity.ok(itemDtos);
+    }
+
+    /**
+     * 현재 로그인된 판매자의 ID 가져오기
+     */
     private Long getSellerIdFromSession(HttpSession session) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String authorities = authentication.getAuthorities().toString();

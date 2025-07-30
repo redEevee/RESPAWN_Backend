@@ -2,7 +2,6 @@ package com.shop.respawn.controller;
 
 import com.shop.respawn.dto.OrderHistoryDto;
 import com.shop.respawn.dto.OrderRequestDto;
-import com.shop.respawn.dto.RefundRequestDto;
 import com.shop.respawn.service.OrderService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -154,103 +153,6 @@ public class OrderController {
         }
 
         return ResponseEntity.ok(latestOrder);
-    }
-
-    /**
-     * 주문 환불 신청
-     */
-    @PostMapping("/{orderId}/refund")
-    public ResponseEntity<Map<String, Object>> requestRefund(
-            @PathVariable Long orderId,
-            @RequestBody @Valid RefundRequestDto refundRequestDto,
-            HttpSession session) {
-        try {
-            Long buyerId = getBuyerIdFromSession(session);
-            orderService.processRefundRequest(orderId, buyerId, refundRequestDto);
-
-            return ResponseEntity.ok(Map.of(
-                    "message", "환불 신청이 정상적으로 완료되었습니다.",
-                    "orderId", orderId
-            ));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    /**
-     * 판매자가 자신의 아이템에 대한 환불 요청 조회
-     */
-    @GetMapping("/refund-requests")
-    public ResponseEntity<?> getRefundRequestsBySeller(HttpSession session) {
-        try {
-            Long sellerId = getSellerIdFromSession(session); // 현재 로그인 판매자ID
-            System.out.println("sellerId = " + sellerId);
-            List<RefundRequestDto> refundRequests = orderService.getRefundRequestsBySeller(sellerId);
-
-            return ResponseEntity.ok(Map.of(
-                    "message", "판매자의 환불 요청 목록을 조회했습니다.",
-                    "refundRequests", refundRequests
-            ));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    /**
-     * 판매자가 환불 완료 처리 (관리자/판매자 권한 필요)
-     */
-    @PostMapping("/{orderId}/refund/complete")
-    public ResponseEntity<Map<String, Object>> completeRefund(
-            @PathVariable Long orderId,
-            HttpSession session) {
-        try {
-            Long sellerId = getSellerIdFromSession(session); // 판매자 ID 가져오기
-
-            orderService.processRefundCompletionBySeller(orderId, sellerId); // 판매자와 주문 비교 검증
-
-            return ResponseEntity.ok(Map.of(
-                    "message", "환불이 성공적으로 완료되었습니다.",
-                    "orderId", orderId
-            ));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    /**
-     * 환불 가능한 주문 목록 조회
-     */
-    @GetMapping("/refundable")
-    public ResponseEntity<Map<String, Object>> getRefundableOrders(HttpSession session) {
-        try {
-            Long buyerId = getBuyerIdFromSession(session);
-            List<OrderHistoryDto> refundableOrders = orderService.getRefundableOrders(buyerId);
-
-            return ResponseEntity.ok(Map.of(
-                    "message", "환불 가능한 주문 목록을 조회했습니다.",
-                    "orders", refundableOrders
-            ));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    /**
-     * 환불 내역 조회
-     */
-    @GetMapping("/refund-history")
-    public ResponseEntity<Map<String, Object>> getRefundHistory(HttpSession session) {
-        try {
-            Long buyerId = getBuyerIdFromSession(session);
-            List<OrderHistoryDto> refundHistory = orderService.getRefundHistory(buyerId);
-
-            return ResponseEntity.ok(Map.of(
-                    "message", "환불 내역을 조회했습니다.",
-                    "refunds", refundHistory
-            ));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
     }
 
     /**

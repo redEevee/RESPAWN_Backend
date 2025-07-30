@@ -39,4 +39,8 @@ public class ItemService {
     public List<Item> getAllItems() {
         return itemRepository.findAll();
     }
+
+    public List<Item> getItemsBySellerId(String sellerId) {
+        return itemRepository.findBySellerId(sellerId);
+    }
 }

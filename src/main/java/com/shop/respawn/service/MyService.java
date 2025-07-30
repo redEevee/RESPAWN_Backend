@@ -35,9 +35,17 @@ public class MyService {
         buyerRepository.save(buyer1);
         em.persist(buyer1);
 
-        Seller seller = Seller.createSeller("강지원", "b", "Fanatec", 1231212345L, encoder.encode("b"), "jiwon426@naver.com", "01023456789", Role.ROLE_SELLER);
-        sellerRepository.save(seller);
-        em.persist(seller);
+        Seller seller1 = Seller.createSeller("강지원", "b", "Fanatec", 1231212345L, encoder.encode("b"), "jiwon426@naver.com", "01023456789", Role.ROLE_SELLER);
+        sellerRepository.save(seller1);
+        em.persist(seller1);
+
+        Seller seller2 = Seller.createSeller("유예슬", "c", "Creative", 1230946578L, encoder.encode("c"), "jiwon426@naver.com", "01098765432", Role.ROLE_SELLER);
+        sellerRepository.save(seller2);
+        em.persist(seller2);
+
+        Seller seller3 = Seller.createSeller("로지텍", "d", "Logitech", 9876543211L, encoder.encode("d"), "logitech9876@gmail.com", "01055430909", Role.ROLE_SELLER);
+        sellerRepository.save(seller3);
+        em.persist(seller3);
 
         em.flush();
         em.clear();
@@ -52,7 +60,7 @@ public class MyService {
         Item item1 = new Item();
         item1.setId("68822f86e8223dd3d36c5db5");
         Item item2 = new Item();
-        item2.setId("68823033e8223dd3d36c5db6");
+        item2.setId("68823316e8223dd3d36c5dbd");
         Item item3 = new Item();
         item3.setId("6882343ae8223dd3d36c5dbe");
 
