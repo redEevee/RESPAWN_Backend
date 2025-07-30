@@ -112,6 +112,17 @@ public class OrderController {
     }
 
     /**
+     * 로그인한 구매자의 주문 내역 단건 조회
+     */
+    @GetMapping("/history/{orderId}")
+    public ResponseEntity<OrderHistoryDto> getOrderDetail(@PathVariable Long orderId, HttpSession session) {
+        Long buyerId = getBuyerIdFromSession(session);  // 로그인 사용자 아이디
+        OrderHistoryDto order = orderService.getOrderDetail(orderId, buyerId);
+        return ResponseEntity.ok(order);
+    }
+
+
+    /**
      * 현재 사용자의 모든 임시 주문 삭제 (TEMPORARY 상태인 주문들을 일괄 삭제)
      */
     @DeleteMapping("/temporary")
@@ -304,7 +315,7 @@ public class OrderController {
     private Long getBuyerIdFromSession(HttpSession session) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String authorities = authentication.getAuthorities().toString();
-        if(authorities.equals("[ROLE_USER]")){
+        if (authorities.equals("[ROLE_USER]")) {
             System.out.println("구매자 권한의 아이디 : " + authorities);
             return (Long) session.getAttribute("userId");
         } else throw new RuntimeException("로그인이 필요하거나 판매자 아이디 입니다.");
@@ -313,7 +324,7 @@ public class OrderController {
     private Long getSellerIdFromSession(HttpSession session) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String authorities = authentication.getAuthorities().toString();
-        if(authorities.equals("[ROLE_SELLER]")) {
+        if (authorities.equals("[ROLE_SELLER]")) {
             System.out.println("판매자 권한의 아이디 : " + authorities);
             return (Long) session.getAttribute("userId");
         } else {
