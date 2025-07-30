@@ -58,6 +58,7 @@ public class UserController {
 
         System.out.println("로그인한 유저네임:" + username);
         System.out.println("유저 권한:" + authentication.getAuthorities());
+        System.out.println("userId = " + userId);
 
         Map<String, String> userInfo = new HashMap<>();
         userInfo.put("name", name);

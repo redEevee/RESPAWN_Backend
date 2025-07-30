@@ -1,10 +1,7 @@
 package com.shop.respawn.service;
 
 import com.shop.respawn.domain.*;
-import com.shop.respawn.dto.OrderHistoryDto;
-import com.shop.respawn.dto.OrderHistoryItemDto;
-import com.shop.respawn.dto.OrderItemDetailDto;
-import com.shop.respawn.dto.OrderRequestDto;
+import com.shop.respawn.dto.*;
 import com.shop.respawn.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +23,7 @@ public class OrderService {
     private final ItemRepository itemRepository;
     private final AddressRepository addressRepository;
     private final ItemService itemService;
-    private final PaymentService paymentService;
+    private final RefundRequestRepository refundRequestRepository;
 
     /**
      * 임시 주문 상세 조회
@@ -369,21 +366,82 @@ public class OrderService {
     }
 
     /**
-     * 주문 환불 처리
+     * 주문 환불 신청 처리
      */
     @Transactional
-    public void processRefund(Long orderId, Long buyerId) {
-        // 1. 주문 조회 및 권한 확인
+    public void processRefundRequest(Long orderId, Long buyerId, RefundRequestDto refundRequestDto) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다"));
-
+                .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다."));
         if (!order.getBuyer().getId().equals(buyerId)) {
-            throw new RuntimeException("해당 주문을 환불할 권한이 없습니다");
+            throw new RuntimeException("해당 주문을 환불 신청할 권한이 없습니다.");
+        }
+        // 환불 신청 가능한지 상태 확인 (ORDERED, PAID 등)
+        if (!(order.getStatus() == OrderStatus.ORDERED || order.getStatus() == OrderStatus.PAID)) {
+            throw new RuntimeException("환불 신청이 불가능한 주문 상태입니다.");
         }
 
-        // 2. 환불 가능 상태 확인
-        if (!isRefundableStatus(order.getStatus())) {
-            throw new RuntimeException("환불이 불가능한 주문 상태입니다: " + order.getStatus());
+        // 환불 신청 엔티티 생성 및 저장
+        RefundRequest refund = new RefundRequest();
+        refund.setOrder(order);
+        refund.setBuyerId(buyerId);
+        refund.setReason(refundRequestDto.getReason());
+        refund.setDetail(refundRequestDto.getDetail());
+        refund.setRequestTime(LocalDateTime.now());
+
+        refundRequestRepository.save(refund);
+
+        // 상태값을 환불 신청으로 변경
+        order.setStatus(OrderStatus.REFUND_REQUESTED);
+        orderRepository.save(order);
+    }
+
+    /**
+     * 판매자가 자신의 아이템의 환불 건 조회
+     */
+    public List<RefundRequestDto> getRefundRequestsBySeller(Long sellerId) {
+        // 1. 모든 환불 요청 조회 (JPA 기준)
+        List<RefundRequest> allRefunds = refundRequestRepository.findAll();
+
+        // 2. 자신(판매자) 상품에 포함된 환불 요청만 필터링
+        List<RefundRequestDto> result = new ArrayList<>();
+
+        for (RefundRequest refund : allRefunds) {
+            Order order = refund.getOrder(); // JPA
+            boolean isMyOrder = order.getOrderItems().stream().allMatch(orderItem -> {
+                // Item은 MongoDB → itemService.getItemById 사용
+                System.out.println("sellerId = " + sellerId);
+                Item item = itemService.getItemById(orderItem.getItemId());
+                boolean equals = item.getSellerId().equals(String.valueOf(sellerId));
+                System.out.println("sellerId = " + sellerId);
+                return equals;
+            });
+            if (isMyOrder) {
+                // 환불 DTO 변환
+                result.add(RefundRequestDto.from(refund, order));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 판매자가 환불 승인/완료 처리 (구매자용 환불 신청과 별도)
+     */
+    @Transactional
+    public void processRefundCompletionBySeller(Long orderId, Long sellerId) {
+        // 1. 주문 조회
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다."));
+
+        // 2. 주문의 모든 상품이 해당 판매자의 상품인지 확인
+        boolean hasSellerItem = order.getOrderItems().stream().allMatch(orderItem -> {
+            Item item = itemRepository.findById(orderItem.getItemId())
+                    .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + orderItem.getItemId()));
+            // item.getSellerId()는 String 타입일 수 있으니 sellerId.toString() 등 타입 일치 고려
+            return item.getSellerId().equals(String.valueOf(sellerId));
+        });
+
+        if (!hasSellerItem) {
+            throw new RuntimeException("해당 주문의 상품은 이 판매자의 상품이 아닙니다.");
         }
 
         // 3. 결제 상태 확인
@@ -391,30 +449,31 @@ public class OrderService {
             throw new RuntimeException("결제 완료된 주문만 환불 가능합니다");
         }
 
+        // 4. 환불 신청 상태인지 체크
+        if (order.getStatus() != OrderStatus.REFUND_REQUESTED) {
+            throw new RuntimeException("환불 신청된 주문만 환불 완료 처리할 수 있습니다.");
+        }
+
+        // 5. 결제 환불 처리 (필요 시 연동)
+        // ex) paymentService.cancelPaymentByOrderId(orderId, "고객 환불 승인");
+
         try {
-            // 4. 재고 복원
+            // 6. 재고 복원
             restoreStockFromOrder(order);
 
-            // 5. 주문 상태를 환불로 변경
+            // 7. 주문 상태를 환불로 변경
             order.setStatus(OrderStatus.REFUNDED);
             order.setPaymentStatus("REFUNDED");
 
-            // 6. 주문 저장
+            // 8 주문 저장
             orderRepository.save(order);
 
-            log.info("환불 처리 완료 - orderId: {}, buyerId: {}", orderId, buyerId);
+            log.info("환불 처리 완료 - orderId: {}", orderId);
 
         } catch (Exception e) {
             log.error("환불 처리 중 오류 발생 - orderId: {}, error: {}", orderId, e.getMessage());
             throw new RuntimeException("환불 처리 중 오류가 발생했습니다: " + e.getMessage());
         }
-    }
-
-    /**
-     * 환불 가능한 상태인지 확인
-     */
-    private boolean isRefundableStatus(OrderStatus status) {
-        return status == OrderStatus.ORDERED || status == OrderStatus.PAID;
     }
 
     /**

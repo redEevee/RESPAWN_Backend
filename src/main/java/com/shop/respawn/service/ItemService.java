@@ -13,7 +13,7 @@ import java.util.List;
 public class ItemService {
     private final ItemRepository itemRepository;
 
-    public Item registerItem(ItemDto itemDto) {
+    public Item registerItem(ItemDto itemDto, Long sellerId) {
 
         Item newItem = new Item();
         newItem.setName(itemDto.getName());
@@ -23,7 +23,7 @@ public class ItemService {
         newItem.setCompany(itemDto.getCompany());
         newItem.setPrice(itemDto.getPrice());
         newItem.setStockQuantity(itemDto.getStockQuantity());
-        newItem.setSellerId(itemDto.getSellerId());
+        newItem.setSellerId(String.valueOf(sellerId));
         newItem.setImageUrl(itemDto.getImageUrl()); // 대표 사진 경로만 저장
         newItem.setCategoryIds(itemDto.getCategoryIds());
 

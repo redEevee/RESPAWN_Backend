@@ -27,6 +27,8 @@ public class UserService {
         String userType = userDto.getUserType();
         String name = userDto.getName();
         String username = userDto.getUsername();
+        String company = userDto.getCompany();
+        Long companyNumber = userDto.getCompanyNumber();
         String password = encoder.encode(userDto.getPassword());
         System.out.println("비밀번호 인코딩:" + password);
         String email = userDto.getEmail();
@@ -36,7 +38,7 @@ public class UserService {
             Buyer buyer = Buyer.createBuyer(name, username, password, email, phoneNumber, Role.ROLE_USER);
             buyerRepository.save(buyer);
         } else if (userType.equals("seller")){
-            Seller seller = Seller.createSeller(name, username, password, email, phoneNumber, Role.ROLE_SELLER);
+            Seller seller = Seller.createSeller(name, username, company, companyNumber, password, email, phoneNumber, Role.ROLE_SELLER);
             sellerRepository.save(seller);
         }
     }

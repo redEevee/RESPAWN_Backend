@@ -35,7 +35,7 @@ public class MyService {
         buyerRepository.save(buyer1);
         em.persist(buyer1);
 
-        Seller seller = Seller.createSeller("가나디", "b", encoder.encode("b"), "gana@naver.com", "01023456789", Role.ROLE_SELLER);
+        Seller seller = Seller.createSeller("강지원", "b", "Fanatec", 1231212345L, encoder.encode("b"), "jiwon426@naver.com", "01023456789", Role.ROLE_SELLER);
         sellerRepository.save(seller);
         em.persist(seller);
 
@@ -54,7 +54,7 @@ public class MyService {
         Item item2 = new Item();
         item2.setId("68823033e8223dd3d36c5db6");
         Item item3 = new Item();
-        item3.setId("6882312ce8223dd3d36c5db8");
+        item3.setId("6882343ae8223dd3d36c5dbe");
 
         // 날짜 예시 (오늘부터 6일 전까지)
         LocalDateTime baseDate = LocalDateTime.now();
@@ -74,8 +74,8 @@ public class MyService {
             order.setOrderDate(orderDate);
             order.setStatus(OrderStatus.PAID);
 
-            OrderItem oi1 = OrderItem.createOrderItem(item1, 30, 1);
-            order.addOrderItem(oi1);
+            OrderItem oi3 = OrderItem.createOrderItem(item3, 50, 1);
+            order.addOrderItem(oi3);
 
             if (i % 3 == 0) {
                 OrderItem oi2 = OrderItem.createOrderItem(item2, 20, 2);

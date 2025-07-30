@@ -2,6 +2,7 @@ package com.shop.respawn.controller;
 
 import com.shop.respawn.dto.OrderHistoryDto;
 import com.shop.respawn.dto.OrderRequestDto;
+import com.shop.respawn.dto.RefundRequestDto;
 import com.shop.respawn.service.OrderService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -59,7 +60,6 @@ public class OrderController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
-
 
     /**
      * 선택된 상품 주문 완료 처리
@@ -146,18 +146,59 @@ public class OrderController {
     }
 
     /**
-     * 주문 환불 처리
+     * 주문 환불 신청
      */
     @PostMapping("/{orderId}/refund")
-    public ResponseEntity<Map<String, Object>> refundOrder(
+    public ResponseEntity<Map<String, Object>> requestRefund(
             @PathVariable Long orderId,
+            @RequestBody @Valid RefundRequestDto refundRequestDto,
             HttpSession session) {
         try {
             Long buyerId = getBuyerIdFromSession(session);
-            orderService.processRefund(orderId, buyerId);
+            orderService.processRefundRequest(orderId, buyerId, refundRequestDto);
 
             return ResponseEntity.ok(Map.of(
-                    "message", "환불이 성공적으로 처리되었습니다.",
+                    "message", "환불 신청이 정상적으로 완료되었습니다.",
+                    "orderId", orderId
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * 판매자가 자신의 아이템에 대한 환불 요청 조회
+     */
+    @GetMapping("/refund-requests")
+    public ResponseEntity<?> getRefundRequestsBySeller(HttpSession session) {
+        try {
+            Long sellerId = getSellerIdFromSession(session); // 현재 로그인 판매자ID
+            System.out.println("sellerId = " + sellerId);
+            List<RefundRequestDto> refundRequests = orderService.getRefundRequestsBySeller(sellerId);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "판매자의 환불 요청 목록을 조회했습니다.",
+                    "refundRequests", refundRequests
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * 판매자가 환불 완료 처리 (관리자/판매자 권한 필요)
+     */
+    @PostMapping("/{orderId}/refund/complete")
+    public ResponseEntity<Map<String, Object>> completeRefund(
+            @PathVariable Long orderId,
+            HttpSession session) {
+        try {
+            Long sellerId = getSellerIdFromSession(session); // 판매자 ID 가져오기
+
+            orderService.processRefundCompletionBySeller(orderId, sellerId); // 판매자와 주문 비교 검증
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "환불이 성공적으로 완료되었습니다.",
                     "orderId", orderId
             ));
         } catch (RuntimeException e) {
@@ -267,5 +308,16 @@ public class OrderController {
             System.out.println("구매자 권한의 아이디 : " + authorities);
             return (Long) session.getAttribute("userId");
         } else throw new RuntimeException("로그인이 필요하거나 판매자 아이디 입니다.");
+    }
+
+    private Long getSellerIdFromSession(HttpSession session) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String authorities = authentication.getAuthorities().toString();
+        if(authorities.equals("[ROLE_SELLER]")) {
+            System.out.println("판매자 권한의 아이디 : " + authorities);
+            return (Long) session.getAttribute("userId");
+        } else {
+            throw new RuntimeException("판매자 로그인이 필요합니다.");
+        }
     }
 }
