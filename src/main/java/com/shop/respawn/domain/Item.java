@@ -22,6 +22,7 @@ public class Item {
     private String deliveryType;
     private String deliveryFee;
     private String company;
+    private Long companyNumber;
     private int price;
     private int stockQuantity;
     private String sellerId;
