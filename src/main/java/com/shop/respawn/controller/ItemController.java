@@ -65,7 +65,7 @@ public class ItemController {
         String authorities = authentication.getAuthorities().toString();
         if(authorities.equals("[ROLE_SELLER]")) {
             // 예시: 세션에 저장된 판매자 ID
-            return (Long) session.getAttribute("sellerId");
+            return (Long) session.getAttribute("userId");
         } else {
             throw new RuntimeException("판매자 로그인이 필요합니다.");
         }

@@ -18,7 +18,6 @@ public class Item {
 
     private String name;
     @Column(columnDefinition = "TEXT")
-    private String description;
     private String deliveryType;
     private String deliveryFee;
     private String company;
@@ -26,10 +25,9 @@ public class Item {
     private int price;
     private int stockQuantity;
     private String sellerId;
-
     private String imageUrl;
-
     private List<String> categoryIds = new ArrayList<>();
+    private String description;
 
     //==비즈니스 로직==//
     public void addStock(int quantity) {
