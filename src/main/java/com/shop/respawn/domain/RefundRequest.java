@@ -6,14 +6,21 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+import static jakarta.persistence.FetchType.*;
+
 @Entity
 @Table(name = "refund_request")
 @Getter @Setter
 public class RefundRequest {
     @Id @GeneratedValue
+    @Column(name = "refund_request_id")
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = LAZY)
+    @JoinColumn(name = "buyer_id")
+    private Buyer buyer;
+
+    @OneToOne(fetch = LAZY)
     @JoinColumn(name = "order_item_id", unique = true)
     private OrderItem orderItem;
 

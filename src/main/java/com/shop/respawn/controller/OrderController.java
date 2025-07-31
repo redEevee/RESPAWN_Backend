@@ -3,6 +3,7 @@ package com.shop.respawn.controller;
 import com.shop.respawn.dto.OrderHistoryDto;
 import com.shop.respawn.dto.OrderRefundRequestDto;
 import com.shop.respawn.dto.OrderRequestDto;
+import com.shop.respawn.dto.RefundRequestDetailDto;
 import com.shop.respawn.service.OrderService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -209,7 +210,7 @@ public class OrderController {
     public ResponseEntity<?> getRefundRequestsOfSeller(HttpSession session) {
         try {
             Long sellerId = getSellerIdFromSession(session);
-            List<OrderHistoryDto> refundRequests = orderService.getRefundRequestsForSeller(sellerId);
+            List<RefundRequestDetailDto> refundRequests = orderService.getRefundRequestsForSeller(sellerId);
             return ResponseEntity.ok(refundRequests);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

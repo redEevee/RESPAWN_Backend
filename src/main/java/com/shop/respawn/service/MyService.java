@@ -3,6 +3,7 @@ package com.shop.respawn.service;
 import com.shop.respawn.domain.*;
 import com.shop.respawn.dto.AddressDto;
 import com.shop.respawn.repository.BuyerRepository;
+import com.shop.respawn.repository.OrderRepository;
 import com.shop.respawn.repository.SellerRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
@@ -19,6 +21,7 @@ public class MyService {
     private final BuyerRepository buyerRepository;
     private final SellerRepository sellerRepository;
     private final AddressService addressService;
+    private final OrderRepository orderRepository;
 
     private final EntityManager em;
 
@@ -101,6 +104,9 @@ public class MyService {
             em.persist(order);
         }
 
+        Order findOrder = orderRepository.findById(1L).get();
+        Delivery delivery = findOrder.getDelivery();
+        delivery.setStatus(DeliveryStatus.DELIVERED);
     }
 
 }

@@ -11,6 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.shop.respawn.dto.RefundRequestDetailDto.*;
 
 @Slf4j
 @Service
@@ -447,6 +450,8 @@ public class OrderService {
             throw new RuntimeException("해당 주문에 대한 권한이 없습니다.");
         }
 
+        Buyer findBuyer = buyerRepository.findById(buyerId).get();
+
         Optional<OrderItem> optionalOrderItem = order.getOrderItems()
                 .stream()
                 .filter(oi -> oi.getId().equals(orderItemId))
@@ -464,6 +469,7 @@ public class OrderService {
 
         RefundRequest refundRequest = new RefundRequest();
         refundRequest.setOrderItem(orderItem);
+        refundRequest.setBuyer(findBuyer);
         refundRequest.setRefundReason(reason);
         refundRequest.setRefundDetail(detail);
         refundRequest.setRequestedAt(LocalDateTime.now());
@@ -513,37 +519,47 @@ public class OrderService {
     /**
      * 판매자 환불 요청 확인
      */
-    @Transactional(readOnly = true)
-    public List<OrderHistoryDto> getRefundRequestsForSeller(Long sellerId) {
-        // 1. 판매자가 등록한 상품 아이디 목록 조회
+    @Transactional
+    public List<RefundRequestDetailDto> getRefundRequestsForSeller(Long sellerId) {
+        // 1. 판매자가 등록한 상품 id 목록 조회
         List<Item> sellerItems = itemService.getItemsBySellerId(String.valueOf(sellerId));
-        List<String> sellerItemIds = sellerItems.stream()
+        Set<String> sellerItemIds = sellerItems.stream()
                 .map(Item::getId)
-                .toList();
+                .collect(Collectors.toSet());
 
-        // 2. 주문들 중 환불 요청된 아이템 포함된 주문만 필터링
-        List<Order> allOrders = orderRepository.findAll(); // 또는 더 효율적 조회 쿼리 작성 가능
-        List<OrderHistoryDto> result = new ArrayList<>();
+        // 2. 모든 주문 조회 (실제 운영 환경에선 조건절로 최적화 권장)
+        List<Order> allOrders = orderRepository.findAll();
 
+        // 3. 결과 담을 리스트 초기화
+        List<RefundRequestDetailDto> result = new ArrayList<>();
+
+        // 4. 각 주문별로 주문자(buyer), 배송지(address), 주문아이템(orderItem) 순회
         for (Order order : allOrders) {
-            List<OrderItem> refundRequestedItems = order.getOrderItems().stream()
-                    .filter(oi -> oi.getRefundStatus() == RefundStatus.REQUESTED &&
-                            sellerItemIds.contains(oi.getItemId()))
-                    .toList();
+            Buyer buyer = order.getBuyer();
+            Address address = null;
+            if (order.getDelivery() != null && order.getDelivery().getAddress() != null) {
+                address = order.getDelivery().getAddress();
+            }
 
-            if (!refundRequestedItems.isEmpty()) {
-                List<OrderHistoryItemDto> itemDtos = new ArrayList<>();
-                for (OrderItem oi : refundRequestedItems) {
-                    try {
-                        Item item = itemService.getItemById(oi.getItemId());
-                        itemDtos.add(OrderHistoryItemDto.from(oi, item));
-                    } catch (Exception e) {
-                        log.error("판매자 환불 요청 조회 중 아이템 조회 실패 - itemId: {}", oi.getItemId(), e);
-                    }
+            for (OrderItem oi : order.getOrderItems()) {
+                // 5. 환불 요청 상태이고, 판매자 상품 목록에 포함된 아이템만 필터링
+                if (oi.getRefundStatus() == RefundStatus.REQUESTED && sellerItemIds.contains(oi.getItemId())) {
+                    // 6. 아이템 정보 조회
+                    Item item = itemService.getItemById(oi.getItemId());
+                    // 7. refundRequest 정보 가져오기
+                    RefundRequest refundRequest = oi.getRefundRequest();
+
+                    // 8. 내부 DTO 객체 생성
+                    BuyerInfo buyerInfo = new BuyerInfo(buyer);
+                    AddressInfo addressInfo = (address != null) ? new AddressInfo(address) : null;
+                    RefundInfo refundInfo = new RefundInfo(refundRequest);
+
+                    // 9. DTO 변환 후 결과에 추가
+                    result.add(new RefundRequestDetailDto(order, oi, item, buyerInfo, addressInfo, refundInfo));
                 }
-                result.add(new OrderHistoryDto(order, itemDtos));
             }
         }
+
         return result;
     }
 
