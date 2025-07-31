@@ -75,21 +75,25 @@ public class MyService {
         for (int i = 0; i < 6; i++) {
             LocalDateTime orderDate = baseDate.minusDays(i);
 
-            Delivery delivery = new Delivery();
-            delivery.setStatus(DeliveryStatus.READY);
-            delivery.setAddress(defaultAddress);
-
             Order order = new Order();
             order.setBuyer(buyer);
             order.setOrderDate(orderDate);
             order.setStatus(OrderStatus.PAID);
 
-            OrderItem oi3 = OrderItem.createOrderItem(item3, 50, 1);
-            order.addOrderItem(oi3);
+            Delivery delivery = new Delivery();
+            delivery.setAddress(defaultAddress);
+            delivery.setStatus(DeliveryStatus.READY);
 
             if (i % 3 == 0) {
                 OrderItem oi2 = OrderItem.createOrderItem(item2, 20, 2);
                 order.addOrderItem(oi2);
+                delivery.setOrderItem(oi2);
+                oi2.setDelivery(delivery);
+            } else {
+                OrderItem oi3 = OrderItem.createOrderItem(item3, 50, 1);
+                order.addOrderItem(oi3);
+                delivery.setOrderItem(oi3);
+                oi3.setDelivery(delivery);
             }
 
             int totalAmount = order.calculateTotalAmount();
