@@ -33,9 +33,10 @@ public class ReviewService {
             throw new RuntimeException("해당 주문 아이템에 대한 권한이 없습니다.");
         }
 
-        // 배송 완료 여부 확인
-        if (order.getDelivery() == null || order.getDelivery().getStatus() != DeliveryStatus.DELIVERED) {
-            throw new RuntimeException("배송이 완료된 주문에 대해서만 리뷰를 작성할 수 있습니다.");
+        // 배송 완료 여부 확인 - Order가 아닌 OrderItem의 Delivery에서 상태 확인
+        Delivery delivery = orderItem.getDelivery();
+        if (delivery == null || delivery.getStatus() != DeliveryStatus.DELIVERED) {
+            throw new RuntimeException("배송이 완료된 주문 아이템에 대해서만 리뷰를 작성할 수 있습니다.");
         }
 
         // 중복 리뷰 확인 (MongoDB)

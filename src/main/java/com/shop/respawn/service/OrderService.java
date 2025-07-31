@@ -153,9 +153,22 @@ public class OrderService {
         // 재고 확인
         validateStockFromOrderItems(order.getOrderItems());
 
+        // 배송지 주소 조회 및 권한 체크
+        Address address = addressRepository.findById(orderRequest.getAddressId())
+                .orElseThrow(() -> new RuntimeException("주소를 찾을 수 없습니다"));
+
+        for (OrderItem orderItem : order.getOrderItems()) {
+            Delivery delivery = new Delivery();
+            delivery.setAddress(address);
+            delivery.setStatus(DeliveryStatus.READY);
+            delivery.setOrderItem(orderItem);
+
+            orderItem.setDelivery(delivery);
+        }
+
         // 배송 정보 설정
-        Delivery delivery = createDeliveryWithAddressId(buyerId, orderRequest.getAddressId());
-        order.setDelivery(delivery);
+//        Delivery delivery = createDeliveryWithAddressId(buyerId, orderRequest.getAddressId());
+//        order.setDelivery(delivery);
 
         // 관련 정보 설정
         setPaymentInfoFromOrderItems(order, order.getOrderItems());
@@ -164,7 +177,7 @@ public class OrderService {
         reduceStockFromOrderItems(order.getOrderItems());
 
         // 주문 상태 주문 완료로 변경
-        order.setStatus(OrderStatus.ORDERED);
+        order.setStatus(OrderStatus.PAID);
 
         System.out.println("orderRequest = " + orderRequest.getCartItemIds());
 
@@ -184,7 +197,7 @@ public class OrderService {
         }
 
         // 최종 저장
-        Order savedOrder = orderRepository.save(order);
+        orderRepository.save(order);
 
     }
 
@@ -228,7 +241,6 @@ public class OrderService {
         order.setPgOrderId(pgOrderId);
         order.setOrderName(orderName);
         order.setTotalAmount(totalAmount);
-        order.setPaymentStatus("READY");
     }
 
     // OrderItem 기반 주문명 생성
@@ -533,15 +545,15 @@ public class OrderService {
         // 3. 결과 담을 리스트 초기화
         List<RefundRequestDetailDto> result = new ArrayList<>();
 
-        // 4. 각 주문별로 주문자(buyer), 배송지(address), 주문아이템(orderItem) 순회
+        // 4. 각 주문별로 주문자(buyer), 주문 아이템 순회
         for (Order order : allOrders) {
             Buyer buyer = order.getBuyer();
-            Address address = null;
-            if (order.getDelivery() != null && order.getDelivery().getAddress() != null) {
-                address = order.getDelivery().getAddress();
-            }
 
             for (OrderItem oi : order.getOrderItems()) {
+                // 주문아이템에 매핑된 배송 정보와 주소 획득
+                Delivery delivery = oi.getDelivery();
+                Address address = (delivery != null) ? delivery.getAddress() : null;
+
                 // 5. 환불 요청 상태이고, 판매자 상품 목록에 포함된 아이템만 필터링
                 if (oi.getRefundStatus() == RefundStatus.REQUESTED && sellerItemIds.contains(oi.getItemId())) {
                     // 6. 아이템 정보 조회
@@ -559,7 +571,6 @@ public class OrderService {
                 }
             }
         }
-
         return result;
     }
 
@@ -629,167 +640,6 @@ public class OrderService {
             }
         }
         return result;
-    }
-
-    /**
-     * 주문 취소 처리 (배송 상태 확인 추가)
-     */
-    @Transactional
-    public void processOrderCancel(Long orderId, Long buyerId) {
-        // 1. 주문 조회 및 권한 확인
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다"));
-
-        if (!order.getBuyer().getId().equals(buyerId)) {
-            throw new RuntimeException("해당 주문을 취소할 권한이 없습니다");
-        }
-
-        // 2. 취소 가능 상태 확인 (주문 상태 + 배송 상태)
-        if (!isCancellableStatus(order.getStatus())) {
-            throw new RuntimeException("취소가 불가능한 주문 상태입니다: " + order.getStatus());
-        }
-
-        // 3. 배송 상태 확인 (핵심 추가 부분)
-        if (!isCancellableDeliveryStatus(order)) {
-            throw new RuntimeException("배송이 시작된 상품은 취소할 수 없습니다. 배송 완료 후 환불을 신청해주세요.");
-        }
-
-        try {
-            // 4. 결제 상태에 따른 처리
-            if ("SUCCESS".equals(order.getPaymentStatus())) {
-                // 결제 완료된 경우 - 실제 결제 취소 처리 필요
-                processPaymentCancel(order);
-            }
-
-            // 5. 재고가 이미 차감되었다면 복원
-            if (needStockRestore(order.getStatus())) {
-                restoreStockFromOrder(order);
-            }
-
-            // 6. 주문 상태를 취소로 변경
-            order.setStatus(OrderStatus.CANCELED);
-            order.setPaymentStatus("CANCELED");
-
-            // 7. 주문 저장
-            orderRepository.save(order);
-
-            log.info("주문 취소 처리 완료 - orderId: {}, buyerId: {}", orderId, buyerId);
-
-        } catch (Exception e) {
-            log.error("주문 취소 처리 중 오류 발생 - orderId: {}, error: {}", orderId, e.getMessage());
-            throw new RuntimeException("주문 취소 처리 중 오류가 발생했습니다: " + e.getMessage());
-        }
-    }
-
-    /**
-     * 재고 복원이 필요한 상태인지 확인
-     */
-    private boolean needStockRestore(OrderStatus status) {
-        // TEMPORARY 상태는 재고 차감이 안되었으므로 복원 불필요
-        return status == OrderStatus.ORDERED || status == OrderStatus.PAID;
-    }
-
-    /**
-     * 결제 취소 처리
-     */
-    private void processPaymentCancel(Order order) {
-
-    }
-
-    /**
-     * 배송 상태 기준으로 취소 가능 여부 확인 (신규 추가)
-     */
-    private boolean isCancellableDeliveryStatus(Order order) {
-        // 배송 정보가 없는 경우 (아직 배송 준비 전) - 취소 가능
-        if (order.getDelivery() == null) {
-            return true;
-        }
-
-        DeliveryStatus deliveryStatus = order.getDelivery().getStatus();
-
-        // 배송 준비 상태에서만 취소 가능
-        // 배송 중이나 배송 완료 상태에서는 취소 불가
-        return deliveryStatus == DeliveryStatus.READY;
-    }
-
-    /**
-     * 취소 가능한 상태인지 확인 (기존 메서드 유지)
-     */
-    private boolean isCancellableStatus(OrderStatus status) {
-        // TEMPORARY: 임시 주문 (재고 차감 전)
-        // ORDERED: 주문 완료 (재고 차감됨, 결제 대기 중)
-        // PAID: 결제 완료 (배송 준비 단계)
-        return status == OrderStatus.TEMPORARY ||
-                status == OrderStatus.ORDERED ||
-                status == OrderStatus.PAID;
-    }
-
-    /**
-     * 취소 가능한 주문 목록 조회 (배송 상태 확인 추가)
-     */
-    @Transactional(readOnly = true)
-    public List<OrderHistoryDto> getCancellableOrders(Long buyerId) {
-        // TEMPORARY, ORDERED, PAID 상태의 주문들을 조회
-        List<Order> potentialCancellableOrders = orderRepository.findByBuyerIdAndStatusIn(
-                buyerId,
-                List.of(OrderStatus.TEMPORARY, OrderStatus.ORDERED, OrderStatus.PAID)
-        );
-
-        // 배송 상태까지 확인하여 실제 취소 가능한 주문만 필터링
-        List<Order> cancellableOrders = potentialCancellableOrders.stream()
-                .filter(this::isCancellableDeliveryStatus)
-                .toList();
-
-        List<OrderHistoryDto> orderHistoryDtos = new ArrayList<>();
-
-        for (Order order : cancellableOrders) {
-            List<OrderHistoryItemDto> itemDtos = new ArrayList<>();
-
-            for (OrderItem orderItem : order.getOrderItems()) {
-                try {
-                    Item item = itemService.getItemById(orderItem.getItemId());
-                    OrderHistoryItemDto itemDto = OrderHistoryItemDto.from(orderItem, item);
-                    itemDtos.add(itemDto);
-                } catch (Exception e) {
-                    log.error("취소 가능 주문 조회 중 아이템 정보 로드 실패 - itemId: {}", orderItem.getItemId());
-                }
-            }
-
-            OrderHistoryDto orderDto = new OrderHistoryDto(order, itemDtos);
-            orderHistoryDtos.add(orderDto);
-        }
-
-        return orderHistoryDtos;
-    }
-
-    /**
-     * 취소 내역 조회
-     */
-    @Transactional(readOnly = true)
-    public List<OrderHistoryDto> getCancelHistory(Long buyerId) {
-        List<Order> cancelledOrders = orderRepository.findByBuyer_IdAndStatusOrderByOrderDateDesc(
-                buyerId, OrderStatus.CANCELED);
-
-        List<OrderHistoryDto> cancelHistoryDtos = new ArrayList<>();
-
-        for (Order order : cancelledOrders) {
-            List<OrderHistoryItemDto> itemDtos = new ArrayList<>();
-
-            for (OrderItem orderItem : order.getOrderItems()) {
-                try {
-                    Item item = itemService.getItemById(orderItem.getItemId());
-                    OrderHistoryItemDto itemDto = OrderHistoryItemDto.from(orderItem, item);
-                    itemDtos.add(itemDto);
-                } catch (Exception e) {
-                    log.error("취소 내역 조회 중 아이템 정보 로드 실패 - itemId: {}", orderItem.getItemId());
-                }
-            }
-
-            OrderHistoryDto orderDto = new OrderHistoryDto(order, itemDtos);
-            cancelHistoryDtos.add(orderDto);
-        }
-
-        return cancelHistoryDtos;
     }
 
     /**

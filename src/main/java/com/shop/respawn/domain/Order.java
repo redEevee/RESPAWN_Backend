@@ -31,9 +31,9 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = ALL)
     private List<CartItem> cartItems = new ArrayList<CartItem>();
 
-    @OneToOne(cascade = ALL, fetch = LAZY)
-    @JoinColumn(name = "delivery_id")
-    private Delivery delivery;
+//    @OneToOne(cascade = ALL, fetch = LAZY)
+//    @JoinColumn(name = "delivery_id")
+//    private Delivery delivery;
 
     private LocalDateTime orderDate;
 
@@ -59,17 +59,17 @@ public class Order {
         orderItem.setOrder(this);
     }
 
-    public void setDelivery(Delivery delivery) {
-        this.delivery = delivery;
-        delivery.setOrder(this);
-    }
+//    public void setDelivery(Delivery delivery) {
+//        this.delivery = delivery;
+//        delivery.setOrder(this);
+//    }
 
     //==생성 메서드==//
     public static Order createOrder(Buyer buyer, Delivery delivery,
                                     OrderItem... orderItems) {
         Order order = new Order();
         order.setBuyer(buyer);
-        order.setDelivery(delivery);
+//        order.setDelivery(delivery);
         for (OrderItem orderItem : orderItems) {
             order.addOrderItem(orderItem);
         }

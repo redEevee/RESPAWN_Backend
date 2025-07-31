@@ -24,11 +24,15 @@ public class OrderItem {
     private int orderPrice; //주문 가격
     private int count; //주문 수량
 
+    @OneToOne(cascade = ALL, fetch = LAZY)
+    @JoinColumn(name = "delivery_id")
+    private Delivery delivery;
+
     // 환불 상태 추가 (예: REFUNDED, REQUESTED, NONE 등)
     @Enumerated(EnumType.STRING)
     private RefundStatus refundStatus = RefundStatus.NONE;
 
-    @OneToOne(mappedBy = "orderItem", cascade = ALL, fetch = LAZY, orphanRemoval = true)
+    @OneToOne(mappedBy = "orderItem", cascade = ALL, orphanRemoval = true)
     private RefundRequest refundRequest;
 
     //==생성 메서드==//

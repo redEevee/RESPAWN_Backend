@@ -81,7 +81,6 @@ public class MyService {
 
             Order order = new Order();
             order.setBuyer(buyer);
-            order.setDelivery(delivery);
             order.setOrderDate(orderDate);
             order.setStatus(OrderStatus.PAID);
 
@@ -103,10 +102,6 @@ public class MyService {
             em.persist(delivery);
             em.persist(order);
         }
-
-        Order findOrder = orderRepository.findById(1L).get();
-        Delivery delivery = findOrder.getDelivery();
-        delivery.setStatus(DeliveryStatus.DELIVERED);
     }
 
 }
