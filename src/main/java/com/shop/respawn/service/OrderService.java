@@ -439,7 +439,7 @@ public class OrderService {
      * 아이템 단위 환불 요청
      */
     @Transactional
-    public void requestRefund(Long orderId, Long orderItemId, Long buyerId) {
+    public void requestRefund(Long orderId, Long orderItemId, Long buyerId, String reason, String detail) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다."));
 
@@ -461,6 +461,13 @@ public class OrderService {
         if (orderItem.getRefundStatus() != RefundStatus.NONE) {
             throw new RuntimeException("이미 환불 요청 또는 완료된 아이템입니다.");
         }
+
+        RefundRequest refundRequest = new RefundRequest();
+        refundRequest.setOrderItem(orderItem);
+        refundRequest.setRefundReason(reason);
+        refundRequest.setRefundDetail(detail);
+        refundRequest.setRequestedAt(LocalDateTime.now());
+        orderItem.setRefundRequest(refundRequest);
 
         // 환불 요청 상태로 변경
         orderItem.setRefundStatus(RefundStatus.REQUESTED);

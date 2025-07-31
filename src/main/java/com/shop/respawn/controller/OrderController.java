@@ -1,6 +1,7 @@
 package com.shop.respawn.controller;
 
 import com.shop.respawn.dto.OrderHistoryDto;
+import com.shop.respawn.dto.OrderRefundRequestDto;
 import com.shop.respawn.dto.OrderRequestDto;
 import com.shop.respawn.service.OrderService;
 import jakarta.servlet.http.HttpSession;
@@ -175,11 +176,12 @@ public class OrderController {
     public ResponseEntity<?> requestRefund(
             @PathVariable Long orderId,
             @PathVariable Long orderItemId,
+            @RequestBody OrderRefundRequestDto refundDto,
             HttpSession session) {
 
         try {
             Long buyerId = getBuyerIdFromSession(session); // 기존 세션에서 구매자 ID 조회 메서드
-            orderService.requestRefund(orderId, orderItemId, buyerId);
+            orderService.requestRefund(orderId, orderItemId, buyerId, refundDto.getReason(), refundDto.getDetail());
             return ResponseEntity.ok(Map.of("message", "해당 아이템의 환불 요청이 완료되었습니다."));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

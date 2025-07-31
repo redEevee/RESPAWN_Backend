@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import static jakarta.persistence.CascadeType.*;
+import static jakarta.persistence.FetchType.*;
+
 @Entity
 @Table(name = "order_item")
 @Getter @Setter
@@ -13,7 +16,7 @@ public class OrderItem {
     @Column(name = "order_item_id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "order_id")
     private Order order; //주문
 
@@ -24,6 +27,9 @@ public class OrderItem {
     // 환불 상태 추가 (예: REFUNDED, REQUESTED, NONE 등)
     @Enumerated(EnumType.STRING)
     private RefundStatus refundStatus = RefundStatus.NONE;
+
+    @OneToOne(mappedBy = "orderItem", cascade = ALL, fetch = LAZY, orphanRemoval = true)
+    private RefundRequest refundRequest;
 
     //==생성 메서드==//
     public static OrderItem createOrderItem(Item item, int orderPrice, int count) {

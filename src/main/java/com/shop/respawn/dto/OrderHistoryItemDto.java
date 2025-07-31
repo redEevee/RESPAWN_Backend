@@ -17,6 +17,9 @@ public class OrderHistoryItemDto {
     private String imageUrl;     // 이미지
     private String refundStatus; // 문자열로 환불 상태 전달
 
+    private String refundReason;      // 환불 사유
+    private String refundDetail;      // 상세 내역
+
     // 생성자
     private OrderHistoryItemDto() {
     }
@@ -30,6 +33,12 @@ public class OrderHistoryItemDto {
         dto.setCount(orderItem.getCount());
         dto.setImageUrl(item.getImageUrl());
         dto.setRefundStatus(orderItem.getRefundStatus().name());
+
+        if(orderItem.getRefundRequest() != null) {
+            dto.setRefundReason(orderItem.getRefundRequest().getRefundReason());
+            dto.setRefundDetail(orderItem.getRefundRequest().getRefundDetail());
+        }
+
         return dto;
     }
 }
