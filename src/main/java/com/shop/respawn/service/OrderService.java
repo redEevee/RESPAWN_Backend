@@ -643,6 +643,42 @@ public class OrderService {
     }
 
     /**
+     * 판매자가 임시로 배송 완료 처리
+     */
+    @Transactional
+    public void completeDelivery(Long orderItemId, Long sellerId) {
+        // 주문 아이템 조회
+        OrderItem orderItem = orderItemRepository.findById(orderItemId)
+                .orElseThrow(() -> new RuntimeException("주문 아이템을 찾을 수 없습니다: " + orderItemId));
+
+        // 판매자 권한 검증: 주문 아이템 상품의 판매자가 맞는지 확인
+        Item item = itemService.getItemById(orderItem.getItemId());
+        if (!item.getSellerId().equals(String.valueOf(sellerId))) {
+            throw new RuntimeException("해당 판매자가 주문 아이템의 판매자가 아닙니다.");
+        }
+
+        // 배송 정보 존재 확인
+        Delivery delivery = orderItem.getDelivery();
+        if (delivery == null) {
+            throw new RuntimeException("배송 정보가 존재하지 않습니다.");
+        }
+
+        // 이미 배송 완료 상태인지 확인
+        if (delivery.getStatus() == DeliveryStatus.DELIVERED) {
+            throw new RuntimeException("이미 배송 완료된 주문입니다.");
+        }
+
+        // 배송 상태 변경
+        delivery.setStatus(DeliveryStatus.DELIVERED);
+
+        // 필요시 주문 상태도 변경 가능 (예: 배송 완료 후 결제 완료 상태 유지 또는 별도 상태 변경)
+
+        // 저장
+        orderItemRepository.save(orderItem);
+        // Delivery는 cascade 옵션에 따라 자동으로 저장됨
+    }
+
+    /**
      * 카트아이템에서 오더아이템으로 변환
      */
     private OrderItem convertCartItemToOrderItem(CartItem cartItem) {

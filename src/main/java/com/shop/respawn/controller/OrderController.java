@@ -264,6 +264,25 @@ public class OrderController {
     }
 
     /**
+     * 배송 완료 처리 메서드
+     */
+    @PostMapping("/seller/order-items/{orderItemId}/complete-delivery")
+    public ResponseEntity<?> completeDelivery(
+            @PathVariable Long orderItemId,
+            HttpSession session) {
+        try {
+            Long sellerId = getSellerIdFromSession(session);
+            orderService.completeDelivery(orderItemId, sellerId);
+            return ResponseEntity.ok(Map.of(
+                    "message", "배송이 성공적으로 완료 처리되었습니다.",
+                    "orderItemId", orderItemId
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
      * 세션에서 sellerId를 가져오는 헬퍼 메서드
      */
     private Long getSellerIdFromSession(HttpSession session) {
