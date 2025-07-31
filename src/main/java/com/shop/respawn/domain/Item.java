@@ -17,17 +17,17 @@ public class Item {
     private String id;
 
     private String name;
-    private String description;
+    @Column(columnDefinition = "TEXT")
     private String deliveryType;
     private String deliveryFee;
     private String company;
+    private Long companyNumber;
     private int price;
     private int stockQuantity;
     private String sellerId;
-
     private String imageUrl;
-
     private List<String> categoryIds = new ArrayList<>();
+    private String description;
 
     //==비즈니스 로직==//
     public void addStock(int quantity) {

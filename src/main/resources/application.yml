@@ -1,3 +1,10 @@
 spring:
+  jpa:
+    open-in-view: true
   config:
     import: classpath:application-db.yml, classpath:application-security.yml
+
+server:
+  servlet:
+    session:
+      persistent: false

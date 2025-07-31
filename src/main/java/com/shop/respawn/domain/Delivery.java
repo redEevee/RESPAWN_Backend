@@ -15,8 +15,12 @@ public class Delivery {
     @Column(name = "delivery_id")
     private Long id;
 
-    @OneToOne(mappedBy = "delivery", fetch = LAZY)
-    private Order order;
+//    @OneToOne(mappedBy = "delivery", fetch = LAZY)
+//    private Order order;
+
+    // 새로 추가 : OrderItem과 1:1 매핑
+    @OneToOne(mappedBy = "delivery")
+    private OrderItem orderItem;
 
     @ManyToOne(fetch = LAZY)  // 다대일 관계로 변경
     @JoinColumn(name = "address_id")

@@ -13,19 +13,20 @@ import java.util.List;
 public class ItemService {
     private final ItemRepository itemRepository;
 
-    public Item registerItem(ItemDto itemDto) {
+    public Item registerItem(ItemDto itemDto, Long sellerId) {
 
         Item newItem = new Item();
         newItem.setName(itemDto.getName());
-        newItem.setDescription(itemDto.getDescription());
         newItem.setDeliveryType(itemDto.getDeliveryType());
         newItem.setDeliveryFee(itemDto.getDeliveryFee());
         newItem.setCompany(itemDto.getCompany());
+        newItem.setCompanyNumber(itemDto.getCompanyNumber());
         newItem.setPrice(itemDto.getPrice());
         newItem.setStockQuantity(itemDto.getStockQuantity());
-        newItem.setSellerId(itemDto.getSellerId());
+        newItem.setSellerId(String.valueOf(sellerId));
         newItem.setImageUrl(itemDto.getImageUrl()); // 대표 사진 경로만 저장
         newItem.setCategoryIds(itemDto.getCategoryIds());
+        newItem.setDescription(itemDto.getDescription());
 
         return itemRepository.save(newItem); // MongoDB에 저장
     }
@@ -37,5 +38,9 @@ public class ItemService {
 
     public List<Item> getAllItems() {
         return itemRepository.findAll();
+    }
+
+    public List<Item> getItemsBySellerId(String sellerId) {
+        return itemRepository.findBySellerId(sellerId);
     }
 }

@@ -1,21 +1,19 @@
 package com.shop.respawn.service;
 
 import com.shop.respawn.domain.*;
-import com.shop.respawn.dto.OrderHistoryDto;
-import com.shop.respawn.dto.OrderHistoryItemDto;
-import com.shop.respawn.dto.OrderItemDetailDto;
-import com.shop.respawn.dto.OrderRequestDto;
+import com.shop.respawn.dto.*;
 import com.shop.respawn.repository.*;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.shop.respawn.dto.RefundRequestDetailDto.*;
 
 @Slf4j
 @Service
@@ -29,6 +27,7 @@ public class OrderService {
     private final ItemRepository itemRepository;
     private final AddressRepository addressRepository;
     private final ItemService itemService;
+    private final OrderItemRepository orderItemRepository;
 
     /**
      * 임시 주문 상세 조회
@@ -59,6 +58,9 @@ public class OrderService {
 
         // 응답 데이터 구성
         Map<String, Object> response = new HashMap<>();
+        response.put("name", order.getBuyer().getName());
+        response.put("phoneNumber", order.getBuyer().getPhoneNumber());
+        response.put("email", order.getBuyer().getEmail());
         response.put("orderId", order.getId());
         response.put("orderItems", orderItemDetails); // DTO 객체 그대로 반환
         response.put("totalAmount", totalAmount);
@@ -97,7 +99,7 @@ public class OrderService {
         Order order = new Order();
         order.setBuyer(buyer);
         order.setOrderDate(LocalDateTime.now());
-        order.setStatus(OrderStatus.ORDERED);
+        order.setStatus(OrderStatus.TEMPORARY);
 
         for (OrderItem orderItem : orderItemArray) {
             order.addOrderItem(orderItem);
@@ -128,7 +130,7 @@ public class OrderService {
         Order order = new Order();
         order.setBuyer(buyer);
         order.setOrderDate(LocalDateTime.now());
-        order.setStatus(OrderStatus.ORDERED); // 또는 임시 상태가 있으면 사용
+        order.setStatus(OrderStatus.TEMPORARY); // 또는 임시 상태가 있으면 사용
 
         // 주문 아이템 생성
         OrderItem orderItem = new OrderItem();
@@ -154,21 +156,38 @@ public class OrderService {
         // 재고 확인
         validateStockFromOrderItems(order.getOrderItems());
 
-        // 배송 정보 설정
-        Delivery delivery = createDeliveryWithAddressId(buyerId, orderRequest.getAddressId());
-        order.setDelivery(delivery);
+        // 배송지 주소 조회 및 권한 체크
+        Address address = addressRepository.findById(orderRequest.getAddressId())
+                .orElseThrow(() -> new RuntimeException("주소를 찾을 수 없습니다"));
 
-        // 토스페이먼츠 관련 정보 설정
-        setTossPaymentInfoFromOrderItems(order, order.getOrderItems());
+        for (OrderItem orderItem : order.getOrderItems()) {
+            Delivery delivery = new Delivery();
+            delivery.setAddress(address);
+            delivery.setStatus(DeliveryStatus.READY);
+            delivery.setOrderItem(orderItem);
+
+            orderItem.setDelivery(delivery);
+        }
+
+        // 배송 정보 설정
+//        Delivery delivery = createDeliveryWithAddressId(buyerId, orderRequest.getAddressId());
+//        order.setDelivery(delivery);
+
+        // 관련 정보 설정
+        setPaymentInfoFromOrderItems(order, order.getOrderItems());
 
         // 재고 차감
         reduceStockFromOrderItems(order.getOrderItems());
 
-        // 최종 저장
-        Order savedOrder = orderRepository.save(order);
+        // 주문 상태 주문 완료로 변경
+        order.setStatus(OrderStatus.PAID);
+
+        System.out.println("orderRequest = " + orderRequest.getCartItemIds());
 
         // 장바구니에서 주문된 아이템들 제거
-        if (orderRequest.getCartItemIds() != null && !orderRequest.getCartItemIds().isEmpty()) {
+        if (orderRequest.getCartItemIds() != null &&
+                !orderRequest.getCartItemIds().isEmpty() &&
+                orderRequest.getCartItemIds().stream().anyMatch(Objects::nonNull)) {
             Cart cart = cartRepository.findByBuyerId(buyerId)
                     .orElseThrow(() -> new RuntimeException("장바구니를 찾을 수 없습니다"));
 
@@ -179,6 +198,9 @@ public class OrderService {
             );
             cartRepository.save(cart);
         }
+
+        // 최종 저장
+        orderRepository.save(order);
 
     }
 
@@ -205,8 +227,8 @@ public class OrderService {
         }
     }
 
-    // OrderItem 기반 토스페이먼츠 정보 설정
-    private void setTossPaymentInfoFromOrderItems(Order order, List<OrderItem> orderItems) {
+    // OrderItem 기반 정보 설정
+    private void setPaymentInfoFromOrderItems(Order order, List<OrderItem> orderItems) {
         // 총 금액 계산
         int totalAmount = orderItems.stream()
                 .mapToInt(orderItem -> orderItem.getOrderPrice() * orderItem.getCount())
@@ -215,14 +237,13 @@ public class OrderService {
         // 주문명 생성
         String orderName = generateOrderNameFromOrderItems(orderItems);
 
-        // tossOrderId 생성
-        String tossOrderId = "ORDER_" + order.getId() + "_" + System.currentTimeMillis();
+        // pgOrderId 생성
+        String pgOrderId = "ORDER_" + order.getId() + "_" + System.currentTimeMillis();
 
-        // 토스페이먼츠 필드 설정
-        order.setTossOrderId(tossOrderId);
+        // 필드 설정
+        order.setPgOrderId(pgOrderId);
         order.setOrderName(orderName);
         order.setTotalAmount(totalAmount);
-        order.setPaymentStatus("READY");
     }
 
     // OrderItem 기반 주문명 생성
@@ -325,7 +346,7 @@ public class OrderService {
     }
 
     public OrderHistoryDto getLatestOrderByBuyerId(Long buyerId) {
-        Order order = orderRepository.findTop1ByBuyerIdOrderByOrderDateDesc(buyerId);
+        Order order = orderRepository.findTop1ByBuyer_IdAndStatusOrderByOrderDateDesc(buyerId, OrderStatus.PAID);
 
         if (order == null) {  // 주문 없으면 null임
             return null;       // null 반환해서 컨트롤러에서 204 No Content 처리 가능
@@ -341,14 +362,328 @@ public class OrderService {
         return new OrderHistoryDto(order, itemDtos);
     }
 
+    /**
+     * 로그인한 구매자의 주문 내역 단건 조회
+     */
+    public OrderHistoryDto getOrderDetail(Long orderId, Long buyerId) {
+        Order order = orderRepository.findByIdAndBuyerIdWithItems(orderId, buyerId)
+                .orElseThrow(() -> new EntityNotFoundException("주문을 찾을 수 없습니다."));
 
-//    @Transactional(readOnly = true)
-//    public Long getBuyerIdByOrderId(Long orderId) {
-//        Order order = orderRepository.findById(orderId)
-//                .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다: " + orderId));
-//        return order.getBuyer().getId();
-//    }
+        // 주문 있으면 DTO 변환 진행
+        List<OrderHistoryItemDto> itemDtos = order.getOrderItems().stream()
+                .map(orderItem -> {
+                    Item item = itemService.getItemById(orderItem.getItemId());
+                    return OrderHistoryItemDto.from(orderItem, item);
+                }).toList();
 
+        return new OrderHistoryDto(order, itemDtos);
+    }
+
+    /**
+     * 현재 사용자의 모든 임시 주문 삭제 (TEMPORARY 상태인 주문들을 일괄 삭제)
+     */
+    @Transactional
+    public int deleteAllTemporaryOrders(Long buyerId) {
+        // 해당 구매자의 TEMPORARY 상태인 모든 주문 조회
+        List<Order> temporaryOrders = orderRepository.findByBuyerIdAndStatus(buyerId, OrderStatus.TEMPORARY);
+
+        if (temporaryOrders.isEmpty()) {
+            log.info("삭제할 임시 주문이 없습니다. buyerId: {}", buyerId);
+            return 0;
+        }
+
+        // 모든 임시 주문 삭제
+        orderRepository.deleteAll(temporaryOrders);
+
+        int deletedCount = temporaryOrders.size();
+        log.info("임시 주문 {}건이 삭제되었습니다. buyerId: {}", deletedCount, buyerId);
+
+        return deletedCount;
+    }
+
+    /**
+     * 주문에서 재고 복원
+     */
+    private void restoreStockFromOrder(Order order) {
+        for (OrderItem orderItem : order.getOrderItems()) {
+            Item item = itemRepository.findById(orderItem.getItemId())
+                    .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + orderItem.getItemId()));
+
+            // 재고 복원
+            item.addStock(orderItem.getCount());
+            itemRepository.save(item);
+
+            log.debug("재고 복원 완료 - itemId: {}, quantity: {}", item.getId(), orderItem.getCount());
+        }
+    }
+
+    /**
+     * 환불 가능한 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<OrderHistoryDto> getRefundableOrderItems(Long buyerId) {
+        // 결제 성공(SUCCESS), 배송 준비/배송 중 등 환불 가능한 주문만 조회(상황에 따라 필터링 확장 가능)
+        List<Order> orders = orderRepository.findByBuyerIdAndStatusInAndPaymentStatus(
+                buyerId,
+                List.of(OrderStatus.ORDERED, OrderStatus.PAID),
+                "SUCCESS"
+        );
+
+        List<OrderHistoryDto> result = new ArrayList<>();
+
+        for (Order order : orders) {
+            // 환불 요청 또는 완료가 아닌 아이템만 필터링
+            List<OrderItem> refundableItems = order.getOrderItems().stream()
+                    .filter(oi -> oi.getRefundStatus() == RefundStatus.NONE)
+                    .toList();
+
+            if (!refundableItems.isEmpty()) {
+                List<OrderHistoryItemDto> itemDtos = new ArrayList<>();
+                for (OrderItem oi : refundableItems) {
+                    try {
+                        Item item = itemService.getItemById(oi.getItemId());
+                        itemDtos.add(OrderHistoryItemDto.from(oi, item));
+                    } catch (Exception e) {
+                        log.error("환불 가능 내역 중 아이템 조회 오류 : itemId={}", oi.getItemId(), e);
+                    }
+                }
+                result.add(new OrderHistoryDto(order, itemDtos));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 아이템 단위 환불 요청
+     */
+    @Transactional
+    public void requestRefund(Long orderId, Long orderItemId, Long buyerId, String reason, String detail) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다."));
+
+        if (!order.getBuyer().getId().equals(buyerId)) {
+            throw new RuntimeException("해당 주문에 대한 권한이 없습니다.");
+        }
+
+        Buyer findBuyer = buyerRepository.findById(buyerId).get();
+
+        Optional<OrderItem> optionalOrderItem = order.getOrderItems()
+                .stream()
+                .filter(oi -> oi.getId().equals(orderItemId))
+                .findFirst();
+
+        if (optionalOrderItem.isEmpty()) {
+            throw new RuntimeException("해당 주문 아이템을 찾을 수 없습니다.");
+        }
+
+        OrderItem orderItem = optionalOrderItem.get();
+
+        if (orderItem.getRefundStatus() != RefundStatus.NONE) {
+            throw new RuntimeException("이미 환불 요청 또는 완료된 아이템입니다.");
+        }
+
+        RefundRequest refundRequest = new RefundRequest();
+        refundRequest.setOrderItem(orderItem);
+        refundRequest.setBuyer(findBuyer);
+        refundRequest.setRefundReason(reason);
+        refundRequest.setRefundDetail(detail);
+        refundRequest.setRequestedAt(LocalDateTime.now());
+        orderItem.setRefundRequest(refundRequest);
+
+        // 환불 요청 상태로 변경
+        orderItem.setRefundStatus(RefundStatus.REQUESTED);
+
+        orderRepository.save(order);
+    }
+
+    /**
+     * 요청한 환불 목록 보기
+     */
+    @Transactional(readOnly = true)
+    public List<OrderHistoryDto> getRefundRequestedItems(Long buyerId) {
+        // 해당 buyer의 모든 주문을 가져온다
+        List<Order> orders = orderRepository.findByBuyer_IdOrderByOrderDateDesc(buyerId);
+
+        List<OrderHistoryDto> refundRequestedOrders = new ArrayList<>();
+
+        for (Order order : orders) {
+            // 주문 아이템 중 환불 요청 또는 완료 상태인 아이템 필터링
+            List<OrderItem> refundItems = order.getOrderItems().stream()
+                    .filter(oi -> oi.getRefundStatus() == RefundStatus.REQUESTED || oi.getRefundStatus() == RefundStatus.REFUNDED)
+                    .toList();
+
+            if (!refundItems.isEmpty()) {
+                // 각 아이템에 대해 Item 정보 조회 및 DTO 변환
+                List<OrderHistoryItemDto> itemDtos = new ArrayList<>();
+                for (OrderItem oi : refundItems) {
+                    try {
+                        Item item = itemService.getItemById(oi.getItemId());
+                        OrderHistoryItemDto dto = OrderHistoryItemDto.from(oi, item);
+                        itemDtos.add(dto);
+                    } catch (Exception e) {
+                        // 예외 로깅 및 무시 또는 기본값 처리
+                        log.error("환불 내역 아이템 조회 중 오류: itemId={}", oi.getItemId(), e);
+                    }
+                }
+                refundRequestedOrders.add(new OrderHistoryDto(order, itemDtos));
+            }
+        }
+        return refundRequestedOrders;
+    }
+
+    /**
+     * 판매자 환불 요청 확인
+     */
+    @Transactional
+    public List<RefundRequestDetailDto> getRefundRequestsForSeller(Long sellerId) {
+        // 1. 판매자가 등록한 상품 id 목록 조회
+        List<Item> sellerItems = itemService.getItemsBySellerId(String.valueOf(sellerId));
+        Set<String> sellerItemIds = sellerItems.stream()
+                .map(Item::getId)
+                .collect(Collectors.toSet());
+
+        // 2. 모든 주문 조회 (실제 운영 환경에선 조건절로 최적화 권장)
+        List<Order> allOrders = orderRepository.findAll();
+
+        // 3. 결과 담을 리스트 초기화
+        List<RefundRequestDetailDto> result = new ArrayList<>();
+
+        // 4. 각 주문별로 주문자(buyer), 주문 아이템 순회
+        for (Order order : allOrders) {
+            Buyer buyer = order.getBuyer();
+
+            for (OrderItem oi : order.getOrderItems()) {
+                // 주문아이템에 매핑된 배송 정보와 주소 획득
+                Delivery delivery = oi.getDelivery();
+                Address address = (delivery != null) ? delivery.getAddress() : null;
+
+                // 5. 환불 요청 상태이고, 판매자 상품 목록에 포함된 아이템만 필터링
+                if (oi.getRefundStatus() == RefundStatus.REQUESTED && sellerItemIds.contains(oi.getItemId())) {
+                    // 6. 아이템 정보 조회
+                    Item item = itemService.getItemById(oi.getItemId());
+                    // 7. refundRequest 정보 가져오기
+                    RefundRequest refundRequest = oi.getRefundRequest();
+
+                    // 8. 내부 DTO 객체 생성
+                    BuyerInfo buyerInfo = new BuyerInfo(buyer);
+                    AddressInfo addressInfo = (address != null) ? new AddressInfo(address) : null;
+                    RefundInfo refundInfo = new RefundInfo(refundRequest);
+
+                    // 9. DTO 변환 후 결과에 추가
+                    result.add(new RefundRequestDetailDto(order, oi, item, buyerInfo, addressInfo, refundInfo));
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 판매자 환불 요청 완료
+     */
+    @Transactional
+    public void completeRefund(Long orderItemId, Long sellerId) {
+        // 주문 아이템 조회
+        OrderItem orderItem = orderItemRepository.findById(orderItemId)
+                .orElseThrow(() -> new RuntimeException("주문 아이템을 찾을 수 없습니다: " + orderItemId));
+
+        // 판매자 권한 검증: 해당 주문 아이템의 상품이 sellerId가 맞는지 확인
+        Item item = itemService.getItemById(orderItem.getItemId());
+        if (!item.getSellerId().equals(String.valueOf(sellerId))) {
+            throw new RuntimeException("해당 판매자가 주문 아이템의 판매자가 아닙니다.");
+        }
+
+        // 환불 상태가 요청된 상태인지 확인
+        if (orderItem.getRefundStatus() != RefundStatus.REQUESTED) {
+            throw new RuntimeException("현재 환불 요청 상태가 아닙니다.");
+        }
+
+        // 환불 상태 변경: REFUNDED
+        orderItem.setRefundStatus(RefundStatus.REFUNDED);
+        orderItemRepository.save(orderItem);
+
+        // 재고 복원 (필요한 경우)
+        item.addStock(orderItem.getCount());
+        itemRepository.save(item);
+
+        // (필요시) 주문 상태 또는 결제 상태 업데이트 등 추가 처리 가능
+    }
+
+    /**
+     * 환불 완료된 주문 아이템 조회 메서드
+     */
+    @Transactional(readOnly = true)
+    public List<OrderHistoryDto> getCompletedRefunds(Long sellerId) {
+        // 판매자 아이디로 등록한 상품들 조회
+        List<Item> sellerItems = itemService.getItemsBySellerId(String.valueOf(sellerId));
+        List<String> sellerItemIds = sellerItems.stream()
+                .map(Item::getId)
+                .toList();
+
+        List<Order> allOrders = orderRepository.findAll(); // 실제 운영시 최적화 필요
+        List<OrderHistoryDto> result = new ArrayList<>();
+
+        for (Order order : allOrders) {
+            // 환불상태가 REFUNDED 이면서 판매자 상품인 주문 아이템만 필터
+            List<OrderItem> refundedItems = order.getOrderItems().stream()
+                    .filter(oi -> oi.getRefundStatus() == RefundStatus.REFUNDED
+                            && sellerItemIds.contains(oi.getItemId()))
+                    .toList();
+
+            if (!refundedItems.isEmpty()) {
+                List<OrderHistoryItemDto> itemDtos = new ArrayList<>();
+                for (OrderItem oi : refundedItems) {
+                    try {
+                        Item item = itemService.getItemById(oi.getItemId());
+                        itemDtos.add(OrderHistoryItemDto.from(oi, item));
+                    } catch (Exception e) {
+                        log.error("환불 완료 내역 중 아이템 조회 오류 - itemId: {}", oi.getItemId(), e);
+                    }
+                }
+                result.add(new OrderHistoryDto(order, itemDtos));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 판매자가 임시로 배송 완료 처리
+     */
+    @Transactional
+    public void completeDelivery(Long orderItemId, Long sellerId) {
+        // 주문 아이템 조회
+        OrderItem orderItem = orderItemRepository.findById(orderItemId)
+                .orElseThrow(() -> new RuntimeException("주문 아이템을 찾을 수 없습니다: " + orderItemId));
+
+        // 판매자 권한 검증: 주문 아이템 상품의 판매자가 맞는지 확인
+        Item item = itemService.getItemById(orderItem.getItemId());
+        if (!item.getSellerId().equals(String.valueOf(sellerId))) {
+            throw new RuntimeException("해당 판매자가 주문 아이템의 판매자가 아닙니다.");
+        }
+
+        // 배송 정보 존재 확인
+        Delivery delivery = orderItem.getDelivery();
+        if (delivery == null) {
+            throw new RuntimeException("배송 정보가 존재하지 않습니다.");
+        }
+
+        // 이미 배송 완료 상태인지 확인
+        if (delivery.getStatus() == DeliveryStatus.DELIVERED) {
+            throw new RuntimeException("이미 배송 완료된 주문입니다.");
+        }
+
+        // 배송 상태 변경
+        delivery.setStatus(DeliveryStatus.DELIVERED);
+
+        // 필요시 주문 상태도 변경 가능 (예: 배송 완료 후 결제 완료 상태 유지 또는 별도 상태 변경)
+
+        // 저장
+        orderItemRepository.save(orderItem);
+        // Delivery는 cascade 옵션에 따라 자동으로 저장됨
+    }
+
+    /**
+     * 카트아이템에서 오더아이템으로 변환
+     */
     private OrderItem convertCartItemToOrderItem(CartItem cartItem) {
         OrderItem orderItem = new OrderItem();
         orderItem.setItemId(cartItem.getItemId());

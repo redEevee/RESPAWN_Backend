@@ -31,22 +31,20 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = ALL)
     private List<CartItem> cartItems = new ArrayList<CartItem>();
 
-    @OneToOne(cascade = ALL, fetch = LAZY)
-    @JoinColumn(name = "delivery_id")
-    private Delivery delivery;
+//    @OneToOne(cascade = ALL, fetch = LAZY)
+//    @JoinColumn(name = "delivery_id")
+//    private Delivery delivery;
 
     private LocalDateTime orderDate;
 
     @Enumerated(STRING)
     private OrderStatus status;
 
-    private String tossOrderId;    // 토스페이먼츠용 주문번호
+    private String pgOrderId;    // 토스페이먼츠용 주문번호
 
     private String orderName;      // 구매상품명 (예: "상품명 외 2건")
 
     private Integer totalAmount;   // 총 결제 금액
-
-    private String paymentKey;     // 토스페이먼츠 결제 키
 
     private String paymentStatus;  // 결제 상태 (READY, SUCCESS, FAIL 등)
 
@@ -61,23 +59,22 @@ public class Order {
         orderItem.setOrder(this);
     }
 
-    public void setDelivery(Delivery delivery) {
-        this.delivery = delivery;
-        delivery.setOrder(this);
-    }
+//    public void setDelivery(Delivery delivery) {
+//        this.delivery = delivery;
+//        delivery.setOrder(this);
+//    }
 
     //==생성 메서드==//
     public static Order createOrder(Buyer buyer, Delivery delivery,
                                     OrderItem... orderItems) {
         Order order = new Order();
         order.setBuyer(buyer);
-        order.setDelivery(delivery);
+//        order.setDelivery(delivery);
         for (OrderItem orderItem : orderItems) {
             order.addOrderItem(orderItem);
         }
         order.setStatus(OrderStatus.ORDERED);
         order.setOrderDate(LocalDateTime.now());
-        // 토스페이먼츠 필드는 OrderService에서 별도로 설정
         return order;
     }
 
@@ -98,15 +95,15 @@ public class Order {
     }
 
     // tossOrderId 생성 메서드 추가
-    public String generateTossOrderId() {
-        return "ORDER_" + System.currentTimeMillis() + "_" + this.id;
-    }
+//    public String generateTossOrderId() {
+//        return "ORDER_" + System.currentTimeMillis() + "_" + this.id;
+//    }
 
     // 토스페이먼츠 필드 설정 메서드 추가
-    public void setTossPaymentInfo(String orderName, int totalAmount) {
-        this.orderName = orderName;
-        this.totalAmount = totalAmount;
-        this.paymentStatus = "READY";
-        // tossOrderId는 주문 저장 후 ID가 생성된 다음에 설정
-    }
+//    public void setTossPaymentInfo(String orderName, int totalAmount) {
+//        this.orderName = orderName;
+//        this.totalAmount = totalAmount;
+//        this.paymentStatus = "READY";
+//        // tossOrderId는 주문 저장 후 ID가 생성된 다음에 설정
+//    }
 }
