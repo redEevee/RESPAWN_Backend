@@ -244,7 +244,7 @@ public class OrderController {
     public ResponseEntity<?> getCompletedRefunds(HttpSession session) {
         try {
             Long sellerId = getSellerIdFromSession(session);
-            List<OrderHistoryDto> completedRefunds = orderService.getCompletedRefunds(sellerId);
+            List<RefundRequestDetailDto> completedRefunds = orderService.getCompletedRefunds(sellerId);
             return ResponseEntity.ok(completedRefunds);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

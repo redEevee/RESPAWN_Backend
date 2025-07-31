@@ -612,38 +612,48 @@ public class OrderService {
      * 환불 완료된 주문 아이템 조회 메서드
      */
     @Transactional(readOnly = true)
-    public List<OrderHistoryDto> getCompletedRefunds(Long sellerId) {
-        // 판매자 아이디로 등록한 상품들 조회
+    public List<RefundRequestDetailDto> getCompletedRefunds(Long sellerId) {
+        // 1. 판매자가 등록한 상품 id 목록 조회
         List<Item> sellerItems = itemService.getItemsBySellerId(String.valueOf(sellerId));
-        List<String> sellerItemIds = sellerItems.stream()
+        Set<String> sellerItemIds = sellerItems.stream()
                 .map(Item::getId)
-                .toList();
+                .collect(Collectors.toSet());
 
-        List<Order> allOrders = orderRepository.findAll(); // 실제 운영시 최적화 필요
-        List<OrderHistoryDto> result = new ArrayList<>();
+        // 2. 모든 주문 조회 (실제 운영 환경에선 조건절로 최적화 권장)
+        List<Order> allOrders = orderRepository.findAll();
 
+        // 3. 결과 담을 리스트 초기화
+        List<RefundRequestDetailDto> result = new ArrayList<>();
+
+        // 4. 각 주문별로 주문자(buyer), 주문 아이템 순회
         for (Order order : allOrders) {
-            // 환불상태가 REFUNDED 이면서 판매자 상품인 주문 아이템만 필터
-            List<OrderItem> refundedItems = order.getOrderItems().stream()
-                    .filter(oi -> oi.getRefundStatus() == RefundStatus.REFUNDED
-                            && sellerItemIds.contains(oi.getItemId()))
-                    .toList();
+            Buyer buyer = order.getBuyer();
 
-            if (!refundedItems.isEmpty()) {
-                List<OrderHistoryItemDto> itemDtos = new ArrayList<>();
-                for (OrderItem oi : refundedItems) {
-                    try {
-                        Item item = itemService.getItemById(oi.getItemId());
-                        itemDtos.add(OrderHistoryItemDto.from(oi, item));
-                    } catch (Exception e) {
-                        log.error("환불 완료 내역 중 아이템 조회 오류 - itemId: {}", oi.getItemId(), e);
-                    }
+            for (OrderItem oi : order.getOrderItems()) {
+                // 주문아이템에 매핑된 배송 정보와 주소 획득
+                Delivery delivery = oi.getDelivery();
+                Address address = (delivery != null) ? delivery.getAddress() : null;
+
+                // 5. 환불 완료 상태이고, 판매자 상품 목록에 포함된 아이템만 필터링
+                if (oi.getRefundStatus() == RefundStatus.REFUNDED && sellerItemIds.contains(oi.getItemId())) {
+                    // 6. 아이템 정보 조회
+                    Item item = itemService.getItemById(oi.getItemId());
+                    // 7. refundRequest 정보 가져오기
+                    RefundRequest refundRequest = oi.getRefundRequest();
+
+                    // 8. 내부 DTO 객체 생성
+                    BuyerInfo buyerInfo = new BuyerInfo(buyer);
+                    AddressInfo addressInfo = (address != null) ? new AddressInfo(address) : null;
+                    RefundInfo refundInfo = new RefundInfo(refundRequest);
+
+                    // 9. DTO 변환 후 결과에 추가
+                    result.add(new RefundRequestDetailDto(order, oi, item, buyerInfo, addressInfo, refundInfo));
                 }
-                result.add(new OrderHistoryDto(order, itemDtos));
             }
         }
         return result;
     }
+
 
     /**
      * 판매자가 임시로 배송 완료 처리
