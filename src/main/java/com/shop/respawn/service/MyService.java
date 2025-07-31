@@ -3,6 +3,7 @@ package com.shop.respawn.service;
 import com.shop.respawn.domain.*;
 import com.shop.respawn.dto.AddressDto;
 import com.shop.respawn.repository.BuyerRepository;
+import com.shop.respawn.repository.OrderItemRepository;
 import com.shop.respawn.repository.OrderRepository;
 import com.shop.respawn.repository.SellerRepository;
 import jakarta.persistence.EntityManager;
@@ -21,7 +22,7 @@ public class MyService {
     private final BuyerRepository buyerRepository;
     private final SellerRepository sellerRepository;
     private final AddressService addressService;
-    private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
 
     private final EntityManager em;
 
@@ -105,6 +106,9 @@ public class MyService {
 
             em.persist(delivery);
             em.persist(order);
+
+            OrderItem findOrderItem = orderItemRepository.findById(1L).get();
+            findOrderItem.getDelivery().setStatus(DeliveryStatus.DELIVERED);
         }
     }
 
