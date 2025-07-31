@@ -58,6 +58,9 @@ public class OrderService {
 
         // 응답 데이터 구성
         Map<String, Object> response = new HashMap<>();
+        response.put("name", order.getBuyer().getName());
+        response.put("phoneNumber", order.getBuyer().getPhoneNumber());
+        response.put("email", order.getBuyer().getEmail());
         response.put("orderId", order.getId());
         response.put("orderItems", orderItemDetails); // DTO 객체 그대로 반환
         response.put("totalAmount", totalAmount);

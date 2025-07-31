@@ -15,6 +15,7 @@ public class RefundRequestDetailDto {
     private int count;
     private LocalDateTime orderDate;
     private String imageUrl;
+    private RefundStatus refundStatus;
 
     // 관련 정보
     private BuyerInfo buyerInfo;
@@ -29,6 +30,7 @@ public class RefundRequestDetailDto {
         this.orderDate =  order.getOrderDate();
         this.count = orderItem.getCount();
         this.imageUrl = item.getImageUrl();
+        this.refundStatus = orderItem.getRefundStatus();
 
         this.buyerInfo = buyerInfo;
         this.addressInfo = addressInfo;
