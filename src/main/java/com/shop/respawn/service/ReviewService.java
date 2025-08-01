@@ -88,7 +88,7 @@ public class ReviewService {
         }
 
         // 2. 해당 주문 아이템 ID들로 리뷰 조회 (MongoDB)
-        List<Review> reviews = reviewRepository.findByOrderItemIdIn(
+        List<Review> reviews = reviewRepository.findByOrderItemIdInOrderByCreatedDateDesc(
                 orderItemIds.stream()
                         .map(String::valueOf)
                         .collect(Collectors.toList())
@@ -124,7 +124,7 @@ public class ReviewService {
     // 특정 아이템(itemId)에 대한 모든 리뷰 가져오기
     public List<ReviewWithItemDto> getReviewsByItemId(String itemId) {
         // 이제 주문아이템을 조회하지 않고 바로 리뷰를 가져옴
-        List<Review> reviews = reviewRepository.findByItemId(itemId);
+        List<Review> reviews = reviewRepository.findByItemIdOrderByCreatedDateDesc(itemId);
 
         // 아이템 정보 단건 조회 (프론트 출력을 위해)
         Item item = itemService.getItemById(itemId);
