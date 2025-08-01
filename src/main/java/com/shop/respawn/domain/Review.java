@@ -23,6 +23,8 @@ public class Review {
 
     private String orderItemId;     // 주문 아이템 ID (MongoDB 기반 ID)
 
+    private String itemId;          // 아이템 ID
+
     private int rating;             // 평점 (1~5)
 
     private String content;         // 리뷰 내용

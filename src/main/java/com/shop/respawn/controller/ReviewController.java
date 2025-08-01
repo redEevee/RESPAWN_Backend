@@ -20,6 +20,27 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
+    /**
+     * 리뷰가 작성되었는지 확인하는 메서드
+     */
+    @GetMapping("/order-items/{orderItemId}")
+    public ResponseEntity<?> checkReviewExists(
+            @PathVariable String orderItemId,
+            HttpSession session) {
+        Long buyerId = (Long) session.getAttribute("userId");
+        if (buyerId == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+        boolean exists = reviewService.existsReviewByOrderItemId(buyerId, orderItemId);
+        // exists가 true면 이미 리뷰 있음, false면 없음
+        return ResponseEntity.ok(
+                java.util.Map.of("reviewExists", exists)
+        );
+    }
+
+    /**
+     * 리뷰 작성 메서드
+     */
     @PostMapping("/order-items/{orderItemId}")
     public ResponseEntity<?> createReview(
             @PathVariable String orderItemId,    // MongoDB의 ID형이 String이므로 String으로 바꿈
@@ -53,6 +74,14 @@ public class ReviewController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    // 리뷰 전체 조회: 특정 아이템의 리뷰
+    @GetMapping("/items/{itemId}")
+    public ResponseEntity<List<ReviewWithItemDto>> getReviewsByItemId(@PathVariable String itemId) {
+        // 서비스에 위임
+        List<ReviewWithItemDto> reviews = reviewService.getReviewsByItemId(itemId);
+        return ResponseEntity.ok(reviews);
     }
 
     /**

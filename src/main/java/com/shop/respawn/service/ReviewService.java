@@ -53,10 +53,13 @@ public class ReviewService {
         Buyer buyer = buyerRepository.findById(buyerId)
                 .orElseThrow(() -> new RuntimeException("구매자를 찾을 수 없습니다."));
 
+        String itemId = orderItem.getItemId();
+
         // 리뷰 생성 및 저장 (MongoDB)
         Review review = Review.builder()
                 .buyerId(String.valueOf(buyer.getId()))
                 .orderItemId(orderItemId)
+                .itemId(itemId)
                 .rating(rating)
                 .content(content)
                 .createdDate(LocalDateTime.now())
@@ -116,6 +119,27 @@ public class ReviewService {
                     return new ReviewWithItemDto(review, item);
                 })
                 .collect(Collectors.toList());
+    }
+
+    // 특정 아이템(itemId)에 대한 모든 리뷰 가져오기
+    public List<ReviewWithItemDto> getReviewsByItemId(String itemId) {
+        // 이제 주문아이템을 조회하지 않고 바로 리뷰를 가져옴
+        List<Review> reviews = reviewRepository.findByItemId(itemId);
+
+        // 아이템 정보 단건 조회 (프론트 출력을 위해)
+        Item item = itemService.getItemById(itemId);
+
+        // DTO 변환
+        return reviews.stream()
+                .map(review -> new ReviewWithItemDto(review, item))
+                .toList();
+    }
+
+    public boolean existsReviewByOrderItemId(Long buyerId, String orderItemId) {
+        // 본인 리뷰만 체크(옵션), buyerId 체크 생략하면 공용 체크
+        return reviewRepository.findByOrderItemId(orderItemId)
+                .filter(review -> review.getBuyerId().equals(String.valueOf(buyerId)))
+                .isPresent();
     }
 
 }
