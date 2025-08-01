@@ -1,5 +1,6 @@
 package com.shop.respawn.dto;
 
+import com.shop.respawn.domain.DeliveryStatus;
 import com.shop.respawn.domain.Item;
 import com.shop.respawn.domain.OrderItem;
 import lombok.Getter;
@@ -12,13 +13,15 @@ public class OrderHistoryItemDto {
     private Long orderItemId;
     private String itemId;
     private String itemName;
-    private int orderPrice;       // 주문 시 가격
-    private int count;       // 수량
-    private String imageUrl;     // 이미지
-    private String refundStatus; // 문자열로 환불 상태 전달
+    private int orderPrice;                 // 주문 시 가격
+    private int count;                      // 수량
+    private String imageUrl;                // 이미지
+    private String refundStatus;            // 문자열로 환불 상태 전달
 
-    private String refundReason;      // 환불 사유
-    private String refundDetail;      // 상세 내역
+    private String refundReason;            // 환불 사유
+    private String refundDetail;            // 상세 내역
+
+    private DeliveryStatus deliveryStatus;  //배송 상태
 
     // 생성자
     private OrderHistoryItemDto() {
@@ -33,6 +36,7 @@ public class OrderHistoryItemDto {
         dto.setCount(orderItem.getCount());
         dto.setImageUrl(item.getImageUrl());
         dto.setRefundStatus(orderItem.getRefundStatus().name());
+        dto.setDeliveryStatus(orderItem.getDelivery().getStatus());
 
         if(orderItem.getRefundRequest() != null) {
             dto.setRefundReason(orderItem.getRefundRequest().getRefundReason());

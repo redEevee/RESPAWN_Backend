@@ -157,21 +157,12 @@ public class OrderService {
         validateStockFromOrderItems(order.getOrderItems());
 
         // 배송지 주소 조회 및 권한 체크
-        Address address = addressRepository.findById(orderRequest.getAddressId())
-                .orElseThrow(() -> new RuntimeException("주소를 찾을 수 없습니다"));
-
+        // 배송 정보 설정
         for (OrderItem orderItem : order.getOrderItems()) {
-            Delivery delivery = new Delivery();
-            delivery.setAddress(address);
-            delivery.setStatus(DeliveryStatus.READY);
+            Delivery delivery = createDeliveryWithAddressId(buyerId, orderRequest.getAddressId());
             delivery.setOrderItem(orderItem);
-
             orderItem.setDelivery(delivery);
         }
-
-        // 배송 정보 설정
-//        Delivery delivery = createDeliveryWithAddressId(buyerId, orderRequest.getAddressId());
-//        order.setDelivery(delivery);
 
         // 관련 정보 설정
         setPaymentInfoFromOrderItems(order, order.getOrderItems());
@@ -402,22 +393,6 @@ public class OrderService {
     }
 
     /**
-     * 주문에서 재고 복원
-     */
-    private void restoreStockFromOrder(Order order) {
-        for (OrderItem orderItem : order.getOrderItems()) {
-            Item item = itemRepository.findById(orderItem.getItemId())
-                    .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + orderItem.getItemId()));
-
-            // 재고 복원
-            item.addStock(orderItem.getCount());
-            itemRepository.save(item);
-
-            log.debug("재고 복원 완료 - itemId: {}, quantity: {}", item.getId(), orderItem.getCount());
-        }
-    }
-
-    /**
      * 환불 가능한 목록 조회
      */
     @Transactional(readOnly = true)
@@ -465,7 +440,8 @@ public class OrderService {
             throw new RuntimeException("해당 주문에 대한 권한이 없습니다.");
         }
 
-        Buyer findBuyer = buyerRepository.findById(buyerId).get();
+        Buyer buyer = buyerRepository.findById(buyerId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 buyer가 없습니다."));
 
         Optional<OrderItem> optionalOrderItem = order.getOrderItems()
                 .stream()
@@ -484,7 +460,7 @@ public class OrderService {
 
         RefundRequest refundRequest = new RefundRequest();
         refundRequest.setOrderItem(orderItem);
-        refundRequest.setBuyer(findBuyer);
+        refundRequest.setBuyer(buyer);
         refundRequest.setRefundReason(reason);
         refundRequest.setRefundDetail(detail);
         refundRequest.setRequestedAt(LocalDateTime.now());
@@ -532,10 +508,10 @@ public class OrderService {
     }
 
     /**
-     * 판매자 환불 요청 확인
+     * 판매자 환불 요청 및 완료 목록 조회
      */
-    @Transactional
-    public List<RefundRequestDetailDto> getRefundRequestsForSeller(Long sellerId) {
+    @Transactional(readOnly = true)
+    public List<RefundRequestDetailDto> getRefundRequestsByStatus(Long sellerId, RefundStatus refundStatus) {
         // 1. 판매자가 등록한 상품 id 목록 조회
         List<Item> sellerItems = itemService.getItemsBySellerId(String.valueOf(sellerId));
         Set<String> sellerItemIds = sellerItems.stream()
@@ -557,8 +533,8 @@ public class OrderService {
                 Delivery delivery = oi.getDelivery();
                 Address address = (delivery != null) ? delivery.getAddress() : null;
 
-                // 5. 환불 요청 상태이고, 판매자 상품 목록에 포함된 아이템만 필터링
-                if (oi.getRefundStatus() == RefundStatus.REQUESTED && sellerItemIds.contains(oi.getItemId())) {
+                // (환불상태 parameter와 판매자 상품만 필터)
+                if (oi.getRefundStatus() == refundStatus && sellerItemIds.contains(oi.getItemId())) {
                     // 6. 아이템 정보 조회
                     Item item = itemService.getItemById(oi.getItemId());
                     // 7. refundRequest 정보 가져오기
@@ -607,53 +583,6 @@ public class OrderService {
 
         // (필요시) 주문 상태 또는 결제 상태 업데이트 등 추가 처리 가능
     }
-
-    /**
-     * 환불 완료된 주문 아이템 조회 메서드
-     */
-    @Transactional(readOnly = true)
-    public List<RefundRequestDetailDto> getCompletedRefunds(Long sellerId) {
-        // 1. 판매자가 등록한 상품 id 목록 조회
-        List<Item> sellerItems = itemService.getItemsBySellerId(String.valueOf(sellerId));
-        Set<String> sellerItemIds = sellerItems.stream()
-                .map(Item::getId)
-                .collect(Collectors.toSet());
-
-        // 2. 모든 주문 조회 (실제 운영 환경에선 조건절로 최적화 권장)
-        List<Order> allOrders = orderRepository.findAll();
-
-        // 3. 결과 담을 리스트 초기화
-        List<RefundRequestDetailDto> result = new ArrayList<>();
-
-        // 4. 각 주문별로 주문자(buyer), 주문 아이템 순회
-        for (Order order : allOrders) {
-            Buyer buyer = order.getBuyer();
-
-            for (OrderItem oi : order.getOrderItems()) {
-                // 주문아이템에 매핑된 배송 정보와 주소 획득
-                Delivery delivery = oi.getDelivery();
-                Address address = (delivery != null) ? delivery.getAddress() : null;
-
-                // 5. 환불 완료 상태이고, 판매자 상품 목록에 포함된 아이템만 필터링
-                if (oi.getRefundStatus() == RefundStatus.REFUNDED && sellerItemIds.contains(oi.getItemId())) {
-                    // 6. 아이템 정보 조회
-                    Item item = itemService.getItemById(oi.getItemId());
-                    // 7. refundRequest 정보 가져오기
-                    RefundRequest refundRequest = oi.getRefundRequest();
-
-                    // 8. 내부 DTO 객체 생성
-                    BuyerInfo buyerInfo = new BuyerInfo(buyer);
-                    AddressInfo addressInfo = (address != null) ? new AddressInfo(address) : null;
-                    RefundInfo refundInfo = new RefundInfo(refundRequest);
-
-                    // 9. DTO 변환 후 결과에 추가
-                    result.add(new RefundRequestDetailDto(order, oi, item, buyerInfo, addressInfo, refundInfo));
-                }
-            }
-        }
-        return result;
-    }
-
 
     /**
      * 판매자가 임시로 배송 완료 처리

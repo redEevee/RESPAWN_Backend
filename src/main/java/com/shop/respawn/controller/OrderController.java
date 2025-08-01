@@ -1,5 +1,6 @@
 package com.shop.respawn.controller;
 
+import com.shop.respawn.domain.RefundStatus;
 import com.shop.respawn.dto.OrderHistoryDto;
 import com.shop.respawn.dto.OrderRefundRequestDto;
 import com.shop.respawn.dto.OrderRequestDto;
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+
+import static com.shop.respawn.domain.RefundStatus.*;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -210,7 +213,7 @@ public class OrderController {
     public ResponseEntity<?> getRefundRequestsOfSeller(HttpSession session) {
         try {
             Long sellerId = getSellerIdFromSession(session);
-            List<RefundRequestDetailDto> refundRequests = orderService.getRefundRequestsForSeller(sellerId);
+            List<RefundRequestDetailDto> refundRequests = orderService.getRefundRequestsByStatus(sellerId, REQUESTED);
             return ResponseEntity.ok(refundRequests);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -244,7 +247,7 @@ public class OrderController {
     public ResponseEntity<?> getCompletedRefunds(HttpSession session) {
         try {
             Long sellerId = getSellerIdFromSession(session);
-            List<RefundRequestDetailDto> completedRefunds = orderService.getCompletedRefunds(sellerId);
+            List<RefundRequestDetailDto> completedRefunds = orderService.getRefundRequestsByStatus(sellerId, REFUNDED);
             return ResponseEntity.ok(completedRefunds);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
