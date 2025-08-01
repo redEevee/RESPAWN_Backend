@@ -1,10 +1,6 @@
 package com.shop.respawn.controller;
 
-import com.shop.respawn.domain.RefundStatus;
-import com.shop.respawn.dto.OrderHistoryDto;
-import com.shop.respawn.dto.OrderRefundRequestDto;
-import com.shop.respawn.dto.OrderRequestDto;
-import com.shop.respawn.dto.RefundRequestDetailDto;
+import com.shop.respawn.dto.*;
 import com.shop.respawn.service.OrderService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -251,6 +247,20 @@ public class OrderController {
             return ResponseEntity.ok(completedRefunds);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * 판매자의 item의 주문 기록 조회
+     */
+    @GetMapping("/seller/orders")
+    public ResponseEntity<List<SellerOrderDto>> getSellerOrders(HttpSession session) {
+        try {
+            Long sellerId = getSellerIdFromSession(session);
+            List<SellerOrderDto> orders  = orderService.getSellerOrders(sellerId);
+            return ResponseEntity.ok(orders);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 
