@@ -119,9 +119,10 @@ public class ItemService {
             // 주문 상태가 결제 완료 혹은 주문 접수 상태이면서 배송이 완료 상태가 아니면 삭제 불가
             boolean paidOrder = order.getStatus() == ORDERED || order.getStatus() == PAID;
             boolean deliveryNotDone = delivery == null || delivery.getStatus() != DELIVERED;
+            boolean itemStatus = item.getStatus() == ItemStatus.SALE;
 
-            if (paidOrder && deliveryNotDone) {
-                throw new RuntimeException("결제 완료된 주문이 배송 완료되지 않은 상품은 삭제할 수 없습니다.");
+            if (paidOrder && deliveryNotDone && itemStatus) {
+                throw new RuntimeException("상품이 아직 판매 중 이거나 결제 완료된 주문이 배송 완료되지 않은 상품은 삭제할 수 없습니다.");
             }
         }
 
