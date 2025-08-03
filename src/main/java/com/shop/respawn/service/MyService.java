@@ -83,7 +83,7 @@ public class MyService {
 
             Delivery delivery = new Delivery();
             delivery.setAddress(defaultAddress);
-            delivery.setStatus(DeliveryStatus.READY);
+            delivery.setStatus(DeliveryStatus.DELIVERED);
 
             if (i % 3 == 0) {
                 OrderItem oi2 = OrderItem.createOrderItem(item2, 20, 2);

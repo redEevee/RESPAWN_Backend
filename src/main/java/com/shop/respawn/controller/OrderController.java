@@ -265,6 +265,21 @@ public class OrderController {
     }
 
     /**
+     * 판매자의 item의 주문 상세 조회
+     */
+    @GetMapping("/seller/orders/{orderItemId}")
+    public ResponseEntity<SellerOrderDetailDto> getSellerOrderDetail(@PathVariable Long orderItemId, HttpSession session) {
+        try {
+            Long sellerId = getSellerIdFromSession(session);
+            SellerOrderDetailDto dto = orderService.getSellerOrderDetail(sellerId, orderItemId);
+            return ResponseEntity.ok(dto);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+
+    /**
      * 세션에서 buyerId를 가져오는 헬퍼 메서드
      */
     private Long getBuyerIdFromSession(HttpSession session) {

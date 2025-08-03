@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.security.access.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -613,7 +614,7 @@ public class OrderService {
         if (sellerItemIds.isEmpty()) return Collections.emptyList();
 
         // 4. OrderItem 테이블에서 itemId가 판매자의 상품인 주문 아이템들만 조회 (JPA에서 IN 쿼리 생성)
-        List<OrderItem> orderItems = orderItemRepository.findAllByItemIdIn(new ArrayList<>(sellerItemIds));
+        List<OrderItem> orderItems = orderItemRepository.findAllByItemIdInOrderByOrder_OrderDateDesc(new ArrayList<>(sellerItemIds));
 
         // 5. itemId로 빠르게 Item 객체를 참조할 수 있도록 Map으로 구성
         Map<String, Item> itemMap = sellerItems.stream()
@@ -621,6 +622,8 @@ public class OrderService {
 
         // 6. 필터링된 주문 아이템들을 DTO 형태로 변환하여 리스트에 담음
         List<SellerOrderDto> result = orderItems.stream()
+                // ① 주문 상태가 TEMPORARY가 아닌 경우만 필터링
+                .filter(orderItem -> orderItem.getOrder().getStatus() != OrderStatus.TEMPORARY)
                 .map(orderItem -> new SellerOrderDto(
                         orderItem.getOrder(),      // Order 엔티티
                         orderItem,                 // OrderItem 엔티티
@@ -631,6 +634,33 @@ public class OrderService {
         // 7. 최종 주문 목록 반환
         return result;
     }
+
+    /**
+     * 판매자의 item의 주문 상세 조회
+     */
+    public SellerOrderDetailDto getSellerOrderDetail(Long sellerId, Long orderItemId) {
+        // 주문 아이템 조회
+        OrderItem orderItem = orderItemRepository.findById(orderItemId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문 항목입니다."));
+
+        // 상품 조회
+        Item item = itemRepository.findById(orderItem.getItemId())
+                .orElseThrow(() -> new IllegalArgumentException("해당 상품을 찾을 수 없습니다."));
+
+        // 판매자 검증
+        if (!item.getSellerId().equals(sellerId.toString())) {
+            throw new AccessDeniedException("해당 주문에 접근할 수 없습니다.");
+        }
+
+        // 주문, 구매자, 배송 조회
+        Order order = orderItem.getOrder();
+        Buyer buyer = order.getBuyer();
+
+        Delivery delivery = orderItem.getDelivery(); // OrderItem에서 Delivery 가져오기
+
+        return new SellerOrderDetailDto(order, orderItem, item, buyer, delivery);
+    }
+
 
     /**
      * 판매자가 임시로 배송 완료 처리
