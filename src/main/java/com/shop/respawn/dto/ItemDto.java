@@ -2,12 +2,12 @@ package com.shop.respawn.dto;
 
 import com.shop.respawn.domain.ItemStatus;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-import static com.shop.respawn.domain.ItemStatus.SALE;
-
 @Data
+@NoArgsConstructor
 public class ItemDto {
 
     private String id;
