@@ -55,7 +55,7 @@ public class ItemController {
     public ResponseEntity<ItemDto> getItem(@PathVariable String id) {
         Item item = itemService.getItemById(id);
         ItemDto itemDto = new ItemDto(item.getId(), item.getName(), item.getDescription(), item.getDeliveryType(), item.getDeliveryFee(), item.getCompany(),
-                item.getCompanyNumber(), item.getPrice(), item.getStockQuantity(), item.getSellerId(), item.getImageUrl(), item.getCategoryIds());
+                item.getCompanyNumber(), item.getPrice(), item.getStockQuantity(), item.getSellerId(), item.getImageUrl(), item.getCategoryIds(), item.getStatus());
         return ResponseEntity.ok(itemDto);
     }
 
