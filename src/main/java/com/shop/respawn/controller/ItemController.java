@@ -126,7 +126,7 @@ public class ItemController {
     /**
      * 상품 판매 일시중지
      */
-    @PatchMapping("/{id}/pause")
+    @PostMapping("/{id}/pause")
     public ResponseEntity<?> pauseItem(@PathVariable String id, HttpSession session) {
         Long sellerId = getSellerIdFromSession(session);
         itemService.changeItemStatus(id, sellerId, PAUSED);
@@ -136,7 +136,7 @@ public class ItemController {
     /**
      * 상품 판매 중지
      */
-    @PatchMapping("/{id}/stop")
+    @PostMapping("/{id}/stop")
     public ResponseEntity<?> stopItem(@PathVariable String id, HttpSession session) {
         Long sellerId = getSellerIdFromSession(session);
         itemService.changeItemStatus(id, sellerId, STOPPED);
@@ -146,7 +146,7 @@ public class ItemController {
     /**
      * 상품 판매 재개
      */
-    @PatchMapping("/{id}/resume")
+    @PostMapping("/{id}/resume")
     public ResponseEntity<?> resumeItem(@PathVariable String id, HttpSession session) {
         Long sellerId = getSellerIdFromSession(session);
         itemService.changeItemStatus(id, sellerId, SALE);
