@@ -1,20 +1,27 @@
 package com.shop.respawn.service;
 
-import com.shop.respawn.domain.Item;
-import com.shop.respawn.domain.ItemStatus;
+import com.shop.respawn.domain.*;
 import com.shop.respawn.dto.ItemDto;
 import com.shop.respawn.repository.ItemRepository;
+import com.shop.respawn.repository.OrderItemRepository;
+import com.shop.respawn.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import static com.shop.respawn.domain.DeliveryStatus.*;
+import static com.shop.respawn.domain.OrderStatus.*;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class ItemService {
+
     private final ItemRepository itemRepository;
+    private final OrderItemRepository orderItemRepository; // 주문 아이템 조회용
+    private final OrderRepository orderRepository;       // 주문 조회용
 
     public Item registerItem(ItemDto itemDto, Long sellerId) {
         try {
@@ -64,5 +71,34 @@ public class ItemService {
         }
         item.setStatus(status);
         itemRepository.save(item);
+    }
+
+    public void deleteItemIfNoPendingDelivery(String itemId, Long sellerId) {
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + itemId));
+
+        // 판매자 본인 상품인지 확인
+        if (!item.getSellerId().equals(String.valueOf(sellerId))) {
+            throw new RuntimeException("본인이 등록한 상품만 삭제할 수 있습니다.");
+        }
+
+        // 해당 상품과 관련된 주문 아이템 조회
+        List<OrderItem> orderItems = orderItemRepository.findAllByItemId(itemId);
+
+        for (OrderItem orderItem : orderItems) {
+            Order order = orderItem.getOrder();
+            Delivery delivery = orderItem.getDelivery();
+
+            // 주문 상태가 결제 완료 혹은 주문 접수 상태이면서 배송이 완료 상태가 아니면 삭제 불가
+            boolean paidOrder = order.getStatus() == ORDERED || order.getStatus() == PAID;
+            boolean deliveryNotDone = delivery == null || delivery.getStatus() != DELIVERED;
+
+            if (paidOrder && deliveryNotDone) {
+                throw new RuntimeException("결제 완료된 주문이 배송 완료되지 않은 상품은 삭제할 수 없습니다.");
+            }
+        }
+
+        // 모든 조건 통과 시 삭제 처리
+        itemRepository.delete(item);
     }
 }

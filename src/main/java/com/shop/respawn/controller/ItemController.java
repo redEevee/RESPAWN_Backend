@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import static com.shop.respawn.domain.ItemStatus.*;
 
@@ -126,6 +127,20 @@ public class ItemController {
         Long sellerId = getSellerIdFromSession(session);
         itemService.changeItemStatus(id, sellerId, SALE);
         return ResponseEntity.ok().body("상품 판매가 재개되었습니다.");
+    }
+
+    /**
+     * 상품 삭제
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteItem(@PathVariable String id, HttpSession session) {
+        try {
+            Long sellerId = getSellerIdFromSession(session);
+            itemService.deleteItemIfNoPendingDelivery(id, sellerId);
+            return ResponseEntity.ok(Map.of("message", "상품이 성공적으로 삭제되었습니다."));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     /**
