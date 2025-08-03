@@ -100,6 +100,26 @@ public class ItemController {
     }
 
     /**
+     * 상품 정보 수정
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateItem(
+            @PathVariable String id,
+            @RequestPart("itemDto") ItemDto itemDto,
+            @RequestPart(value = "image") MultipartFile imageFile,
+            HttpSession session) {
+        try {
+            Long sellerId = getSellerIdFromSession(session);
+            String imageUrl = imageService.saveImage(imageFile);
+            itemDto.setImageUrl(imageUrl);
+            Item updatedItem = itemService.updateItem(id, itemDto, sellerId);
+            return ResponseEntity.ok(updatedItem);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("상품 수정 에러: " + e.getMessage());
+        }
+    }
+
+    /**
      * 상품 판매 일시중지
      */
     @PatchMapping("/{id}/pause")

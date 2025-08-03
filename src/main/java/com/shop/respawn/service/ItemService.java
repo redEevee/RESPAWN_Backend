@@ -4,7 +4,6 @@ import com.shop.respawn.domain.*;
 import com.shop.respawn.dto.ItemDto;
 import com.shop.respawn.repository.ItemRepository;
 import com.shop.respawn.repository.OrderItemRepository;
-import com.shop.respawn.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +20,6 @@ public class ItemService {
 
     private final ItemRepository itemRepository;
     private final OrderItemRepository orderItemRepository; // 주문 아이템 조회용
-    private final OrderRepository orderRepository;       // 주문 조회용
 
     public Item registerItem(ItemDto itemDto, Long sellerId) {
         try {
@@ -45,6 +43,35 @@ public class ItemService {
             System.err.println("상품 등록 실패: " + e.getMessage());
             throw new RuntimeException("상품 등록에 실패했습니다. [상세원인: " + e.getMessage() + "]", e);
         }
+    }
+
+    @Transactional
+    public Item updateItem(String itemId, ItemDto itemDto, Long sellerId) {
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + itemId));
+
+        // 본인 상품인지 확인
+        if (!item.getSellerId().equals(String.valueOf(sellerId))) {
+            throw new RuntimeException("본인이 등록한 상품만 수정할 수 있습니다.");
+        }
+
+        // 상품 정보 수정
+        item.setName(itemDto.getName());
+        item.setDescription(itemDto.getDescription());
+        item.setDeliveryType(itemDto.getDeliveryType());
+        item.setDeliveryFee(itemDto.getDeliveryFee());
+        item.setCompany(itemDto.getCompany());
+        item.setCompanyNumber(itemDto.getCompanyNumber());
+        item.setPrice(itemDto.getPrice());
+        item.setStockQuantity(itemDto.getStockQuantity());
+        item.setCategoryIds(itemDto.getCategoryIds());
+
+        // 이미지 URL은 별도의 로직으로 처리하거나 그대로 유지
+        if (itemDto.getImageUrl() != null && !itemDto.getImageUrl().isEmpty()) {
+            item.setImageUrl(itemDto.getImageUrl());
+        }
+
+        return itemRepository.save(item);
     }
 
     public Item getItemById(String id) {
