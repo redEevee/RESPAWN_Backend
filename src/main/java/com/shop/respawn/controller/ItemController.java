@@ -110,8 +110,12 @@ public class ItemController {
             HttpSession session) {
         try {
             Long sellerId = getSellerIdFromSession(session);
-            String imageUrl = imageService.saveImage(imageFile);
-            itemDto.setImageUrl(imageUrl);
+
+            if (imageFile != null && !imageFile.isEmpty()) {
+                String imageUrl = imageService.saveImage(imageFile);
+                itemDto.setImageUrl(imageUrl);
+            }
+
             Item updatedItem = itemService.updateItem(id, itemDto, sellerId);
             return ResponseEntity.ok(updatedItem);
         } catch (Exception e) {
