@@ -1,7 +1,7 @@
 package com.shop.respawn.controller;
 
 import com.mongodb.client.gridfs.model.GridFSFile;
-import com.shop.respawn.entity.mongodb.MainBanner;
+import com.shop.respawn.domain.MainBanner;
 import com.shop.respawn.repository.mainBannerRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

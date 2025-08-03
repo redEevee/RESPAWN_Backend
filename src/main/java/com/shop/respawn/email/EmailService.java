@@ -1,6 +1,6 @@
 package com.shop.respawn.email;
 
-import com.shop.respawn.config.RedisUtil;
+import com.shop.respawn.util.RedisUtil;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;

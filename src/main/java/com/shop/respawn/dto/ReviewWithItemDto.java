@@ -12,6 +12,7 @@ public class ReviewWithItemDto {
 
     private String reviewId;
     private String buyerId;
+    private String maskedUsername;
     private String orderItemId;
     private int rating;
     private String content;
@@ -23,9 +24,10 @@ public class ReviewWithItemDto {
     private String imageUrl;
     private int price;
 
-    public ReviewWithItemDto(Review review, Item item) {
+    public ReviewWithItemDto(Review review, Item item, String maskedUsername) {
         this.reviewId = review.getId();
         this.buyerId = review.getBuyerId();
+        this.maskedUsername = maskedUsername;
         this.orderItemId = review.getOrderItemId();
         this.rating = review.getRating();
         this.content = review.getContent();

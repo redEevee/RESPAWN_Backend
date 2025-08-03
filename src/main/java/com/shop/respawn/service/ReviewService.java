@@ -12,6 +12,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.shop.respawn.util.MaskingUtil.maskMiddleFourChars;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -72,67 +74,39 @@ public class ReviewService {
      * 판매자 ID로 판매한 아이템들의 리뷰 리스트 조회
      */
     public List<ReviewWithItemDto> getReviewsBySellerId(String sellerId) {
-        // 1. 판매자가 판매한 아이템 리스트 조회 (MongoDB itemId)
         List<Item> sellerItems = itemService.getItemsBySellerId(sellerId);
         List<String> sellerItemIds = sellerItems.stream()
                 .map(Item::getId)
                 .collect(Collectors.toList());
 
-        // 1-1. 해당 아이템에 대한 주문 아이템 ID 리스트 조회 (RDBMS OrderItem.id)
         List<Long> orderItemIds = orderItemRepository.findAllByItemIdIn(sellerItemIds).stream()
                 .map(OrderItem::getId)
                 .toList();
 
         if (orderItemIds.isEmpty()) {
-            return Collections.emptyList(); // 조회되는 주문 아이템 없으면 빈 리스트 반환
+            return Collections.emptyList();
         }
 
-        // 2. 해당 주문 아이템 ID들로 리뷰 조회 (MongoDB)
         List<Review> reviews = reviewRepository.findByOrderItemIdInOrderByCreatedDateDesc(
                 orderItemIds.stream()
                         .map(String::valueOf)
                         .collect(Collectors.toList())
         );
 
-        // 3. 리뷰 + 아이템 정보를 DTO로 변환
-        return reviews.stream()
-                .map(review -> {
-                    // 리뷰의 orderItemId 는 string 이므로 변환 필요
-                    String orderItemId = review.getOrderItemId();
-
-                    // 리뷰에 해당하는 OrderItem의 itemId 를 찾기 위해 orderItemRepository에서 조회하거나
-                    // sellerItems, orderItemIds 연결이 필요함
-                    // 간단히 sellerItems 에서 review의 itemId를 매칭하는 로직으로 변경
-
-                    // orderItemRepository.findById(Long.valueOf(orderItemId)) 해도 됨
-                    OrderItem orderItem = orderItemRepository.findById(Long.valueOf(orderItemId))
-                            .orElse(null);
-
-                    Item item = null;
-                    if (orderItem != null) {
-                        String itemId = orderItem.getItemId();
-                        item = sellerItems.stream()
-                                .filter(i -> i.getId().equals(itemId))
-                                .findFirst()
-                                .orElse(null);
-                    }
-                    return new ReviewWithItemDto(review, item);
-                })
-                .collect(Collectors.toList());
+        // 리뷰 변환을 공통 메서드로 위임 (sellerItems 전달)
+        return convertReviewsToDtos(reviews, sellerItems);
     }
 
     // 특정 아이템(itemId)에 대한 모든 리뷰 가져오기
     public List<ReviewWithItemDto> getReviewsByItemId(String itemId) {
-        // 이제 주문아이템을 조회하지 않고 바로 리뷰를 가져옴
         List<Review> reviews = reviewRepository.findByItemIdOrderByCreatedDateDesc(itemId);
 
-        // 아이템 정보 단건 조회 (프론트 출력을 위해)
         Item item = itemService.getItemById(itemId);
+        // 단일 상품이므로 리스트로 만들어 전달
+        List<Item> singleItemList = List.of(item);
 
-        // DTO 변환
-        return reviews.stream()
-                .map(review -> new ReviewWithItemDto(review, item))
-                .toList();
+        // 리뷰 변환 공통 메서드 사용
+        return convertReviewsToDtos(reviews, singleItemList);
     }
 
     public boolean existsReviewByOrderItemId(Long buyerId, String orderItemId) {
@@ -140,6 +114,48 @@ public class ReviewService {
         return reviewRepository.findByOrderItemId(orderItemId)
                 .filter(review -> review.getBuyerId().equals(String.valueOf(buyerId)))
                 .isPresent();
+    }
+
+    private List<ReviewWithItemDto> convertReviewsToDtos(List<Review> reviews, List<Item> relatedItems) {
+        return reviews.stream()
+                .map(review -> {
+                    // 리뷰 작성자 ID
+                    String buyerId = review.getBuyerId();
+                    String maskedUsername = "";
+
+                    try {
+                        String buyerUsername = buyerRepository.findById(Long.valueOf(buyerId))
+                                .map(Buyer::getUsername)
+                                .orElse("알 수 없는 사용자");
+                        maskedUsername = maskMiddleFourChars(buyerUsername);
+                    } catch (NumberFormatException e) {
+                        maskedUsername = "알 수 없는 사용자";
+                    }
+
+                    // 리뷰의 OrderItemId로부터 itemId 확인 (OrderItem에서)
+                    String orderItemId = review.getOrderItemId();
+                    Item item = null;
+                    try {
+                        OrderItem orderItem = orderItemRepository.findById(Long.valueOf(orderItemId)).orElse(null);
+                        if (orderItem != null) {
+                            String itemId = orderItem.getItemId();
+                            // relatedItems 중 해당 id 검색
+                            item = relatedItems.stream()
+                                    .filter(i -> i.getId().equals(itemId))
+                                    .findFirst()
+                                    .orElse(null);
+                        }
+                    } catch (NumberFormatException ex) {
+                        // orderItemId가 숫자가 아닐 경우 예외 처리 (없으면 null 유지)
+                        item = null;
+                    }
+
+                    // item이 이미 넘어온 relatedItems 단건(예: getReviewsByItemId)일 경우 처리 예외는 caller에서 조절
+                    // 리뷰의 itemId와 relatedItems의 itemId가 1:1일 경우 item=null 대신 첫개 item 전달할 수도 있음
+
+                    return new ReviewWithItemDto(review, item, maskedUsername);
+                })
+                .collect(Collectors.toList());
     }
 
 }
