@@ -504,6 +504,16 @@ public class OrderService {
                 refundRequestedOrders.add(new OrderHistoryDto(order, itemDtos));
             }
         }
+
+        refundRequestedOrders.sort(Comparator.comparing(
+                dto -> dto.getItems().stream()
+                        .map(OrderHistoryItemDto::getRequestedAt)
+                        .filter(Objects::nonNull)
+                        .max(LocalDateTime::compareTo)
+                        .orElse(LocalDateTime.MIN),
+                Comparator.reverseOrder()
+        ));
+
         return refundRequestedOrders;
     }
 
@@ -547,6 +557,9 @@ public class OrderService {
 
                     // 9. DTO 변환 후 결과에 추가
                     result.add(new RefundRequestDetailDto(order, oi, item, buyerInfo, addressInfo, refundInfo));
+
+                    // 10. requestedAt 기준으로 내림차순 정렬
+                    result.sort(Comparator.comparing(dto -> dto.getRefundInfo().getRequestedAt(), Comparator.nullsLast(Comparator.reverseOrder())));
                 }
             }
         }
