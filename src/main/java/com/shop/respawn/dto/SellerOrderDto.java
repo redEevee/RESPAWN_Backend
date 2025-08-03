@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class SellerOrderDto {
     private Long orderId;               // 주문번호
+    private Long orderItemId;           // 주문 아이템 id
     private String buyerName;           // 구매자 이름
     private String itemName;            // 상품명
     private int count;                  // 수량
@@ -24,6 +25,7 @@ public class SellerOrderDto {
 
     public SellerOrderDto(Order order, OrderItem orderItem, Item item) {
         this.orderId = order.getId();
+        this.orderItemId = orderItem.getId();
         this.buyerName = order.getBuyer().getName();
         this.itemName = item.getName();
         this.count = orderItem.getCount();

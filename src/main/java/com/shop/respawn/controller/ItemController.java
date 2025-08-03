@@ -106,7 +106,7 @@ public class ItemController {
     public ResponseEntity<?> updateItem(
             @PathVariable String id,
             @RequestPart("itemDto") ItemDto itemDto,
-            @RequestPart(value = "image") MultipartFile imageFile,
+            @RequestPart(value = "image", required = false) MultipartFile imageFile,
             HttpSession session) {
         try {
             Long sellerId = getSellerIdFromSession(session);
