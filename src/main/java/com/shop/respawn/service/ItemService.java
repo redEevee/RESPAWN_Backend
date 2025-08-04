@@ -4,11 +4,13 @@ import com.shop.respawn.domain.*;
 import com.shop.respawn.dto.ItemDto;
 import com.shop.respawn.repository.ItemRepository;
 import com.shop.respawn.repository.OrderItemRepository;
+import com.shop.respawn.repository.SellerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 import static com.shop.respawn.domain.DeliveryStatus.*;
 import static com.shop.respawn.domain.OrderStatus.*;
@@ -19,16 +21,21 @@ import static com.shop.respawn.domain.OrderStatus.*;
 public class ItemService {
 
     private final ItemRepository itemRepository;
+    private final SellerRepository sellerRepository;
     private final OrderItemRepository orderItemRepository; // 주문 아이템 조회용
 
     public Item registerItem(ItemDto itemDto, Long sellerId) {
         try {
+
+            Seller findSeller = sellerRepository.findById(sellerId)
+                    .orElseThrow(() -> new RuntimeException("판매자를 찾을 수 없습니다"));
+
             Item newItem = new Item();
             newItem.setName(itemDto.getName());
             newItem.setDeliveryType(itemDto.getDeliveryType());
             newItem.setDeliveryFee(itemDto.getDeliveryFee());
-            newItem.setCompany(itemDto.getCompany());
-            newItem.setCompanyNumber(itemDto.getCompanyNumber());
+            newItem.setCompany(findSeller.getCompany());
+            newItem.setCompanyNumber(findSeller.getCompanyNumber());
             newItem.setPrice(itemDto.getPrice());
             newItem.setStockQuantity(itemDto.getStockQuantity());
             newItem.setSellerId(String.valueOf(sellerId));
@@ -45,7 +52,6 @@ public class ItemService {
         }
     }
 
-    @Transactional
     public Item updateItem(String itemId, ItemDto itemDto, Long sellerId) {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + itemId));

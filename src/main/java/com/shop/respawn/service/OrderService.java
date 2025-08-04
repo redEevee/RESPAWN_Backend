@@ -374,7 +374,6 @@ public class OrderService {
     /**
      * 현재 사용자의 모든 임시 주문 삭제 (TEMPORARY 상태인 주문들을 일괄 삭제)
      */
-    @Transactional
     public int deleteAllTemporaryOrders(Long buyerId) {
         // 해당 구매자의 TEMPORARY 상태인 모든 주문 조회
         List<Order> temporaryOrders = orderRepository.findByBuyerIdAndStatus(buyerId, OrderStatus.TEMPORARY);
@@ -432,7 +431,6 @@ public class OrderService {
     /**
      * 아이템 단위 환불 요청
      */
-    @Transactional
     public void requestRefund(Long orderId, Long orderItemId, Long buyerId, String reason, String detail) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다."));
@@ -570,7 +568,6 @@ public class OrderService {
     /**
      * 판매자 환불 요청 완료
      */
-    @Transactional
     public void completeRefund(Long orderItemId, Long sellerId) {
         // 주문 아이템 조회
         OrderItem orderItem = orderItemRepository.findById(orderItemId)
@@ -662,7 +659,6 @@ public class OrderService {
     /**
      * 판매자가 임시로 배송 완료 처리
      */
-    @Transactional
     public void completeDelivery(Long orderItemId, Long sellerId) {
         // 주문 아이템 조회
         OrderItem orderItem = orderItemRepository.findById(orderItemId)

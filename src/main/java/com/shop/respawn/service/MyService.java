@@ -13,8 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class MyService {
 
     private final BuyerRepository buyerRepository;
@@ -24,7 +25,6 @@ public class MyService {
 
     private final EntityManager em;
 
-    @Transactional
     public void initData() {
 
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();

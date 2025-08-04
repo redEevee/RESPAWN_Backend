@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 
 @Slf4j
 @Service
+@Transactional
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
@@ -42,7 +43,6 @@ public class PaymentService {
     }
 
     // 결제 검증
-    @Transactional
     public PaymentDto verifyPayment(String impUid, Long buyerId, Long orderId) throws IamportResponseException, IOException {
         IamportResponse<Payment> iamportResponse = iamportClient.paymentByImpUid(impUid);
 
