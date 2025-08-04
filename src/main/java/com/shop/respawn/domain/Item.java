@@ -1,6 +1,5 @@
 package com.shop.respawn.domain;
 
-import com.shop.respawn.exception.NotEnoughStockException;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

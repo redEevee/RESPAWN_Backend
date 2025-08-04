@@ -37,17 +37,27 @@ public class PrincipalOauth2UserService extends DefaultOAuth2UserService {
         System.out.println("getAttributes = " + oAuth2User.getAttributes());
 
         OAuth2UserInfo oAuth2UserInfo = null;
-        if (userRequest.getClientRegistration().getRegistrationId().equals("google")) {
-            System.out.println("구글 로그인 요청");
-            oAuth2UserInfo = new GoogleUserInfo(oAuth2User.getAttributes());
-        } else if (userRequest.getClientRegistration().getRegistrationId().equals("naver")) {
-            System.out.println("네이버 로그인 요청");
-            oAuth2UserInfo = new NaverUserInfo((Map) oAuth2User.getAttributes().get("response"));
-        } else if (userRequest.getClientRegistration().getRegistrationId().equals("kakao")) {
-            System.out.println("카카오 로그인 요청");
-            oAuth2UserInfo = new KakaoUserInfo(oAuth2User.getAttributes());
-        } else {
-            System.out.println("구글, 네이버, 카카오 로그인을 지원합니다.");
+        switch (userRequest.getClientRegistration().getRegistrationId()) {
+            case "google" -> {
+                System.out.println("구글 로그인 요청");
+                oAuth2UserInfo = new GoogleUserInfo(oAuth2User.getAttributes());
+            }
+            case "naver" -> {
+                System.out.println("네이버 로그인 요청");
+                Object responseObj = oAuth2User.getAttributes().get("response");
+                if (responseObj instanceof Map<?, ?>) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> response = (Map<String, Object>) responseObj;
+                    oAuth2UserInfo = new NaverUserInfo(response);
+                } else {
+                    throw new IllegalArgumentException("네이버 response 데이터 타입이 올바르지 않습니다.");
+                }
+            }
+            case "kakao" -> {
+                System.out.println("카카오 로그인 요청");
+                oAuth2UserInfo = new KakaoUserInfo(oAuth2User.getAttributes());
+            }
+            default -> System.out.println("구글, 네이버, 카카오 로그인을 지원합니다.");
         }
 
         assert oAuth2UserInfo != null;

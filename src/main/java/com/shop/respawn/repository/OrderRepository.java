@@ -23,16 +23,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByBuyerIdAndStatusInAndPaymentStatus(Long buyerId, List<OrderStatus> statuses, String paymentStatus);
 
     /**
-     * 구매자 ID와 특정 상태로 주문 조회 (최신순)
-     */
-    List<Order> findByBuyer_IdAndStatusOrderByOrderDateDesc(Long buyerId, OrderStatus status);
-
-    /**
-     * 구매자 ID와 주문 상태 목록으로 주문 조회
-     */
-    List<Order> findByBuyerIdAndStatusIn(Long buyerId, List<OrderStatus> statuses);
-
-    /**
      * 구매자 ID와 ORDER ID 아이템 조회
      */
     @Query("""

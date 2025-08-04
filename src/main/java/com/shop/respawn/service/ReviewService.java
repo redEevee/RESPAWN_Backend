@@ -121,7 +121,7 @@ public class ReviewService {
                 .map(review -> {
                     // 리뷰 작성자 ID
                     String buyerId = review.getBuyerId();
-                    String maskedUsername = "";
+                    String maskedUsername;
 
                     try {
                         String buyerUsername = buyerRepository.findById(Long.valueOf(buyerId))
@@ -147,7 +147,6 @@ public class ReviewService {
                         }
                     } catch (NumberFormatException ex) {
                         // orderItemId가 숫자가 아닐 경우 예외 처리 (없으면 null 유지)
-                        item = null;
                     }
 
                     // item이 이미 넘어온 relatedItems 단건(예: getReviewsByItemId)일 경우 처리 예외는 caller에서 조절

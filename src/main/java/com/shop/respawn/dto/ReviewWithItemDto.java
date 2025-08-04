@@ -3,7 +3,6 @@ package com.shop.respawn.dto;
 import com.shop.respawn.domain.Item;
 import com.shop.respawn.domain.Review;
 import lombok.Data;
-import lombok.Getter;
 
 import java.time.LocalDateTime;
 

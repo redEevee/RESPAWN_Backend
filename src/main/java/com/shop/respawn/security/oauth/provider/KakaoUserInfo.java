@@ -20,11 +20,15 @@ public class KakaoUserInfo implements OAuth2UserInfo{
         return String.valueOf(attributes.get("id"));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public String getEmail() {
         Object object = attributes.get("kakao_account");
-        LinkedHashMap accountMap = (LinkedHashMap) object;
-        return (String) accountMap.get("email");
+        if (object instanceof Map) {
+            Map<String, Object> accountMap = (Map<String, Object>) object;
+            return (String) accountMap.get("email");
+        }
+        return null;
     }
 
     @Override

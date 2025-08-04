@@ -64,14 +64,10 @@ public class ImageController {
     @GetMapping("/mainBanner/image/{id}")
     public void getImage(@PathVariable String id, HttpServletResponse response) throws IOException {
         GridFSFile file = gridFsTemplate.findOne(Query.query(Criteria.where("_id").is(id)));
-        if (file != null) {
-            GridFsResource resource = gridFsTemplate.getResource(file);
-            assert file.getMetadata() != null;
-            response.setContentType(file.getMetadata().get("_contentType").toString());
-            StreamUtils.copy(resource.getInputStream(), response.getOutputStream());
-        } else {
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        }
+        GridFsResource resource = gridFsTemplate.getResource(file);
+        assert file.getMetadata() != null;
+        response.setContentType(file.getMetadata().get("_contentType").toString());
+        StreamUtils.copy(resource.getInputStream(), response.getOutputStream());
     }
 
     @GetMapping("/mainBanner")
@@ -88,12 +84,10 @@ public class ImageController {
             MainBanner banner = banners.getFirst(); // 첫 번째만 사용하거나, 원하는 방식으로 선택
             String fileId = banner.getImageFileId();
             GridFSFile file = gridFsTemplate.findOne(Query.query(Criteria.where("_id").is(fileId)));
-            if (file != null) {
-                GridFsResource resource = gridFsTemplate.getResource(file);
-                response.setContentType(resource.getContentType());
-                StreamUtils.copy(resource.getInputStream(), response.getOutputStream());
-                return;
-            }
+            GridFsResource resource = gridFsTemplate.getResource(file);
+            response.setContentType(resource.getContentType());
+            StreamUtils.copy(resource.getInputStream(), response.getOutputStream());
+            return;
         }
         response.setStatus(HttpServletResponse.SC_NOT_FOUND);
     }

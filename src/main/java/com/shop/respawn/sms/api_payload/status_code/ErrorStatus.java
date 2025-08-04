@@ -1,4 +1,4 @@
-package com.shop.respawn.api.api_payload.status_code;
+package com.shop.respawn.sms.api_payload.status_code;
 
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
@@ -48,9 +48,5 @@ public enum ErrorStatus implements BaseCode{
     @Override
     public String getMessage() {
         return message;
-    }
-
-    public HttpStatus getHttpStatus() {
-        return httpStatus;
     }
 }

@@ -28,23 +28,21 @@ public class Payment {
     @JoinColumn(name = "order_id")
     private Order order;
 
-    @Column(name = "imp_uid", unique = true, nullable = false)
+    @Column(unique = true, nullable = false)
     private String impUid;
 
-    @Column(name = "amount", nullable = false)
+    @Column(nullable = false)
     private Long amount;
 
-    @Column(name = "status", nullable = false)
+    @Column(nullable = false)
     private String status;
 
-    @Column(name = "name")
     private String name;
 
     @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
+    @Column(updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @PreUpdate

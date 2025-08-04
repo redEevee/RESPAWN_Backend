@@ -3,8 +3,8 @@ package com.shop.respawn.sms;
 import java.time.LocalDateTime;
 
 import com.nimbusds.oauth2.sdk.GeneralException;
-import com.shop.respawn.api.api_payload.CommonResponse;
-import com.shop.respawn.api.api_payload.status_code.SuccessStatus;
+import com.shop.respawn.sms.api_payload.CommonResponse;
+import com.shop.respawn.sms.api_payload.status_code.SuccessStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

@@ -111,7 +111,9 @@ public class OrderService {
         return savedOrder.getId();
     }
 
-    @Transactional
+    /**
+     * 상품페이지에서 바로 구매
+     */
     public Long createTemporaryOrder(Long buyerId, String itemId, Integer count) {
         Buyer buyer = buyerRepository.findById(buyerId)
                 .orElseThrow(() -> new RuntimeException("구매자를 찾을 수 없습니다"));
@@ -174,21 +176,18 @@ public class OrderService {
         // 주문 상태 주문 완료로 변경
         order.setStatus(OrderStatus.PAID);
 
-        System.out.println("orderRequest = " + orderRequest.getCartItemIds());
-
-        // 장바구니에서 주문된 아이템들 제거
-        if (orderRequest.getCartItemIds() != null &&
-                !orderRequest.getCartItemIds().isEmpty() &&
-                orderRequest.getCartItemIds().stream().anyMatch(Objects::nonNull)) {
-            Cart cart = cartRepository.findByBuyerId(buyerId)
-                    .orElseThrow(() -> new RuntimeException("장바구니를 찾을 수 없습니다"));
-
-            cart.getCartItems().removeIf(cartItem ->
-                    order.getOrderItems().stream().anyMatch(orderItem ->
-                            orderItem.getItemId().equals(cartItem.getItemId())
-                    )
-            );
+        // 장바구니가 존재하면 주문된 아이템 제거
+        Optional<Cart> optionalCart = cartRepository.findByBuyerId(buyerId);
+        if (optionalCart.isPresent()) {
+            Cart cart = optionalCart.get();
+            List<String> orderedItemIds = order.getOrderItems().stream()
+                    .map(OrderItem::getItemId)
+                    .distinct()
+                    .toList();
+            cart.getCartItems().removeIf(cartItem -> orderedItemIds.contains(cartItem.getItemId()));
             cartRepository.save(cart);
+        } else {
+            log.info("주문자 {}의 장바구니가 없어 아이템 제거를 건너뜁니다.", buyerId);
         }
 
         // 최종 저장
@@ -324,7 +323,8 @@ public class OrderService {
                     OrderHistoryItemDto itemDto = OrderHistoryItemDto.from(orderItem, item);
                     itemDtos.add(itemDto);
                 } catch (Exception e) {
-                    e.printStackTrace(); // 혹은 로그 찍기
+                    log.error("아이템 조회 중 오류 발생: orderItemId={}, itemId={}",
+                            orderItem.getId(), orderItem.getItemId(), e); // 혹은 로그 찍기
                     // 필요하면 기본값 세팅 or 예외 무시
                 }
             }
@@ -620,19 +620,16 @@ public class OrderService {
         Map<String, Item> itemMap = sellerItems.stream()
                 .collect(Collectors.toMap(Item::getId, item -> item));
 
-        // 6. 필터링된 주문 아이템들을 DTO 형태로 변환하여 리스트에 담음
-        List<SellerOrderDto> result = orderItems.stream()
+        return orderItems.stream()
+                // 6. 필터링된 주문 아이템들을 DTO 형태로 변환하여 리스트에 담음
                 // ① 주문 상태가 TEMPORARY가 아닌 경우만 필터링
                 .filter(orderItem -> orderItem.getOrder().getStatus() != OrderStatus.TEMPORARY)
                 .map(orderItem -> new SellerOrderDto(
-                        orderItem.getOrder(),      // Order 엔티티
-                        orderItem,                 // OrderItem 엔티티
-                        itemMap.get(orderItem.getItemId()) // Item 엔티티
+                        orderItem.getOrder(),               // Order 엔티티
+                        orderItem,                          // OrderItem 엔티티
+                        itemMap.get(orderItem.getItemId())  // Item 엔티티
                 ))
-                .collect(Collectors.toList());
-
-        // 7. 최종 주문 목록 반환
-        return result;
+                .collect(Collectors.toList());              // 7. 최종 주문 목록 반환
     }
 
     /**

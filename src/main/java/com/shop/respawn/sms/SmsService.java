@@ -1,7 +1,7 @@
 package com.shop.respawn.sms;
 
 import com.nimbusds.oauth2.sdk.GeneralException;
-import com.shop.respawn.api.api_payload.status_code.ErrorStatus;
+import com.shop.respawn.sms.api_payload.status_code.ErrorStatus;
 import com.shop.respawn.sms.Verification.VerificationCode;
 import com.shop.respawn.sms.Verification.VerificationCodeGenerator;
 import com.shop.respawn.sms.Verification.VerificationCodeRepository;

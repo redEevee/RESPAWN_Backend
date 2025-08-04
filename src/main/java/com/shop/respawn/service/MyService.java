@@ -4,7 +4,6 @@ import com.shop.respawn.domain.*;
 import com.shop.respawn.dto.AddressDto;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.OrderItemRepository;
-import com.shop.respawn.repository.OrderRepository;
 import com.shop.respawn.repository.SellerRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
@@ -107,7 +105,9 @@ public class MyService {
             em.persist(delivery);
             em.persist(order);
 
-            OrderItem findOrderItem = orderItemRepository.findById(1L).get();
+            OrderItem findOrderItem = orderItemRepository.findById(1L)
+                    .orElseThrow(() -> new RuntimeException("OrderItem이 존재하지 않습니다."));
+
             findOrderItem.getDelivery().setStatus(DeliveryStatus.DELIVERED);
         }
     }

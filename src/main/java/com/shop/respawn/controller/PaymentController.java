@@ -6,12 +6,9 @@ import com.shop.respawn.dto.VerifyRequest;
 import com.shop.respawn.service.OrderService;
 import com.shop.respawn.service.PaymentService;
 import com.siot.IamportRestClient.exception.IamportResponseException;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;

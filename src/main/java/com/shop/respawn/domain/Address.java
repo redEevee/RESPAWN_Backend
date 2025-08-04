@@ -4,9 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static jakarta.persistence.FetchType.*;
 import static lombok.AccessLevel.*;
 
@@ -22,9 +19,6 @@ public class Address {
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "buyer_id")
     private Buyer buyer;
-
-    @OneToMany(mappedBy = "address", fetch = LAZY)
-    private List<Delivery> deliveries = new ArrayList<>();  // 수정
 
     private String addressName;
     private String recipient;
@@ -47,16 +41,6 @@ public class Address {
         this.basic = basic;
     }
 
-    private Address(String addressName, String recipient, String zoneCode, String baseAddress, String detailAddress, String phone, String subPhone) {
-        this.addressName = addressName;
-        this.recipient = recipient;
-        this.zoneCode = zoneCode;
-        this.baseAddress = baseAddress;
-        this.detailAddress = detailAddress;
-        this.phone = phone;
-        this.subPhone = subPhone;
-    }
-
     // 정적 팩토리 메서드
     public static Address createAddress(Buyer buyer, String addressName, String recipient,
                                         String zoneCode, String baseAddress, String detailAddress,
@@ -70,13 +54,6 @@ public class Address {
         }
 
         return address;
-    }
-
-    public static Address createAddress(String addressName, String recipient,
-                                        String zoneCode, String baseAddress, String detailAddress,
-                                        String phone, String subPhone) {
-        return new Address(addressName, recipient, zoneCode,
-                baseAddress, detailAddress, phone, subPhone);
     }
 
     // 비즈니스 메서드로 상태 변경
