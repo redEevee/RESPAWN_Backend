@@ -50,18 +50,19 @@ public class Buyer {
     @OneToMany(mappedBy = "buyer")
     private List<Order> orders = new ArrayList<>();
 
-    private Buyer(String name, String username, String password, String email, String phoneNumber, Role role) {
+    private Buyer(String name, String username, String password, String email, String phoneNumber, String provider, Role role) {
         this.name = name;
         this.username = username;
         this.password = password;
         this.email = email;
         this.phoneNumber = phoneNumber;
+        this.provider = provider;
         this.role = role;
     }
 
     //정적 팩토리 메서드
-    public static Buyer createBuyer(String name, String username, String password, String email, String phoneNumber, Role role) {
-        return new Buyer(name, username, password, email, phoneNumber, role);
+    public static Buyer createBuyer(String name, String username, String password, String email, String phoneNumber, String provider, Role role) {
+        return new Buyer(name, username, password, email, phoneNumber, provider, role);
     }
 
     public void updatePhoneNumber(String newPhoneNumber) {
@@ -80,7 +81,7 @@ public class Buyer {
 
     // initData 용도
     public static Buyer createBuyerWithInitLists(String name, String username, String password, String email, String phoneNumber, Role role) {
-        Buyer buyer = new Buyer(name, username, password, email, phoneNumber, role);
+        Buyer buyer = new Buyer(name, username, password, email, phoneNumber, "local", role);
         buyer.orders = new ArrayList<>();
         buyer.addresses = new ArrayList<>();
         buyer.cart = new ArrayList<>();

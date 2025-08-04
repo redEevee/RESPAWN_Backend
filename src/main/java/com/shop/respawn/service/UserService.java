@@ -35,7 +35,7 @@ public class UserService {
         String phoneNumber = userDto.getPhoneNumber();
 
         if(userType.equals("buyer")){
-            Buyer buyer = Buyer.createBuyer(name, username, password, email, phoneNumber, Role.ROLE_USER);
+            Buyer buyer = Buyer.createBuyer(name, username, password, email, phoneNumber, "local", Role.ROLE_USER);
             buyerRepository.save(buyer);
         } else if (userType.equals("seller")){
             Seller seller = Seller.createSeller(name, username, company, companyNumber, password, email, phoneNumber, Role.ROLE_SELLER);
