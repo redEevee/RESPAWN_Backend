@@ -32,6 +32,13 @@ public class Payment {
     private String impUid;
 
     @Column(nullable = false)
+    private String paymentMethod;
+
+    private String pgProvider;
+
+    private String cardName;
+
+    @Column(nullable = false)
     private Long amount;
 
     @Column(nullable = false)

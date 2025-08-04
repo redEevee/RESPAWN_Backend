@@ -49,6 +49,9 @@ public class PaymentService {
         Long amount = iamportResponse.getResponse().getAmount().longValue();
         String name = iamportResponse.getResponse().getName();
         String status = iamportResponse.getResponse().getStatus();
+        String paymentMethod = iamportResponse.getResponse().getPayMethod();
+        String pgProvider = iamportResponse.getResponse().getPgProvider();
+        String cardName = iamportResponse.getResponse().getCardName();
 
         PaymentDto paymentDto = PaymentDto.builder()
                 .impUid(impUid)
@@ -57,6 +60,9 @@ public class PaymentService {
                 .name(name)
                 .buyerId(buyerId)  // buyerId 추가
                 .orderId(orderId)  // orderId 추가
+                .paymentMethod(paymentMethod)
+                .pgProvider(pgProvider)
+                .cardName(cardName)
                 .build();
 
         if ("paid".equals(status)) {
@@ -92,6 +98,9 @@ public class PaymentService {
                 .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다: " + paymentDto.getOrderId()));
         com.shop.respawn.domain.Payment payment = com.shop.respawn.domain.Payment.builder()
                 .impUid(paymentDto.getImpUid())
+                .paymentMethod(paymentDto.getPaymentMethod())
+                .pgProvider(paymentDto.getPgProvider())
+                .cardName(paymentDto.getCardName())
                 .amount(paymentDto.getAmount())
                 .status(paymentDto.getStatus())
                 .name(paymentDto.getName())

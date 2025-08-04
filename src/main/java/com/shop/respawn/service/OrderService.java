@@ -276,6 +276,12 @@ public class OrderService {
         return delivery;
     }
 
+    @Transactional(readOnly = true)
+    public Order getOrderById(Long orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다: " + orderId));
+    }
+
     /**
      * 주문 ID로 구매자 ID 조회
      */

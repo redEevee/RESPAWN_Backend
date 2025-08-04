@@ -1,6 +1,9 @@
 package com.shop.respawn.controller;
 
+import com.shop.respawn.domain.Order;
+import com.shop.respawn.domain.Payment;
 import com.shop.respawn.dto.*;
+import com.shop.respawn.repository.PaymentRepository;
 import com.shop.respawn.service.OrderService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -10,6 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +25,7 @@ import static com.shop.respawn.domain.RefundStatus.*;
 public class OrderController {
 
     private final OrderService orderService;
+    private final PaymentRepository paymentRepository;
 
     /**
      * 장바구니 선택 상품 주문
@@ -76,6 +81,45 @@ public class OrderController {
             return ResponseEntity.ok(Map.of(
                     "message", "선택된 상품의 주문이 성공적으로 완료되었습니다."
             ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * 주문 완료 상세 페이지
+     */
+    @GetMapping("/{orderId}/complete-info")
+    public ResponseEntity<?> getOrderCompleteInfo(@PathVariable Long orderId, HttpSession session) {
+        try {
+            Long buyerId = getBuyerIdFromSession(session);
+
+            // 주문 상세 정보 조회: 기존에 작성된 getOrderDetails() 활용
+            Map<String, Object> orderDetails = orderService.getOrderDetails(orderId, buyerId);
+
+            // 결제 정보도 함께 전달 (예: 결제 상태, PG 주문번호, 주문명, 결제 금액)
+            Order order = orderService.getOrderById(orderId);
+
+            // 결제 정보 조회 (PaymentRepository나 PaymentService 통해 구현 필요)
+            Payment payment = paymentRepository.findByOrder(order)
+                    .orElse(null); // 결제 정보 없을 수 있으므로 null 처리
+
+            Map<String, Object> response = new HashMap<>(orderDetails);
+
+            response.put("paymentStatus", order.getPaymentStatus());
+            response.put("pgOrderId", order.getPgOrderId());
+            response.put("orderName", order.getOrderName());
+            response.put("orderDate", order.getOrderDate());
+
+            if (payment != null) {
+                response.put("cardName", payment.getCardName());
+                response.put("paymentMethod", payment.getPaymentMethod());
+                response.put("pgProvider", payment.getPgProvider());
+            } else {
+                response.put("paymentInfo", "결제 정보가 없습니다.");
+            }
+
+            return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -277,7 +321,6 @@ public class OrderController {
             return ResponseEntity.badRequest().build();
         }
     }
-
 
     /**
      * 세션에서 buyerId를 가져오는 헬퍼 메서드
