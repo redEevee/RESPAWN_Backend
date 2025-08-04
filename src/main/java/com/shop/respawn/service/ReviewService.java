@@ -135,6 +135,7 @@ public class ReviewService {
                     // 리뷰의 OrderItemId로부터 itemId 확인 (OrderItem에서)
                     String orderItemId = review.getOrderItemId();
                     Item item = null;
+                    Order order = null;
                     try {
                         OrderItem orderItem = orderItemRepository.findById(Long.valueOf(orderItemId)).orElse(null);
                         if (orderItem != null) {
@@ -144,6 +145,8 @@ public class ReviewService {
                                     .filter(i -> i.getId().equals(itemId))
                                     .findFirst()
                                     .orElse(null);
+                            // 주문일시 조회 위해 Order 객체도 가져오기
+                            order = orderItem.getOrder();  // OrderItem에 Order 연관관계 있음
                         }
                     } catch (NumberFormatException ex) {
                         // orderItemId가 숫자가 아닐 경우 예외 처리 (없으면 null 유지)
@@ -152,7 +155,9 @@ public class ReviewService {
                     // item이 이미 넘어온 relatedItems 단건(예: getReviewsByItemId)일 경우 처리 예외는 caller에서 조절
                     // 리뷰의 itemId와 relatedItems의 itemId가 1:1일 경우 item=null 대신 첫개 item 전달할 수도 있음
 
-                    return new ReviewWithItemDto(review, item, maskedUsername);
+                    ReviewWithItemDto reviewWithItemDto = new ReviewWithItemDto(review, item, maskedUsername,  order);
+                    System.out.println("reviewWithItemDto = " + reviewWithItemDto);
+                    return reviewWithItemDto;
                 })
                 .collect(Collectors.toList());
     }

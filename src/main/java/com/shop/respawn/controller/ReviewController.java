@@ -66,9 +66,6 @@ public class ReviewController {
     public ResponseEntity<List<ReviewWithItemDto>> getMyItemReviews(HttpSession session) {
         try {
             String sellerId = getSellerIdFromSession(session).toString();
-
-            System.out.println("sellerId = " + sellerId);
-
             List<ReviewWithItemDto> reviews = reviewService.getReviewsBySellerId(sellerId);
             return ResponseEntity.ok(reviews);
         } catch (Exception e) {
