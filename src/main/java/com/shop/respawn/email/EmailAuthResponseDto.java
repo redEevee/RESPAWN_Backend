@@ -1,8 +1,8 @@
 package com.shop.respawn.email;
 
-import lombok.Getter;
+import lombok.Data;
 
-@Getter
+@Data
 public class EmailAuthResponseDto {
     private boolean success;
     private String responseMessage;

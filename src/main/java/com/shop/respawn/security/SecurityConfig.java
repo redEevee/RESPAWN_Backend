@@ -21,7 +21,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity // 스프링 시큐리티 필터가 스프링 필터체인에 등록됨
-@EnableMethodSecurity(securedEnabled = true, prePostEnabled = true) // secured 어노테이션 활성화, preAuthorize 어노테이션 활성화
+@EnableMethodSecurity(securedEnabled = true) // secured 어노테이션 활성화, preAuthorize 어노테이션 활성화
 @RequiredArgsConstructor
 public class SecurityConfig {
 

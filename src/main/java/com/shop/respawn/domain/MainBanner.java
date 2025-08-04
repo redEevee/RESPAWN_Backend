@@ -1,4 +1,4 @@
-package com.shop.respawn.entity.mongodb;
+package com.shop.respawn.domain;
 
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;

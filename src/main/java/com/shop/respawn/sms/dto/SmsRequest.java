@@ -1,14 +1,15 @@
 package com.shop.respawn.sms.dto;
 
-import lombok.Getter;
+import lombok.Data;
 
 public class SmsRequest {
-    @Getter
+
+    @Data
     public static class PhoneNumberForVerificationRequest{
         private String phoneNumber;
     }
 
-    @Getter
+    @Data
     public static class VerificationCodeRequest{
         private String code;
     }

@@ -26,14 +26,10 @@ public class Order {
     private Buyer buyer; //주문 회원
 
     @OneToMany(mappedBy = "order", cascade = ALL)
-    private List<OrderItem> orderItems = new ArrayList<OrderItem>();
+    private List<OrderItem> orderItems = new ArrayList<>();
 
-    @OneToMany(mappedBy = "order", cascade = ALL)
-    private List<CartItem> cartItems = new ArrayList<CartItem>();
-
-//    @OneToOne(cascade = ALL, fetch = LAZY)
-//    @JoinColumn(name = "delivery_id")
-//    private Delivery delivery;
+//    @OneToMany(mappedBy = "order", cascade = ALL)
+//    private List<CartItem> cartItems = new ArrayList<>();
 
     private LocalDateTime orderDate;
 
@@ -59,25 +55,6 @@ public class Order {
         orderItem.setOrder(this);
     }
 
-//    public void setDelivery(Delivery delivery) {
-//        this.delivery = delivery;
-//        delivery.setOrder(this);
-//    }
-
-    //==생성 메서드==//
-    public static Order createOrder(Buyer buyer, Delivery delivery,
-                                    OrderItem... orderItems) {
-        Order order = new Order();
-        order.setBuyer(buyer);
-//        order.setDelivery(delivery);
-        for (OrderItem orderItem : orderItems) {
-            order.addOrderItem(orderItem);
-        }
-        order.setStatus(OrderStatus.ORDERED);
-        order.setOrderDate(LocalDateTime.now());
-        return order;
-    }
-
     // 총 금액 계산 메서드 추가
     public int calculateTotalAmount() {
         return orderItems.stream()
@@ -94,16 +71,4 @@ public class Order {
         return itemCount == 1 ? "상품 1건" : "상품 " + itemCount + "건";
     }
 
-    // tossOrderId 생성 메서드 추가
-//    public String generateTossOrderId() {
-//        return "ORDER_" + System.currentTimeMillis() + "_" + this.id;
-//    }
-
-    // 토스페이먼츠 필드 설정 메서드 추가
-//    public void setTossPaymentInfo(String orderName, int totalAmount) {
-//        this.orderName = orderName;
-//        this.totalAmount = totalAmount;
-//        this.paymentStatus = "READY";
-//        // tossOrderId는 주문 저장 후 ID가 생성된 다음에 설정
-//    }
 }

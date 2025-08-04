@@ -1,8 +1,8 @@
-package com.shop.respawn.api.api_payload;
+package com.shop.respawn.sms.api_payload;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.shop.respawn.api.api_payload.status_code.BaseCode;
-import com.shop.respawn.api.api_payload.status_code.SuccessStatus;
+import com.shop.respawn.sms.api_payload.status_code.BaseCode;
+import com.shop.respawn.sms.api_payload.status_code.SuccessStatus;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

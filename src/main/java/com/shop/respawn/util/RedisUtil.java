@@ -1,4 +1,4 @@
-package com.shop.respawn.config;
+package com.shop.respawn.util;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;

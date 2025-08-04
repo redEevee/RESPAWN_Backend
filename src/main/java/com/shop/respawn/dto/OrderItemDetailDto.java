@@ -4,9 +4,6 @@ import com.shop.respawn.domain.Item;
 import com.shop.respawn.domain.OrderItem;
 import lombok.Data;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @Data
 public class OrderItemDetailDto {
     private Long orderItemId;
@@ -39,19 +36,4 @@ public class OrderItemDetailDto {
         return new OrderItemDetailDto(orderItem, item);
     }
 
-    // Map으로 변환하는 메서드
-    public Map<String, Object> toMap() {
-        Map<String, Object> map = new HashMap<>();
-        map.put("orderItemId", this.orderItemId);
-        map.put("itemId", this.itemId);
-        map.put("itemName", this.itemName);
-        map.put("itemDescription", this.itemDescription);
-        map.put("itemPrice", this.itemPrice);
-        map.put("orderPrice", this.orderPrice);
-        map.put("count", this.count);
-        map.put("totalPrice", this.totalPrice);
-        map.put("imageUrl", this.imageUrl);
-        map.put("stockQuantity", this.stockQuantity);
-        return map;
-    }
 }

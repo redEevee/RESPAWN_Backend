@@ -20,9 +20,9 @@ public class CartItem {
     @JoinColumn(name = "cart_id")
     private Cart cart;
 
-    @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "order_id")
-    private Order order;
+//    @ManyToOne(fetch = LAZY)
+//    @JoinColumn(name = "order_id")
+//    private Order order;
 
     private String itemId;
     private int cartPrice;
@@ -40,10 +40,6 @@ public class CartItem {
         this.cart = cart;
     }
 
-    // 카트 아이템으로 오더 생성 시 사용
-    public void connectToOrder(Order order) {
-        this.order = order;
-    }
 
     // 정적 팩토리 메서드 (의도 강조 가능)
     public static CartItem createCartItem(Cart cart, String itemId, int cartPrice, int count) {
@@ -53,14 +49,6 @@ public class CartItem {
     }
 
     //==비즈니스 로직==//
-    /** 장바구니 아이템 수량 변경 */
-    public void changeQuantity(int newCount) {
-        if (newCount <= 0) {
-            throw new IllegalArgumentException("수량은 1개 이상이어야 합니다.");
-        }
-        this.count = newCount;
-    }
-
     /** 수량 증가 */
     public void increaseQuantity(int amount) {
         if (amount <= 0) {

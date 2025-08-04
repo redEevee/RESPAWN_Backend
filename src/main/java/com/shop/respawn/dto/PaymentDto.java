@@ -8,6 +8,9 @@ import lombok.Data;
 public class PaymentDto {
     private String impUid;
     private Long amount;
+    private String pgProvider;
+    private String paymentMethod;
+    private String cardName;
     private String status;
     private String name;
     private String merchantUid;

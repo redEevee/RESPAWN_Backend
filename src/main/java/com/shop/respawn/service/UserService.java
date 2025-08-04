@@ -35,7 +35,7 @@ public class UserService {
         String phoneNumber = userDto.getPhoneNumber();
 
         if(userType.equals("buyer")){
-            Buyer buyer = Buyer.createBuyer(name, username, password, email, phoneNumber, Role.ROLE_USER);
+            Buyer buyer = Buyer.createBuyer(name, username, password, email, phoneNumber, "local", Role.ROLE_USER);
             buyerRepository.save(buyer);
         } else if (userType.equals("seller")){
             Seller seller = Seller.createSeller(name, username, company, companyNumber, password, email, phoneNumber, Role.ROLE_SELLER);
@@ -43,7 +43,6 @@ public class UserService {
         }
     }
 
-    @Transactional
     public void updatePhoneNumber(String username, String newPhoneNumber) {
         Buyer buyer = buyerRepository.findOptionalByUsername(username)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));

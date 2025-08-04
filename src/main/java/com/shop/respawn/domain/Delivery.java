@@ -15,9 +15,6 @@ public class Delivery {
     @Column(name = "delivery_id")
     private Long id;
 
-//    @OneToOne(mappedBy = "delivery", fetch = LAZY)
-//    private Order order;
-
     // 새로 추가 : OrderItem과 1:1 매핑
     @OneToOne(mappedBy = "delivery")
     private OrderItem orderItem;

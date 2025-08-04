@@ -1,6 +1,5 @@
 package com.shop.respawn.config;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
@@ -12,11 +11,8 @@ import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
 
 @Configuration
-@RequiredArgsConstructor
 @EnableMongoAuditing
 public class MongoConfig {
-
-    private final MongoMappingContext mongoMappingContext;
 
     @Bean
     public MappingMongoConverter mappingMongoConverter(

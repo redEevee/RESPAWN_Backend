@@ -10,5 +10,7 @@ public interface ReviewRepository extends MongoRepository<Review, String> {
     // 특정 주문 아이템에 리뷰가 이미 있는지 체크
     Optional<Review> findByOrderItemId(String orderItemId);
 
-    List<Review> findByOrderItemIdIn(List<String> orderItemIds);
+    List<Review> findByOrderItemIdInOrderByCreatedDateDesc(List<String> orderItemIds);
+
+    List<Review> findByItemIdOrderByCreatedDateDesc(String itemId);
 }

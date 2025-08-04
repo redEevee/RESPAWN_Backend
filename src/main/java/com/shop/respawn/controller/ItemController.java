@@ -13,8 +13,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+
+import static com.shop.respawn.domain.ItemStatus.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -31,18 +33,17 @@ public class ItemController {
     public ResponseEntity<?> registerItem(
             @RequestPart("itemDto") ItemDto itemDto,
             @RequestPart("image") MultipartFile imageFile,
-            HttpSession session) throws IOException {
-
-        Long sellerId = getSellerIdFromSession(session); // 판매자 ID 가져오기
-
-        // 이미지 실제 저장 (예시 - 로컬 서버에 저장)
-        String imageUrl = imageService.saveImage(imageFile);
-
-        // 이미지 URL을 DTO에 설정
-        itemDto.setImageUrl(imageUrl);
-
-        Item created = itemService.registerItem(itemDto, sellerId);
-        return ResponseEntity.ok(created);
+            HttpSession session
+    ) {
+        try {
+            Long sellerId = getSellerIdFromSession(session);
+            String imageUrl = imageService.saveImage(imageFile);
+            itemDto.setImageUrl(imageUrl);
+            Item created = itemService.registerItem(itemDto, sellerId);
+            return ResponseEntity.ok(created);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("상품 등록 에러: " + e.getMessage());
+        }
     }
 
     /**
@@ -52,7 +53,7 @@ public class ItemController {
     public ResponseEntity<ItemDto> getItem(@PathVariable String id) {
         Item item = itemService.getItemById(id);
         ItemDto itemDto = new ItemDto(item.getId(), item.getName(), item.getDescription(), item.getDeliveryType(), item.getDeliveryFee(), item.getCompany(),
-                item.getCompanyNumber(), item.getPrice(), item.getStockQuantity(), item.getSellerId(), item.getImageUrl(), item.getCategoryIds());
+                item.getCompanyNumber(), item.getPrice(), item.getStockQuantity(), item.getSellerId(), item.getImageUrl(), item.getCategoryIds(), item.getStatus());
         return ResponseEntity.ok(itemDto);
     }
 
@@ -94,6 +95,74 @@ public class ItemController {
                 .toList();
 
         return ResponseEntity.ok(itemDtos);
+    }
+
+    /**
+     * 상품 정보 수정
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateItem(
+            @PathVariable String id,
+            @RequestPart("itemDto") ItemDto itemDto,
+            @RequestPart(value = "image", required = false) MultipartFile imageFile,
+            HttpSession session) {
+        try {
+            Long sellerId = getSellerIdFromSession(session);
+
+            if (imageFile != null && !imageFile.isEmpty()) {
+                String imageUrl = imageService.saveImage(imageFile);
+                itemDto.setImageUrl(imageUrl);
+            }
+
+            Item updatedItem = itemService.updateItem(id, itemDto, sellerId);
+            return ResponseEntity.ok(updatedItem);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("상품 수정 에러: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 상품 판매 일시중지
+     */
+    @PostMapping("/{id}/pause")
+    public ResponseEntity<?> pauseItem(@PathVariable String id, HttpSession session) {
+        Long sellerId = getSellerIdFromSession(session);
+        itemService.changeItemStatus(id, sellerId, PAUSED);
+        return ResponseEntity.ok().body("상품이 일시중지되었습니다.");
+    }
+
+    /**
+     * 상품 판매 중지
+     */
+    @PostMapping("/{id}/stop")
+    public ResponseEntity<?> stopItem(@PathVariable String id, HttpSession session) {
+        Long sellerId = getSellerIdFromSession(session);
+        itemService.changeItemStatus(id, sellerId, STOPPED);
+        return ResponseEntity.ok().body("상품 판매가 중지되었습니다.");
+    }
+
+    /**
+     * 상품 판매 재개
+     */
+    @PostMapping("/{id}/resume")
+    public ResponseEntity<?> resumeItem(@PathVariable String id, HttpSession session) {
+        Long sellerId = getSellerIdFromSession(session);
+        itemService.changeItemStatus(id, sellerId, SALE);
+        return ResponseEntity.ok().body("상품 판매가 재개되었습니다.");
+    }
+
+    /**
+     * 상품 삭제
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteItem(@PathVariable String id, HttpSession session) {
+        try {
+            Long sellerId = getSellerIdFromSession(session);
+            itemService.deleteItemIfNoPendingDelivery(id, sellerId);
+            return ResponseEntity.ok(Map.of("message", "상품이 성공적으로 삭제되었습니다."));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     /**

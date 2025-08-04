@@ -1,9 +1,10 @@
 package com.shop.respawn.email;
 
-import com.shop.respawn.config.RedisUtil;
+import com.shop.respawn.util.RedisUtil;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailSendException;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ThreadLocalRandom;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailService {
@@ -33,8 +35,7 @@ public class EmailService {
             mailSender.send(emailForm);
             System.out.println("이메일이 전송 되었습니다.");
         } catch (MessagingException | MailSendException e) {
-            e.printStackTrace();
-            System.out.println("\"메일 전송 중 오류가 발생하였습니다. 다시 시도해주세요.\"e = " + e);
+            log.error("메일 전송 중 오류가 발생하였습니다. 다시 시도해주세요.", e);
         }
     }
 

@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.security.access.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -110,7 +111,9 @@ public class OrderService {
         return savedOrder.getId();
     }
 
-    @Transactional
+    /**
+     * 상품페이지에서 바로 구매
+     */
     public Long createTemporaryOrder(Long buyerId, String itemId, Integer count) {
         Buyer buyer = buyerRepository.findById(buyerId)
                 .orElseThrow(() -> new RuntimeException("구매자를 찾을 수 없습니다"));
@@ -157,21 +160,12 @@ public class OrderService {
         validateStockFromOrderItems(order.getOrderItems());
 
         // 배송지 주소 조회 및 권한 체크
-        Address address = addressRepository.findById(orderRequest.getAddressId())
-                .orElseThrow(() -> new RuntimeException("주소를 찾을 수 없습니다"));
-
+        // 배송 정보 설정
         for (OrderItem orderItem : order.getOrderItems()) {
-            Delivery delivery = new Delivery();
-            delivery.setAddress(address);
-            delivery.setStatus(DeliveryStatus.READY);
+            Delivery delivery = createDeliveryWithAddressId(buyerId, orderRequest.getAddressId());
             delivery.setOrderItem(orderItem);
-
             orderItem.setDelivery(delivery);
         }
-
-        // 배송 정보 설정
-//        Delivery delivery = createDeliveryWithAddressId(buyerId, orderRequest.getAddressId());
-//        order.setDelivery(delivery);
 
         // 관련 정보 설정
         setPaymentInfoFromOrderItems(order, order.getOrderItems());
@@ -182,21 +176,18 @@ public class OrderService {
         // 주문 상태 주문 완료로 변경
         order.setStatus(OrderStatus.PAID);
 
-        System.out.println("orderRequest = " + orderRequest.getCartItemIds());
-
-        // 장바구니에서 주문된 아이템들 제거
-        if (orderRequest.getCartItemIds() != null &&
-                !orderRequest.getCartItemIds().isEmpty() &&
-                orderRequest.getCartItemIds().stream().anyMatch(Objects::nonNull)) {
-            Cart cart = cartRepository.findByBuyerId(buyerId)
-                    .orElseThrow(() -> new RuntimeException("장바구니를 찾을 수 없습니다"));
-
-            cart.getCartItems().removeIf(cartItem ->
-                    order.getOrderItems().stream().anyMatch(orderItem ->
-                            orderItem.getItemId().equals(cartItem.getItemId())
-                    )
-            );
+        // 장바구니가 존재하면 주문된 아이템 제거
+        Optional<Cart> optionalCart = cartRepository.findByBuyerId(buyerId);
+        if (optionalCart.isPresent()) {
+            Cart cart = optionalCart.get();
+            List<String> orderedItemIds = order.getOrderItems().stream()
+                    .map(OrderItem::getItemId)
+                    .distinct()
+                    .toList();
+            cart.getCartItems().removeIf(cartItem -> orderedItemIds.contains(cartItem.getItemId()));
             cartRepository.save(cart);
+        } else {
+            log.info("주문자 {}의 장바구니가 없어 아이템 제거를 건너뜁니다.", buyerId);
         }
 
         // 최종 저장
@@ -285,6 +276,12 @@ public class OrderService {
         return delivery;
     }
 
+    @Transactional(readOnly = true)
+    public Order getOrderById(Long orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다: " + orderId));
+    }
+
     /**
      * 주문 ID로 구매자 ID 조회
      */
@@ -332,7 +329,8 @@ public class OrderService {
                     OrderHistoryItemDto itemDto = OrderHistoryItemDto.from(orderItem, item);
                     itemDtos.add(itemDto);
                 } catch (Exception e) {
-                    e.printStackTrace(); // 혹은 로그 찍기
+                    log.error("아이템 조회 중 오류 발생: orderItemId={}, itemId={}",
+                            orderItem.getId(), orderItem.getItemId(), e); // 혹은 로그 찍기
                     // 필요하면 기본값 세팅 or 예외 무시
                 }
             }
@@ -382,7 +380,6 @@ public class OrderService {
     /**
      * 현재 사용자의 모든 임시 주문 삭제 (TEMPORARY 상태인 주문들을 일괄 삭제)
      */
-    @Transactional
     public int deleteAllTemporaryOrders(Long buyerId) {
         // 해당 구매자의 TEMPORARY 상태인 모든 주문 조회
         List<Order> temporaryOrders = orderRepository.findByBuyerIdAndStatus(buyerId, OrderStatus.TEMPORARY);
@@ -399,22 +396,6 @@ public class OrderService {
         log.info("임시 주문 {}건이 삭제되었습니다. buyerId: {}", deletedCount, buyerId);
 
         return deletedCount;
-    }
-
-    /**
-     * 주문에서 재고 복원
-     */
-    private void restoreStockFromOrder(Order order) {
-        for (OrderItem orderItem : order.getOrderItems()) {
-            Item item = itemRepository.findById(orderItem.getItemId())
-                    .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + orderItem.getItemId()));
-
-            // 재고 복원
-            item.addStock(orderItem.getCount());
-            itemRepository.save(item);
-
-            log.debug("재고 복원 완료 - itemId: {}, quantity: {}", item.getId(), orderItem.getCount());
-        }
     }
 
     /**
@@ -456,7 +437,6 @@ public class OrderService {
     /**
      * 아이템 단위 환불 요청
      */
-    @Transactional
     public void requestRefund(Long orderId, Long orderItemId, Long buyerId, String reason, String detail) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다."));
@@ -465,7 +445,8 @@ public class OrderService {
             throw new RuntimeException("해당 주문에 대한 권한이 없습니다.");
         }
 
-        Buyer findBuyer = buyerRepository.findById(buyerId).get();
+        Buyer buyer = buyerRepository.findById(buyerId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 buyer가 없습니다."));
 
         Optional<OrderItem> optionalOrderItem = order.getOrderItems()
                 .stream()
@@ -484,7 +465,7 @@ public class OrderService {
 
         RefundRequest refundRequest = new RefundRequest();
         refundRequest.setOrderItem(orderItem);
-        refundRequest.setBuyer(findBuyer);
+        refundRequest.setBuyer(buyer);
         refundRequest.setRefundReason(reason);
         refundRequest.setRefundDetail(detail);
         refundRequest.setRequestedAt(LocalDateTime.now());
@@ -528,14 +509,24 @@ public class OrderService {
                 refundRequestedOrders.add(new OrderHistoryDto(order, itemDtos));
             }
         }
+
+        refundRequestedOrders.sort(Comparator.comparing(
+                dto -> dto.getItems().stream()
+                        .map(OrderHistoryItemDto::getRequestedAt)
+                        .filter(Objects::nonNull)
+                        .max(LocalDateTime::compareTo)
+                        .orElse(LocalDateTime.MIN),
+                Comparator.reverseOrder()
+        ));
+
         return refundRequestedOrders;
     }
 
     /**
-     * 판매자 환불 요청 확인
+     * 판매자 환불 요청 및 완료 목록 조회
      */
-    @Transactional
-    public List<RefundRequestDetailDto> getRefundRequestsForSeller(Long sellerId) {
+    @Transactional(readOnly = true)
+    public List<RefundRequestDetailDto> getRefundRequestsByStatus(Long sellerId, RefundStatus refundStatus) {
         // 1. 판매자가 등록한 상품 id 목록 조회
         List<Item> sellerItems = itemService.getItemsBySellerId(String.valueOf(sellerId));
         Set<String> sellerItemIds = sellerItems.stream()
@@ -557,8 +548,8 @@ public class OrderService {
                 Delivery delivery = oi.getDelivery();
                 Address address = (delivery != null) ? delivery.getAddress() : null;
 
-                // 5. 환불 요청 상태이고, 판매자 상품 목록에 포함된 아이템만 필터링
-                if (oi.getRefundStatus() == RefundStatus.REQUESTED && sellerItemIds.contains(oi.getItemId())) {
+                // (환불상태 parameter와 판매자 상품만 필터)
+                if (oi.getRefundStatus() == refundStatus && sellerItemIds.contains(oi.getItemId())) {
                     // 6. 아이템 정보 조회
                     Item item = itemService.getItemById(oi.getItemId());
                     // 7. refundRequest 정보 가져오기
@@ -571,6 +562,9 @@ public class OrderService {
 
                     // 9. DTO 변환 후 결과에 추가
                     result.add(new RefundRequestDetailDto(order, oi, item, buyerInfo, addressInfo, refundInfo));
+
+                    // 10. requestedAt 기준으로 내림차순 정렬
+                    result.sort(Comparator.comparing(dto -> dto.getRefundInfo().getRequestedAt(), Comparator.nullsLast(Comparator.reverseOrder())));
                 }
             }
         }
@@ -580,7 +574,6 @@ public class OrderService {
     /**
      * 판매자 환불 요청 완료
      */
-    @Transactional
     public void completeRefund(Long orderItemId, Long sellerId) {
         // 주문 아이템 조회
         OrderItem orderItem = orderItemRepository.findById(orderItemId)
@@ -609,46 +602,69 @@ public class OrderService {
     }
 
     /**
-     * 환불 완료된 주문 아이템 조회 메서드
+     * 판매자의 item의 주문 기록 조회
      */
-    @Transactional(readOnly = true)
-    public List<OrderHistoryDto> getCompletedRefunds(Long sellerId) {
-        // 판매자 아이디로 등록한 상품들 조회
-        List<Item> sellerItems = itemService.getItemsBySellerId(String.valueOf(sellerId));
-        List<String> sellerItemIds = sellerItems.stream()
+    public List<SellerOrderDto> getSellerOrders(Long sellerId) {
+        // 1. MongoDB에서 해당 판매자의 상품 목록을 모두 조회 (sellerId는 String)
+        List<Item> sellerItems = itemRepository.findBySellerId(sellerId.toString());
+
+        // 2. 각 상품의 ID만 추출해서 Set으로 변환 (중복 제거 및 빠른 조회를 위해)
+        Set<String> sellerItemIds = sellerItems.stream()
                 .map(Item::getId)
-                .toList();
+                .collect(Collectors.toSet());
 
-        List<Order> allOrders = orderRepository.findAll(); // 실제 운영시 최적화 필요
-        List<OrderHistoryDto> result = new ArrayList<>();
+        // 3. 판매자의 상품이 하나도 없다면 빈 리스트 반환
+        if (sellerItemIds.isEmpty()) return Collections.emptyList();
 
-        for (Order order : allOrders) {
-            // 환불상태가 REFUNDED 이면서 판매자 상품인 주문 아이템만 필터
-            List<OrderItem> refundedItems = order.getOrderItems().stream()
-                    .filter(oi -> oi.getRefundStatus() == RefundStatus.REFUNDED
-                            && sellerItemIds.contains(oi.getItemId()))
-                    .toList();
+        // 4. OrderItem 테이블에서 itemId가 판매자의 상품인 주문 아이템들만 조회 (JPA에서 IN 쿼리 생성)
+        List<OrderItem> orderItems = orderItemRepository.findAllByItemIdInOrderByOrder_OrderDateDesc(new ArrayList<>(sellerItemIds));
 
-            if (!refundedItems.isEmpty()) {
-                List<OrderHistoryItemDto> itemDtos = new ArrayList<>();
-                for (OrderItem oi : refundedItems) {
-                    try {
-                        Item item = itemService.getItemById(oi.getItemId());
-                        itemDtos.add(OrderHistoryItemDto.from(oi, item));
-                    } catch (Exception e) {
-                        log.error("환불 완료 내역 중 아이템 조회 오류 - itemId: {}", oi.getItemId(), e);
-                    }
-                }
-                result.add(new OrderHistoryDto(order, itemDtos));
-            }
-        }
-        return result;
+        // 5. itemId로 빠르게 Item 객체를 참조할 수 있도록 Map으로 구성
+        Map<String, Item> itemMap = sellerItems.stream()
+                .collect(Collectors.toMap(Item::getId, item -> item));
+
+        return orderItems.stream()
+                // 6. 필터링된 주문 아이템들을 DTO 형태로 변환하여 리스트에 담음
+                // ① 주문 상태가 TEMPORARY가 아닌 경우만 필터링
+                .filter(orderItem -> orderItem.getOrder().getStatus() != OrderStatus.TEMPORARY)
+                .map(orderItem -> new SellerOrderDto(
+                        orderItem.getOrder(),               // Order 엔티티
+                        orderItem,                          // OrderItem 엔티티
+                        itemMap.get(orderItem.getItemId())  // Item 엔티티
+                ))
+                .collect(Collectors.toList());              // 7. 최종 주문 목록 반환
     }
+
+    /**
+     * 판매자의 item의 주문 상세 조회
+     */
+    public SellerOrderDetailDto getSellerOrderDetail(Long sellerId, Long orderItemId) {
+        // 주문 아이템 조회
+        OrderItem orderItem = orderItemRepository.findById(orderItemId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문 항목입니다."));
+
+        // 상품 조회
+        Item item = itemRepository.findById(orderItem.getItemId())
+                .orElseThrow(() -> new IllegalArgumentException("해당 상품을 찾을 수 없습니다."));
+
+        // 판매자 검증
+        if (!item.getSellerId().equals(sellerId.toString())) {
+            throw new AccessDeniedException("해당 주문에 접근할 수 없습니다.");
+        }
+
+        // 주문, 구매자, 배송 조회
+        Order order = orderItem.getOrder();
+        Buyer buyer = order.getBuyer();
+
+        Delivery delivery = orderItem.getDelivery(); // OrderItem에서 Delivery 가져오기
+
+        return new SellerOrderDetailDto(order, orderItem, item, buyer, delivery);
+    }
+
 
     /**
      * 판매자가 임시로 배송 완료 처리
      */
-    @Transactional
     public void completeDelivery(Long orderItemId, Long sellerId) {
         // 주문 아이템 조회
         OrderItem orderItem = orderItemRepository.findById(orderItemId)

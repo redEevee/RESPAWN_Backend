@@ -38,17 +38,6 @@ public class Seller {
     @Enumerated(STRING)
     private Role role;
 
-    private Seller(String name, String username, String company, Long companyNumber,String password, String email, String phoneNumber, Role role) {
-        this.name = name;
-        this.username = username;
-        this.company = company;
-        this.companyNumber = companyNumber;
-        this.password = password;
-        this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.role = role;
-    }
-
     //정적 팩토리 메서드
     public static Seller createSeller(String name, String username, String company, Long companyNumber, String password, String email, String phoneNumber, Role role) {
         Seller seller = new Seller();
@@ -63,7 +52,4 @@ public class Seller {
         return seller;
     }
 
-    public void updatePhoneNumber(String newPhoneNumber) {
-        this.phoneNumber = newPhoneNumber;
-    }
 }

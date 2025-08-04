@@ -4,7 +4,6 @@ import com.shop.respawn.domain.*;
 import com.shop.respawn.dto.AddressDto;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.OrderItemRepository;
-import com.shop.respawn.repository.OrderRepository;
 import com.shop.respawn.repository.SellerRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -13,10 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class MyService {
 
     private final BuyerRepository buyerRepository;
@@ -26,7 +25,6 @@ public class MyService {
 
     private final EntityManager em;
 
-    @Transactional
     public void initData() {
 
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
@@ -64,7 +62,7 @@ public class MyService {
         Item item1 = new Item();
         item1.setId("68822f86e8223dd3d36c5db5");
         Item item2 = new Item();
-        item2.setId("68823316e8223dd3d36c5dbd");
+        item2.setId("688f1ec09458c96f5cecfffa");
         Item item3 = new Item();
         item3.setId("6882343ae8223dd3d36c5dbe");
 
@@ -83,7 +81,7 @@ public class MyService {
 
             Delivery delivery = new Delivery();
             delivery.setAddress(defaultAddress);
-            delivery.setStatus(DeliveryStatus.READY);
+            delivery.setStatus(DeliveryStatus.DELIVERED);
 
             if (i % 3 == 0) {
                 OrderItem oi2 = OrderItem.createOrderItem(item2, 20, 2);
@@ -107,7 +105,9 @@ public class MyService {
             em.persist(delivery);
             em.persist(order);
 
-            OrderItem findOrderItem = orderItemRepository.findById(1L).get();
+            OrderItem findOrderItem = orderItemRepository.findById(1L)
+                    .orElseThrow(() -> new RuntimeException("OrderItem이 존재하지 않습니다."));
+
             findOrderItem.getDelivery().setStatus(DeliveryStatus.DELIVERED);
         }
     }

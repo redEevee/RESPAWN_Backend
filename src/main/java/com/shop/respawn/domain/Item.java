@@ -1,6 +1,5 @@
 package com.shop.respawn.domain;
 
-import com.shop.respawn.exception.NotEnoughStockException;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,6 +7,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.shop.respawn.domain.ItemStatus.*;
 
 @Document(collection = "item")
 @Getter @Setter
@@ -28,6 +29,8 @@ public class Item {
     private String imageUrl;
     private List<String> categoryIds = new ArrayList<>();
     private String description;
+
+    private ItemStatus status = SALE;
 
     //==비즈니스 로직==//
     public void addStock(int quantity) {
