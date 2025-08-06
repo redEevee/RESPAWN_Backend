@@ -24,6 +24,8 @@ public class ProductInquiry {
     @Indexed
     private String itemId;   // 문의 대상 상품 ID
 
+    private String inquiryType;
+
     private String question;
 
     private String questionDetail;

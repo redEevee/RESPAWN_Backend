@@ -10,9 +10,14 @@ public class ProductInquiryRequestDto {
     private String itemId;
 
     @NotBlank
+    private String inquiryType;
+
+    @NotBlank
     private String question;
 
     @NotBlank
     private String questionDetail;
+
+    private boolean openToPublic;
 
 }

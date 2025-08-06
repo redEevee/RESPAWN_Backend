@@ -15,6 +15,8 @@ public class ProductInquiryResponseTitlesDto {
 
     private String itemId;
 
+    private String inquiryType;
+
     private String question;
 
     private LocalDateTime questionDate;

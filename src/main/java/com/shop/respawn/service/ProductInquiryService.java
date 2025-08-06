@@ -52,6 +52,7 @@ public class ProductInquiryService {
 
                     String question = i.getQuestion();
                     dto.setQuestion(question.length() > 30 ? question.substring(0, 30) + "..." : question);
+                    dto.setInquiryType(i.getInquiryType());
                     dto.setStatus(i.getStatus().name());
                     dto.setQuestionDate(i.getQuestionDate());
                     dto.setOpenToPublic(i.isOpenToPublic());
@@ -79,6 +80,7 @@ public class ProductInquiryService {
                     // 제목 역할을 하는 question의 앞부분만 보이도록 처리 (예: 30자)
                     String question = i.getQuestion();
                     dto.setQuestion(question.length() > 30 ? question.substring(0, 30) + "..." : question);
+                    dto.setInquiryType(i.getInquiryType());
                     dto.setStatus(i.getStatus().name());
                     dto.setQuestionDate(i.getQuestionDate());
                     dto.setOpenToPublic(i.isOpenToPublic());
@@ -95,15 +97,18 @@ public class ProductInquiryService {
                 .collect(Collectors.toList());
     }
 
+    // 상품 문의 등록
     public ProductInquiryResponseDto createInquiry(Long buyerId, ProductInquiryRequestDto dto) {
 
         ProductInquiry inquiry = new ProductInquiry();
         inquiry.setBuyerId(String.valueOf(buyerId));
         inquiry.setItemId(dto.getItemId());
+        inquiry.setInquiryType(dto.getInquiryType());
         inquiry.setQuestion(dto.getQuestion());
         inquiry.setQuestionDetail(dto.getQuestionDetail());
         inquiry.setQuestionDate(LocalDateTime.now());
         inquiry.setStatus(InquiryStatus.WAITING);
+        inquiry.setOpenToPublic(dto.isOpenToPublic());
 
         ProductInquiry saved = productInquiryRepository.save(inquiry);
 
@@ -181,6 +186,7 @@ public class ProductInquiryService {
         dto.setBuyerId(entity.getBuyerId());
         dto.setBuyerUsername(buyerUsername);
         dto.setItemId(entity.getItemId());
+        dto.setInquiryType(entity.getInquiryType());
         dto.setQuestion(entity.getQuestion());
         dto.setQuestionDetail(entity.getQuestionDetail());
         dto.setAnswer(entity.getAnswer());
