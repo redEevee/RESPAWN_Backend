@@ -11,4 +11,5 @@ public interface ProductInquiryRepository extends MongoRepository<ProductInquiry
 
     List<ProductInquiry> findAllByBuyerId(String buyerId);
 
+    List<ProductInquiry> findAllByItemIdIn(List<String> itemIds);
 }

@@ -117,6 +117,39 @@ public class InquiryController {
         }
     }
 
+    // 1) 판매자가 본인 상품에 대한 문의 목록 조회
+    @GetMapping("/seller")
+    public ResponseEntity<?> getInquiriesForSeller(HttpSession session) {
+        try {
+            String sellerId = String.valueOf(getSellerIdFromSession(session));
+            List<ProductInquiryResponseDto> inquiries = productInquiryService.getInquiriesBySellerId(sellerId);
+            return ResponseEntity.ok(inquiries);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // 2) 판매자가 문의에 답변 등록/수정
+    @PostMapping("/{inquiryId}/answer")
+    public ResponseEntity<?> answerInquiry(
+            @PathVariable String inquiryId,
+            @RequestBody Map<String, String> requestBody,
+            HttpSession session) {
+        try {
+            String sellerId = String.valueOf(getSellerIdFromSession(session));
+
+            String answer = requestBody.get("answer");
+            if (answer == null || answer.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "답변 내용을 입력하세요."));
+            }
+
+            ProductInquiryResponseDto updatedInquiry = productInquiryService.answerInquiry(inquiryId, answer, sellerId);
+            return ResponseEntity.ok(Map.of("message", "답변이 등록되었습니다.", "inquiry", updatedInquiry));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(Map.of("error", e.getMessage()));
+        }
+    }
+
     /**
      * 현재 로그인된 판매자의 ID 가져오기
      */
@@ -127,10 +160,27 @@ public class InquiryController {
             // 예시: 세션에 저장된 구매자 ID
             return (Long) session.getAttribute("userId");
         } else {
+            throw new RuntimeException("구매자 로그인이 필요합니다.");
+        }
+    }
+
+    /**
+     * 현재 로그인된 판매자의 ID 가져오기
+     */
+    private Long getSellerIdFromSession(HttpSession session) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String authorities = authentication.getAuthorities().toString();
+        if(authorities.equals("[ROLE_SELLER]")) {
+            // 예시: 세션에 저장된 구매자 ID
+            return (Long) session.getAttribute("userId");
+        } else {
             throw new RuntimeException("판매자 로그인이 필요합니다.");
         }
     }
 
+    /**
+     * 현재 로그인된 유저의 ID 가져오기
+     */
     private Long getUserIdFromSession(HttpSession session) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String authorities = authentication.getAuthorities().toString();
