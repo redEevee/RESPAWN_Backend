@@ -169,9 +169,17 @@ public class ProductInquiryService {
 
 
     private ProductInquiryResponseDto toResponseDto(ProductInquiry entity) {
+
+        // buyerId로 구매자 정보 조회
+        String buyerId = entity.getBuyerId();
+        String buyerUsername = buyerRepository.findById(Long.valueOf(buyerId))
+                .map(Buyer::getUsername)
+                .orElse("알 수 없음");
+
         ProductInquiryResponseDto dto = new ProductInquiryResponseDto();
         dto.setId(entity.getId());
         dto.setBuyerId(entity.getBuyerId());
+        dto.setBuyerUsername(buyerUsername);
         dto.setItemId(entity.getItemId());
         dto.setQuestion(entity.getQuestion());
         dto.setQuestionDetail(entity.getQuestionDetail());

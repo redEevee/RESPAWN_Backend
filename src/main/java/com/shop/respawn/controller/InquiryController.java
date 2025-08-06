@@ -91,10 +91,11 @@ public class InquiryController {
             // 상품 판매자 ID 조회
             String itemId = inquiryDto.getItemId();
             String sellerId = itemService.getSellerIdByItemId(itemId);
+
             // getSellerIdByItemId(String itemId)는 ItemService에 구현 필요
 
             // 권한 체크: 로그인한 유저가 구매자 본인 OR 판매자면 허용
-            if (userId.equals(inquiryDto.getBuyerId()) || userId.equals(sellerId)) {
+            if (userId.equals(inquiryDto.getBuyerId()) || userId.equals(sellerId) || inquiryDto.isOpenToPublic()) {
                 return ResponseEntity.ok(inquiryDto);
             } else {
                 return ResponseEntity.status(403).body(Map.of("error", "권한이 없습니다."));
