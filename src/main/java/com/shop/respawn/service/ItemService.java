@@ -93,6 +93,12 @@ public class ItemService {
         return itemRepository.findBySellerId(sellerId);
     }
 
+    public String getSellerIdByItemId(String itemId) {
+        return itemRepository.findById(itemId)
+                .map(Item::getSellerId)
+                .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + itemId));
+    }
+
     /**
      * 상품의 판매상태 조작 메서드
      */
