@@ -81,7 +81,6 @@ public class InquiryController {
     @GetMapping("/{inquiryId}/detail")
     public ResponseEntity<?> getInquiryDetail(@PathVariable String inquiryId, HttpSession session) {
         try {
-            String userId = String.valueOf(getUserIdFromSession(session));
 
             ProductInquiryResponseDto inquiryDto = productInquiryService.getInquiryById(inquiryId);
             if (inquiryDto == null) {
@@ -95,6 +94,7 @@ public class InquiryController {
             if(inquiryDto.isOpenToPublic()) {
                 return ResponseEntity.ok(inquiryDto);
             } else {
+                String userId = String.valueOf(getUserIdFromSession(session));
                 // 권한 체크: 로그인한 유저가 구매자 본인 OR 판매자면 허용
                 if (userId.equals(inquiryDto.getBuyerId()) || userId.equals(sellerId)) {
                     return ResponseEntity.ok(inquiryDto);
