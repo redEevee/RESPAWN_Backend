@@ -143,12 +143,11 @@ public class InquiryController {
             String sellerId = String.valueOf(getSellerIdFromSession(session));
 
             String answer = requestBody.get("answer");
-            String answerDetail = requestBody.get("answerDetail");
-            if (answer == null || answer.isBlank() && (answerDetail == null || answerDetail.isBlank())) {
+            if (answer == null || answer.isBlank()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "답변 내용을 입력하세요."));
             }
 
-            ProductInquiryResponseDto updatedInquiry = productInquiryService.answerInquiry(inquiryId, answer, answerDetail, sellerId);
+            ProductInquiryResponseDto updatedInquiry = productInquiryService.answerInquiry(inquiryId, answer, sellerId);
             return ResponseEntity.ok(Map.of("message", "답변이 등록되었습니다.", "inquiry", updatedInquiry));
         } catch (RuntimeException e) {
             return ResponseEntity.status(403).body(Map.of("error", e.getMessage()));

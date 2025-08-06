@@ -21,8 +21,6 @@ public class ProductInquiryResponseDto {
 
     private String answer;
 
-    private String answerDetail;
-
     private LocalDateTime questionDate;
 
     private LocalDateTime answerDate;
