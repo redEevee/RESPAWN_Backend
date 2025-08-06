@@ -99,6 +99,10 @@ public class ItemService {
                 .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + itemId));
     }
 
+    public List<Item> getItemsByIds(List<String> itemIds) {
+        return itemRepository.findAllById(itemIds);
+    }
+
     /**
      * 상품의 판매상태 조작 메서드
      */

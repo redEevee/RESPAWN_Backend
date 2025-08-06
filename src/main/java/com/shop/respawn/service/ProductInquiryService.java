@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -117,8 +118,21 @@ public class ProductInquiryService {
 
     public List<ProductInquiryResponseDto> getInquiriesByBuyer(String buyerId) {
         List<ProductInquiry> inquiries = productInquiryRepository.findAllByBuyerId(buyerId);
+        // 문의에 포함된 itemId 추출 및 중복 제거
+        List<String> itemIds = inquiries.stream()
+                .map(ProductInquiry::getItemId)
+                .distinct()
+                .toList();
+
+        // 해당 상품들 조회
+        List<Item> items = itemService.getItemsByIds(itemIds);
+
+        // itemId -> itemName 매핑
+        Map<String, String> itemIdToName = items.stream()
+                .collect(Collectors.toMap(Item::getId, Item::getName));
+
         return inquiries.stream()
-                .map(this::toResponseDto)
+                .map(inquiry -> toResponseDtoWithItemName(inquiry, itemIdToName))
                 .collect(Collectors.toList());
     }
 
@@ -143,9 +157,12 @@ public class ProductInquiryService {
         }
         List<ProductInquiry> inquiries = productInquiryRepository.findAllByItemIdIn(sellerItemIds);
 
+        Map<String, String> itemIdToName = sellerItems.stream()
+                .collect(Collectors.toMap(Item::getId, Item::getName));
+
         // 3) 문의 엔티티를 DTO로 변환 후 반환
         return inquiries.stream()
-                .map(this::toResponseDto)
+                .map(inquiry -> toResponseDtoWithItemName(inquiry, itemIdToName))
                 .collect(Collectors.toList());
     }
 
@@ -194,6 +211,30 @@ public class ProductInquiryService {
         dto.setAnswerDate(entity.getAnswerDate());
         dto.setStatus(entity.getStatus().name());
         dto.setOpenToPublic(entity.isOpenToPublic());
+        return dto;
+    }
+
+    private ProductInquiryResponseDto toResponseDtoWithItemName(ProductInquiry entity, Map<String, String> itemIdToName) {
+        ProductInquiryResponseDto dto = new ProductInquiryResponseDto();
+        dto.setId(entity.getId());
+        dto.setBuyerId(entity.getBuyerId());
+
+        // 구매자 username 추가 시 연동 가능
+        String buyerUsername = buyerRepository.findById(Long.valueOf(entity.getBuyerId()))
+                .map(Buyer::getUsername)
+                .orElse("알 수 없음");
+        dto.setBuyerUsername(buyerUsername);
+
+        dto.setItemId(entity.getItemId());
+        dto.setItemName(itemIdToName.getOrDefault(entity.getItemId(), "알 수 없는 상품"));  // 상품명 세팅
+
+        dto.setQuestion(entity.getQuestion());
+        dto.setAnswer(entity.getAnswer());
+        dto.setQuestionDate(entity.getQuestionDate());
+        dto.setAnswerDate(entity.getAnswerDate());
+        dto.setStatus(entity.getStatus().name());
+        dto.setOpenToPublic(entity.isOpenToPublic());
+
         return dto;
     }
 }

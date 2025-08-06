@@ -15,6 +15,8 @@ public class ProductInquiryResponseDto {
 
     private String itemId;
 
+    private String itemName;
+
     private String inquiryType;
 
     private String question;
