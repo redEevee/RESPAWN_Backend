@@ -145,7 +145,7 @@ public class ProductInquiryService {
     }
 
     // 판매자가 문의에 답변 등록
-    public ProductInquiryResponseDto answerInquiry(String inquiryId, String answer, String sellerId) {
+    public ProductInquiryResponseDto answerInquiry(String inquiryId, String answer, String answerDetail, String sellerId) {
         ProductInquiry inquiry = productInquiryRepository.findById(inquiryId)
                 .orElseThrow(() -> new RuntimeException("문의가 존재하지 않습니다."));
 
@@ -160,6 +160,7 @@ public class ProductInquiryService {
 
         // 3) 답변 등록 및 상태 변경
         inquiry.setAnswer(answer);
+        inquiry.setAnswerDetail(answerDetail);
         inquiry.setAnswerDate(LocalDateTime.now());
         inquiry.setStatus(InquiryStatus.ANSWERED);
 

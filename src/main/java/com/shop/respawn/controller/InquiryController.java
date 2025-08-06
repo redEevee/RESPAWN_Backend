@@ -92,14 +92,17 @@ public class InquiryController {
             String itemId = inquiryDto.getItemId();
             String sellerId = itemService.getSellerIdByItemId(itemId);
 
-            // getSellerIdByItemId(String itemId)는 ItemService에 구현 필요
-
-            // 권한 체크: 로그인한 유저가 구매자 본인 OR 판매자면 허용
-            if (userId.equals(inquiryDto.getBuyerId()) || userId.equals(sellerId) || inquiryDto.isOpenToPublic()) {
+            if(inquiryDto.isOpenToPublic()) {
                 return ResponseEntity.ok(inquiryDto);
             } else {
-                return ResponseEntity.status(403).body(Map.of("error", "권한이 없습니다."));
+                // 권한 체크: 로그인한 유저가 구매자 본인 OR 판매자면 허용
+                if (userId.equals(inquiryDto.getBuyerId()) || userId.equals(sellerId)) {
+                    return ResponseEntity.ok(inquiryDto);
+                } else {
+                    return ResponseEntity.status(403).body(Map.of("error", "권한이 없습니다."));
+                }
             }
+
         } catch (RuntimeException e) {
             return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
         }
@@ -140,11 +143,12 @@ public class InquiryController {
             String sellerId = String.valueOf(getSellerIdFromSession(session));
 
             String answer = requestBody.get("answer");
-            if (answer == null || answer.isBlank()) {
+            String answerDetail = requestBody.get("answerDetail");
+            if (answer == null || answer.isBlank() && (answerDetail == null || answerDetail.isBlank())) {
                 return ResponseEntity.badRequest().body(Map.of("error", "답변 내용을 입력하세요."));
             }
 
-            ProductInquiryResponseDto updatedInquiry = productInquiryService.answerInquiry(inquiryId, answer, sellerId);
+            ProductInquiryResponseDto updatedInquiry = productInquiryService.answerInquiry(inquiryId, answer, answerDetail, sellerId);
             return ResponseEntity.ok(Map.of("message", "답변이 등록되었습니다.", "inquiry", updatedInquiry));
         } catch (RuntimeException e) {
             return ResponseEntity.status(403).body(Map.of("error", e.getMessage()));
