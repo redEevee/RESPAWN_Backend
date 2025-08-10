@@ -98,6 +98,40 @@ public class ReviewService {
         return convertReviewsToDtos(reviews, sellerItems);
     }
 
+    /**
+     * 판매자 ID와 특정 아이템 ID로 필터링된 리뷰 리스트 조회
+     */
+    public List<ReviewWithItemDto> getReviewsBySellerIdAndItemId(String sellerId, String itemId) {
+        // 판매자 상품 리스트 가져오기
+        List<Item> sellerItems = itemService.getItemsBySellerId(sellerId);
+
+        // 해당 itemId가 판매자 상품 목록에 있는지 체크 (보안/유효성 검사)
+        boolean ownsItem = sellerItems.stream()
+                .anyMatch(item -> item.getId().equals(itemId));
+        if (!ownsItem) {
+            // 판매자가 판매하지 않는 상품이면 빈 리스트 반환
+            return Collections.emptyList();
+        }
+
+        // 특정 상품에 해당하는 주문 아이템 ID만 조회
+        List<Long> orderItemIds = orderItemRepository.findAllByItemId(itemId).stream()
+                .map(OrderItem::getId)
+                .toList();
+
+        if (orderItemIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Review> reviews = reviewRepository.findByOrderItemIdInOrderByCreatedDateDesc(
+                orderItemIds.stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.toList())
+        );
+
+        // 리뷰 변환 (기존 메서드 활용)
+        return convertReviewsToDtos(reviews, sellerItems);
+    }
+
     // 특정 아이템(itemId)에 대한 모든 리뷰 가져오기
     public List<ReviewWithItemDto> getReviewsByItemId(String itemId) {
         List<Review> reviews = reviewRepository.findByItemIdOrderByCreatedDateDesc(itemId);

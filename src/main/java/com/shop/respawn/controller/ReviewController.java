@@ -86,10 +86,17 @@ public class ReviewController {
      * 판매자가 자신이 판매한 아이템에 대한 리뷰 보기
      */
     @GetMapping("/seller/my-reviews")
-    public ResponseEntity<List<ReviewWithItemDto>> getMyItemReviews(HttpSession session) {
+    public ResponseEntity<List<ReviewWithItemDto>> getMyItemReviews(
+            HttpSession session,
+            @RequestParam(required = false) String itemId) {
         try {
             String sellerId = getSellerIdFromSession(session).toString();
-            List<ReviewWithItemDto> reviews = reviewService.getReviewsBySellerId(sellerId);
+            List<ReviewWithItemDto> reviews;
+            if (itemId != null && !itemId.isEmpty()) {
+                reviews = reviewService.getReviewsBySellerIdAndItemId(sellerId, itemId);
+            } else {
+                reviews = reviewService.getReviewsBySellerId(sellerId);
+            }
             return ResponseEntity.ok(reviews);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
