@@ -1,9 +1,5 @@
 package com.shop.respawn.controller;
 
-import com.shop.respawn.domain.Address;
-import com.shop.respawn.domain.Delivery;
-import com.shop.respawn.domain.Order;
-import com.shop.respawn.domain.Payment;
 import com.shop.respawn.dto.*;
 import com.shop.respawn.repository.PaymentRepository;
 import com.shop.respawn.service.OrderService;
@@ -11,15 +7,14 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.shop.respawn.domain.RefundStatus.*;
+import static com.shop.respawn.util.SessionUtil.*;
+
 
 @RestController
 @RequestMapping("/api/orders")
@@ -304,18 +299,6 @@ public class OrderController {
     }
 
     /**
-     * 세션에서 buyerId를 가져오는 헬퍼 메서드
-     */
-    private Long getBuyerIdFromSession(HttpSession session) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String authorities = authentication.getAuthorities().toString();
-        if (authorities.equals("[ROLE_USER]")) {
-            System.out.println("구매자 권한의 아이디 : " + authorities);
-            return (Long) session.getAttribute("userId");
-        } else throw new RuntimeException("로그인이 필요하거나 판매자 아이디 입니다.");
-    }
-
-    /**
      * 배송 완료 처리 메서드
      */
     @PostMapping("/seller/order-items/{orderItemId}/complete-delivery")
@@ -334,17 +317,4 @@ public class OrderController {
         }
     }
 
-    /**
-     * 세션에서 sellerId를 가져오는 헬퍼 메서드
-     */
-    private Long getSellerIdFromSession(HttpSession session) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String authorities = authentication.getAuthorities().toString();
-        if (authorities.equals("[ROLE_SELLER]")) {
-            System.out.println("판매자 권한의 아이디 : " + authorities);
-            return (Long) session.getAttribute("userId");
-        } else {
-            throw new RuntimeException("판매자 로그인이 필요합니다.");
-        }
-    }
 }

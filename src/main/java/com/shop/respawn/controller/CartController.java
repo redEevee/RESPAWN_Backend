@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.shop.respawn.util.SessionUtil.getBuyerIdFromSession;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/cart")
@@ -35,9 +37,7 @@ public class CartController {
             @RequestBody CartItemDto cartItemDto,
             HttpSession session) {
 
-
         System.out.println("cartItemDto = " + cartItemDto);
-        // 세션에서 buyerId 가져오기
         Long buyerId = getBuyerIdFromSession(session);
         System.out.println("buyerId = " + buyerId);
 
@@ -149,16 +149,4 @@ public class CartController {
         }
     }
 
-    /**
-     * 세션에서 buyerId를 가져오는 헬퍼 메서드
-     */
-    private Long getBuyerIdFromSession(HttpSession session) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String authorities = authentication.getAuthorities().toString();
-
-        if(authorities.equals("[ROLE_USER]")){
-            System.out.println("구매자 권한의 아이디 : " + authorities);
-            return (Long) session.getAttribute("userId");
-        } else throw new RuntimeException("로그인이 필요하거나 판매자 아이디 입니다.");
-    }
 }

@@ -73,9 +73,7 @@ public class UserController {
     @GetMapping("/logoutOk")
     public ResponseEntity<?> logoutOk() {
         System.out.println("로그아웃 성공");
-        ResponseEntity<Object> build = ResponseEntity.ok().build();
-        System.out.println("build = " + build);
-        return build;
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/admin")
