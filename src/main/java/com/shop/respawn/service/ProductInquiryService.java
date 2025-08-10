@@ -43,7 +43,7 @@ public class ProductInquiryService {
 
     //상품별 제목 조회
     public List<ProductInquiryResponseTitlesDto> getInquiryTitlesByItemId(String itemId) {
-        List<ProductInquiry> inquiries = productInquiryRepository.findAllByItemId(itemId);
+        List<ProductInquiry> inquiries = productInquiryRepository.findAllByItemIdOrderByQuestionDateDesc(itemId);
 
         return inquiries.stream()
                 .map(i -> {
@@ -117,7 +117,7 @@ public class ProductInquiryService {
     }
 
     public List<ProductInquiryResponseDto> getInquiriesByBuyer(String buyerId) {
-        List<ProductInquiry> inquiries = productInquiryRepository.findAllByBuyerId(buyerId);
+        List<ProductInquiry> inquiries = productInquiryRepository.findAllByBuyerIdOrderByQuestionDateDesc(buyerId);
         // 문의에 포함된 itemId 추출 및 중복 제거
         List<String> itemIds = inquiries.stream()
                 .map(ProductInquiry::getItemId)
@@ -137,7 +137,7 @@ public class ProductInquiryService {
     }
 
     public List<ProductInquiryResponseDto> getInquiriesByItem(String itemId) {
-        List<ProductInquiry> inquiries = productInquiryRepository.findAllByItemId(itemId);
+        List<ProductInquiry> inquiries = productInquiryRepository.findAllByItemIdOrderByQuestionDateDesc(itemId);
         return inquiries.stream()
                 .map(this::toResponseDto)
                 .collect(Collectors.toList());
@@ -155,7 +155,7 @@ public class ProductInquiryService {
         if (sellerItemIds.isEmpty()) {
             return List.of();
         }
-        List<ProductInquiry> inquiries = productInquiryRepository.findAllByItemIdIn(sellerItemIds);
+        List<ProductInquiry> inquiries = productInquiryRepository.findAllByItemIdInOrderByQuestionDateDesc(sellerItemIds);
 
         Map<String, String> itemIdToName = sellerItems.stream()
                 .collect(Collectors.toMap(Item::getId, Item::getName));
