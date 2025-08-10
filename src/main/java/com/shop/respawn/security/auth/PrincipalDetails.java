@@ -75,21 +75,41 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
 
     @Override
     public boolean isAccountNonExpired() {
+        if (buyer != null && buyer.getAccountStatus() != null) {
+            return buyer.getAccountStatus().isAccountNonExpired();
+        } else if (seller != null && seller.getAccountStatus() != null) {
+            return seller.getAccountStatus().isAccountNonExpired();
+        }
         return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
+        if (buyer != null && buyer.getAccountStatus() != null) {
+            return buyer.getAccountStatus().isAccountNonLocked();
+        } else if (seller != null && seller.getAccountStatus() != null) {
+            return seller.getAccountStatus().isAccountNonLocked();
+        }
         return true;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
+        if (buyer != null && buyer.getAccountStatus() != null) {
+            return buyer.getAccountStatus().isCredentialsNonExpired();
+        } else if (seller != null && seller.getAccountStatus() != null) {
+            return seller.getAccountStatus().isCredentialsNonExpired();
+        }
         return true;
     }
 
     @Override
     public boolean isEnabled() {
+        if (buyer != null && buyer.getAccountStatus() != null) {
+            return buyer.getAccountStatus().isEnabled();
+        } else if (seller != null && seller.getAccountStatus() != null) {
+            return seller.getAccountStatus().isEnabled();
+        }
         return true;
     }
 }

@@ -94,10 +94,14 @@ public class UserController {
         Seller seller = userService.getSellerInfo(username);
 
         if (buyer != null) {
+            buyer.renewExpiryDate();
+            buyerRepository.save(buyer);
             return ResponseEntity.ok(
                     new UserDto(buyer.getName(), buyer.getUsername(), buyer.getEmail(), buyer.getPhoneNumber(), buyer.getProvider(), buyer.getRole())
             );
         } else if (seller != null) {
+            seller.renewExpiryDate();
+            sellerRepository.save(seller);
             return ResponseEntity.ok(
                     new UserDto(seller.getName(), seller.getUsername(), seller.getEmail(), seller.getPhoneNumber(), seller.getRole())
             );

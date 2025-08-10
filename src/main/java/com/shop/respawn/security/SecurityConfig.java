@@ -1,5 +1,7 @@
 package com.shop.respawn.security;
 
+import com.shop.respawn.exception.CustomAuthenticationFailureHandler;
+import com.shop.respawn.exception.CustomAuthenticationSuccessHandler;
 import com.shop.respawn.security.oauth.PrincipalOauth2UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,8 @@ import java.util.List;
 public class SecurityConfig {
 
     private final PrincipalOauth2UserService principalOauth2UserService;
+    private final CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
+    private final CustomAuthenticationFailureHandler customAuthenticationFailureHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -54,6 +58,8 @@ public class SecurityConfig {
                         .usernameParameter("username")
                         .passwordParameter("password")
                         .defaultSuccessUrl("/loginOk")
+                        .successHandler(customAuthenticationSuccessHandler) // 성공 핸들러
+                        .failureHandler(customAuthenticationFailureHandler) // 실패 핸들러
                         .permitAll()
                 );
 
@@ -70,10 +76,10 @@ public class SecurityConfig {
 
         http //로그아웃
                 .logout(logout -> logout
-                        .logoutUrl("/logout")                  // 로그아웃 요청 URL (기본값: "/logout")
-                        .logoutSuccessUrl("/logoutOk")          // 로그아웃 성공 후 리다이렉트 URL (기본값: "/login?logout")
-                        .invalidateHttpSession(true)           // 세션 무효화 (기본값: true)
-                        .deleteCookies("JSESSIONID")           // 쿠키 삭제
+                        .logoutUrl("/logout")                           // 로그아웃 요청 URL (기본값: "/logout")
+                        .logoutSuccessUrl("/logoutOk")                  // 로그아웃 성공 후 리다이렉트 URL (기본값: "/login?logout")
+                        .invalidateHttpSession(true)                      // 세션 무효화 (기본값: true)
+                        .deleteCookies("JSESSIONID")     // 쿠키 삭제
                 );
 
         http

@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 import static jakarta.persistence.EnumType.STRING;
 import static lombok.AccessLevel.PROTECTED;
 
@@ -38,18 +40,30 @@ public class Seller {
     @Enumerated(STRING)
     private Role role;
 
+    // 계정 상태 필드 추가
+    @Embedded
+    private AccountStatus accountStatus = new AccountStatus();
+
     //정적 팩토리 메서드
     public static Seller createSeller(String name, String username, String company, Long companyNumber, String password, String email, String phoneNumber, Role role) {
-        Seller seller = new Seller();
-        seller.name = name;
-        seller.username = username;
-        seller.company = company;
-        seller.companyNumber = companyNumber;
-        seller.password = password;
-        seller.email = email;
-        seller.phoneNumber = phoneNumber;
-        seller.role = role;
-        return seller;
+        return Seller.builder()
+                .name(name)
+                .username(username)
+                .company(company)
+                .companyNumber(companyNumber)
+                .password(password)
+                .email(email)
+                .phoneNumber(phoneNumber)
+                .role(role)
+                .accountStatus(new AccountStatus(true)) // 가입시 1년 만료일 자동 할당
+                .build();
+    }
+
+    //연관 관계 편의 메서드
+    public void renewExpiryDate() {
+        if (this.accountStatus != null) {
+            this.accountStatus.setAccountExpiryDate(LocalDateTime.now().plusYears(1));
+        }
     }
 
 }

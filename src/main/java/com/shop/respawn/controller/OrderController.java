@@ -1,7 +1,6 @@
 package com.shop.respawn.controller;
 
 import com.shop.respawn.dto.*;
-import com.shop.respawn.repository.PaymentRepository;
 import com.shop.respawn.service.OrderService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -22,7 +21,6 @@ import static com.shop.respawn.util.SessionUtil.*;
 public class OrderController {
 
     private final OrderService orderService;
-    private final PaymentRepository paymentRepository;
 
     /**
      * 장바구니 선택 상품 주문

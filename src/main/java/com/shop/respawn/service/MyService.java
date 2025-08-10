@@ -2,6 +2,7 @@ package com.shop.respawn.service;
 
 import com.shop.respawn.domain.*;
 import com.shop.respawn.dto.AddressDto;
+import com.shop.respawn.repository.AdminRepository;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.OrderItemRepository;
 import com.shop.respawn.repository.SellerRepository;
@@ -20,14 +21,14 @@ public class MyService {
 
     private final BuyerRepository buyerRepository;
     private final SellerRepository sellerRepository;
+    private final AdminRepository adminRepository;
     private final AddressService addressService;
     private final OrderItemRepository orderItemRepository;
+    private final BCryptPasswordEncoder encoder;
 
     private final EntityManager em;
 
     public void initData() {
-
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
         Buyer buyer = Buyer.createBuyerWithInitLists("이지은", "a", encoder.encode("a"), "iu@naver.com", "01012345678", Role.ROLE_USER);
         buyerRepository.save(buyer);
@@ -48,6 +49,10 @@ public class MyService {
         Seller seller3 = Seller.createSeller("로지텍", "d", "Logitech", 9876543211L, encoder.encode("d"), "logitech9876@gmail.com", "01055430909", Role.ROLE_SELLER);
         sellerRepository.save(seller3);
         em.persist(seller3);
+
+        Admin admin = Admin.createAdmin("관리자", "admin", encoder.encode("adminPw"), Role.ROLE_ADMIN);
+        adminRepository.save(admin);
+        em.persist(admin);
 
         em.flush();
         em.clear();
