@@ -2,6 +2,7 @@ package com.shop.respawn.controller;
 
 import com.shop.respawn.dto.ReviewRequestDto;
 import com.shop.respawn.dto.ReviewWithItemDto;
+import com.shop.respawn.dto.WritableReviewDto;
 import com.shop.respawn.service.ReviewService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -11,7 +12,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/reviews")
@@ -57,6 +60,26 @@ public class ReviewController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    /**
+     * 자신이 작성한 리뷰 조회 및 리뷰 작성 가능 여부
+     */
+    @GetMapping("/my")
+    public ResponseEntity<?> getMyReviews(HttpSession session) {
+        Long buyerId = (Long) session.getAttribute("userId");
+        if (buyerId == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+
+        List<WritableReviewDto> writableItems = reviewService.getWritableReviews(buyerId);
+        List<ReviewWithItemDto> writtenReviews = reviewService.getWrittenReviews(buyerId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("writableItems", writableItems);
+        response.put("writtenReviews", writtenReviews);
+
+        return ResponseEntity.ok(response);
     }
 
     /**

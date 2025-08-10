@@ -2,6 +2,7 @@ package com.shop.respawn.service;
 
 import com.shop.respawn.domain.*;
 import com.shop.respawn.dto.ReviewWithItemDto;
+import com.shop.respawn.dto.WritableReviewDto;
 import com.shop.respawn.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -161,5 +162,46 @@ public class ReviewService {
                 })
                 .collect(Collectors.toList());
     }
+
+    /**
+     * 리뷰 작성 가능 여부
+     */
+    public List<WritableReviewDto> getWritableReviews(Long buyerId) {
+        List<OrderItem> deliveredOrderItems =
+                orderItemRepository.findDeliveredItemsByBuyerIdAndStatus(buyerId, DeliveryStatus.DELIVERED);
+
+        return deliveredOrderItems.stream()
+                .filter(orderItem -> reviewRepository.findByOrderItemId(String.valueOf(orderItem.getId())).isEmpty())
+                .map(orderItem -> {
+                    Item item = itemService.getItemById(orderItem.getItemId());
+                    boolean exists = reviewRepository
+                            .findByOrderItemId(String.valueOf(orderItem.getId()))
+                            .isPresent();
+                    return new WritableReviewDto(
+                            orderItem.getOrder().getId(),
+                            String.valueOf(orderItem.getId()),
+                            item.getName(),
+                            item.getImageUrl(),
+                            exists
+                    );
+                })
+                .toList();
+    }
+
+    /**
+     * 리뷰 조회
+     */
+    public List<ReviewWithItemDto> getWrittenReviews(Long buyerId) {
+        // MongoDB에서 해당 구매자의 리뷰 조회
+        List<Review> reviews = reviewRepository.findByBuyerIdOrderByCreatedDateDesc(String.valueOf(buyerId));
+
+        // 관련 아이템 캐시
+        List<Item> items = reviews.stream()
+                .map(r -> itemService.getItemById(r.getItemId()))
+                .toList();
+
+        return convertReviewsToDtos(reviews, items);
+    }
+
 
 }
