@@ -31,4 +31,14 @@ public class MaskingUtil {
                 "*".repeat(maskLength) + // 중간 4글자 마스킹
                 username.substring(start + maskLength);
     }
+
+    public static String maskUsername(String username) {
+        if (username == null || username.length() <= 3) {
+            // 3글자 이하이면 전체 * 처리하거나 그대로 반환
+            return username == null ? "" : username.replaceAll(".", "*");
+        }
+        String visible = username.substring(0, 3);
+        String masked = "*".repeat(username.length() - 3);
+        return visible + masked;
+    }
 }

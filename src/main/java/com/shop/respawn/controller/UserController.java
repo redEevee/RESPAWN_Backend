@@ -97,7 +97,7 @@ public class UserController {
 
         if (buyer != null) {
             return ResponseEntity.ok(
-                    new UserDto(buyer.getName(), buyer.getUsername(), buyer.getEmail(), buyer.getPhoneNumber(), buyer.getRole())
+                    new UserDto(buyer.getName(), buyer.getUsername(), buyer.getEmail(), buyer.getPhoneNumber(), buyer.getProvider(), buyer.getRole())
             );
         } else if (seller != null) {
             return ResponseEntity.ok(
