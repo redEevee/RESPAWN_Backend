@@ -11,8 +11,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -51,6 +49,27 @@ public class UserService {
 
         buyer.updatePhoneNumber(newPhoneNumber);
         // userRepository.save(user); // 트랜잭션 내 변경감지로 자동 업데이트 됩니다.
+    }
+
+    public boolean changePassword(String username, String currentPassword, String newPassword) {
+        Buyer buyer = buyerRepository.findByUsername(username);
+        Seller seller = sellerRepository.findByUsername(username);
+
+        if (buyer != null) {
+            if (!encoder.matches(currentPassword, buyer.getPassword())) {
+                return false; // 현재 비밀번호 불일치
+            }
+            buyer.updatePassword(encoder.encode(newPassword));
+            // 변경감지(트랜잭션 내)로 save 호출 불필요
+            return true;
+        } else if (seller != null) {
+            if (!encoder.matches(currentPassword, seller.getPassword())) {
+                return false;
+            }
+            seller.updatePassword(encoder.encode(newPassword));
+            return true;
+        }
+        throw new RuntimeException("사용자를 찾을 수 없습니다.");
     }
 
     public Buyer getBuyerInfo(String username){

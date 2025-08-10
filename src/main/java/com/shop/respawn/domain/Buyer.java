@@ -83,6 +83,10 @@ public class Buyer {
         this.phoneNumber = newPhoneNumber;
     }
 
+    public void updatePassword(String newPassword) {
+        this.password = newPassword;
+    }
+
     // 연관관계 편의 메서드
     /**
      * 주소를 추가하는 편의 메서드

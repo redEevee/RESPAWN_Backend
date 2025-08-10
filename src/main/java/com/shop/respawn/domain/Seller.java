@@ -66,4 +66,8 @@ public class Seller {
         }
     }
 
+    public void updatePassword(String newPassword) {
+        this.password = newPassword;
+    }
+
 }

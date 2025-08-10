@@ -153,6 +153,28 @@ public class UserController {
         return Map.of("message", "전화번호가 성공적으로 변경되었습니다.");
     }
 
+    // 비밀번호 변경 엔드포인트
+    @PutMapping("/myPage/setPassword")
+    public ResponseEntity<?> changePassword(
+            Authentication authentication,
+            @RequestBody Map<String, String> request
+    ) {
+        String username = authentication.getName();
+        String currentPassword = request.get("currentPassword");
+        String newPassword = request.get("newPassword");
+        if (currentPassword == null || newPassword == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "값이 비어 있습니다."));
+        }
+
+        boolean changed = userService.changePassword(username, currentPassword, newPassword);
+        if (changed) {
+            return ResponseEntity.ok(Map.of("message", "비밀번호가 성공적으로 변경되었습니다."));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("error", "현재 비밀번호가 일치하지 않습니다."));
+        }
+    }
+
+
     @GetMapping("signup/username/{username}")
     public Boolean checkUsernameDuplicate(@PathVariable String username) {
         return userService.checkUsernameDuplicate(username);
