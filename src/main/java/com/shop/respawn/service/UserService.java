@@ -197,7 +197,7 @@ public class UserService {
 
         // 임시 토큰 생성 (10분 만료)
         String token = UUID.randomUUID().toString();
-        String resetLink = "http://localhost:8080/reset-password?token=" + token;
+        String resetLink = "http://localhost:3000/reset-password?token=" + token;
 
         // Redis나 DB에 토큰 저장
         redisUtil.setDataExpire("reset-token:" + token, username, 10 * 60L);
@@ -216,7 +216,7 @@ public class UserService {
         }
 
         String token = UUID.randomUUID().toString();
-        String resetLink = "http://localhost:8080/reset-password?token=" + token;
+        String resetLink = "http://localhost:3000/reset-password?token=" + token;
 
         redisUtil.setDataExpire("reset-token:" + token, username, 30 * 60L);
 
@@ -260,6 +260,18 @@ public class UserService {
             return seller.getName().equals(name) && seller.getPhoneNumber().equals(phoneNumber);
         }
         return false;
+    }
+
+    public Long getUserIdByUsername(String username) {
+        Buyer buyer = buyerRepository.findByUsername(username);
+        if (buyer != null) {
+            return buyer.getId();
+        }
+        Seller seller = sellerRepository.findByUsername(username);
+        if (seller != null) {
+            return seller.getId();
+        }
+        throw new RuntimeException("해당 아이디의 사용자를 찾을 수 없습니다.");
     }
 
     /**
