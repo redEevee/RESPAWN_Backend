@@ -98,7 +98,7 @@ public class UserService {
      */
     public String findMaskedUsernameByNameAndEmail(String name, String email) {
         String username = findUsernameByNameAndEmail(name, email);
-        return maskUsername(username);
+        return maskMiddleFourChars(username);
     }
 
     /**
@@ -106,7 +106,7 @@ public class UserService {
      */
     public String findMaskedUsernameByNameAndPhone(String name, String phoneNumber) {
         String username = findUsernameByNameAndPhone(name, phoneNumber);
-        return maskUsername(username);
+        return maskMiddleFourChars(username);
     }
 
     /**

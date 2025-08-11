@@ -9,6 +9,7 @@ import com.shop.respawn.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.shop.respawn.util.MaskingUtil.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -188,33 +191,46 @@ public class UserController {
     }
 
     /**
-     * 1단계 - 이름 + 이메일로 마스킹된 아이디 찾기
+     * 1단계 - 이름 + 이메일 or 전화번호로 마스킹된 아이디 찾기
      */
-    @PostMapping("/find-id/email")
-    public ResponseEntity<?> findIdByEmail(@RequestBody Map<String, String> response) {
+    @PostMapping("/find-id")
+    public ResponseEntity<?> findId(@RequestBody Map<String, String> response) {
         String name = response.get("name");
         String email = response.get("email");
-        String maskedUsername = userService.findMaskedUsernameByNameAndEmail(name, email);
-        String phoneNumber = userService.findPhoneNumberByNameAndEmail(name, email);
-        return ResponseEntity.ok(Map.of("maskedUsername", maskedUsername,
-                "email", email,
-                "phoneNumber", phoneNumber)
-        );
-    }
-
-    /**
-     * 1단계 - 이름 + 전화번호로 마스킹된 아이디 찾기
-     */
-    @PostMapping("/find-id/phone")
-    public ResponseEntity<?> findIdByPhone(@RequestBody Map<String, String> response) {
-        String name = response.get("name");
         String phoneNumber = response.get("phoneNumber");
-        String maskedUsername = userService.findMaskedUsernameByNameAndPhone(name, phoneNumber);
-        String email = userService.findEmailByNameAndPhone(name, phoneNumber);
-        return ResponseEntity.ok(Map.of("maskedUsername", maskedUsername,
-                "phoneNumber", phoneNumber,
-                "email", email)
-        );
+
+        if (phoneNumber == null && email != null) {
+            String maskedUsername = userService.findMaskedUsernameByNameAndEmail(name, email);
+            String findPhoneNumber = userService.findPhoneNumberByNameAndEmail(name, email);
+
+            if (maskedUsername == null || findPhoneNumber == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "일치하는 계정을 찾을 수 없습니다."));
+            }
+
+            return ResponseEntity.ok(Map.of(
+                    "maskedUsername", maskedUsername,
+                    "email", maskEmail(email),
+                    "phoneNumber", maskPhoneNumber(findPhoneNumber)
+            ));
+        } else if (email == null && phoneNumber != null) {
+            String maskedUsername = userService.findMaskedUsernameByNameAndPhone(name, phoneNumber);
+            String findEmail = userService.findEmailByNameAndPhone(name, phoneNumber);
+
+            if (maskedUsername == null || findEmail == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "일치하는 계정을 찾을 수 없습니다."));
+            }
+
+            return ResponseEntity.ok(Map.of(
+                    "maskedUsername", maskedUsername,
+                    "phoneNumber", maskPhoneNumber(phoneNumber),
+                    "email", maskEmail(findEmail)
+            ));
+        }
+
+        return ResponseEntity.badRequest()
+                .body(Map.of("error", "이메일 또는 전화번호 중 하나만 입력하세요."));
     }
 
     /**
