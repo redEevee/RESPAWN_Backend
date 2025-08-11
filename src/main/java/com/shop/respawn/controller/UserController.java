@@ -188,21 +188,33 @@ public class UserController {
     }
 
     /**
-     * 1단계 - 이름+이메일로 마스킹된 아이디 찾기
+     * 1단계 - 이름 + 이메일로 마스킹된 아이디 찾기
      */
     @PostMapping("/find-id/email")
     public ResponseEntity<?> findIdByEmail(@RequestBody Map<String, String> response) {
-        String maskedUsername = userService.findMaskedUsernameByNameAndEmail(response.get("name"), response.get("email"));
-        return ResponseEntity.ok(Map.of("maskedUsername", maskedUsername));
+        String name = response.get("name");
+        String email = response.get("email");
+        String maskedUsername = userService.findMaskedUsernameByNameAndEmail(name, email);
+        String phoneNumber = userService.findPhoneNumberByNameAndEmail(name, email);
+        return ResponseEntity.ok(Map.of("maskedUsername", maskedUsername,
+                "email", email,
+                "phoneNumber", phoneNumber)
+        );
     }
 
     /**
-     * 1단계 - 이름+전화번호로 마스킹된 아이디 찾기
+     * 1단계 - 이름 + 전화번호로 마스킹된 아이디 찾기
      */
     @PostMapping("/find-id/phone")
     public ResponseEntity<?> findIdByPhone(@RequestBody Map<String, String> response) {
-        String maskedUsername = userService.findMaskedUsernameByNameAndPhone(response.get("name"), response.get("phoneNumber"));
-        return ResponseEntity.ok(Map.of("maskedUsername", maskedUsername));
+        String name = response.get("name");
+        String phoneNumber = response.get("phoneNumber");
+        String maskedUsername = userService.findMaskedUsernameByNameAndPhone(name, phoneNumber);
+        String email = userService.findEmailByNameAndPhone(name, phoneNumber);
+        return ResponseEntity.ok(Map.of("maskedUsername", maskedUsername,
+                "phoneNumber", phoneNumber,
+                "email", email)
+        );
     }
 
     /**
@@ -221,6 +233,34 @@ public class UserController {
     public ResponseEntity<?> sendIdToPhone(@RequestBody Map<String, String> response) {
         userService.sendRealUsernameByPhone(response.get("name"), response.get("phoneNumber"));
         return ResponseEntity.ok(Map.of("message", "아이디가 휴대폰으로 전송되었습니다."));
+    }
+
+    @PostMapping("/find-password/email")
+    public ResponseEntity<Map<String, Object>> findPasswordByEmail(@RequestBody Map<String, String> request) {
+        boolean result = userService.sendPasswordResetLinkByEmail(
+                request.get("username"),
+                request.get("name"),
+                request.get("email")
+        );
+        if (result) {
+            return ResponseEntity.ok(Map.of("message", "비밀번호 재설정 링크가 이메일로 전송되었습니다."));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("error", "일치하는 계정을 찾을 수 없습니다."));
+        }
+    }
+
+    @PostMapping("/find-password/phone")
+    public ResponseEntity<Map<String, Object>> findPasswordByPhone(@RequestBody Map<String, String> request) {
+        boolean result = userService.sendPasswordResetLinkByPhone(
+                request.get("username"),
+                request.get("name"),
+                request.get("phoneNumber")
+        );
+        if (result) {
+            return ResponseEntity.ok(Map.of("message", "비밀번호 재설정 링크가 휴대폰으로 전송되었습니다."));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("error", "일치하는 계정을 찾을 수 없습니다."));
+        }
     }
 
     /**

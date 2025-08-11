@@ -125,4 +125,19 @@ public class EmailService {
         return body;
     }
 
+    @Async
+    public void sendPasswordResetLink(String toEmail, String resetLink) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            message.setFrom(senderEmail);
+            message.setRecipients(MimeMessage.RecipientType.TO, toEmail);
+            message.setSubject("[RESPAWN] 비밀번호 재설정 안내");
+            message.setText("<p>아래 링크를 클릭하여 비밀번호를 재설정하세요.</p>"
+                    + "<a href='" + resetLink + "'>비밀번호 재설정</a>", "utf-8", "html");
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            log.error("비밀번호 재설정 메일 전송 실패", e);
+        }
+    }
+
 }

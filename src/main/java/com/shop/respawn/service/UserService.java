@@ -10,12 +10,14 @@ import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.SellerRepository;
 import com.shop.respawn.sms.SmsService;
 import com.shop.respawn.util.MaskingUtil;
+import com.shop.respawn.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import static com.shop.respawn.util.MaskingUtil.*;
 
@@ -29,6 +31,7 @@ public class UserService {
     private final EmailService emailService;
     private final SmsService smsService;
     private final BCryptPasswordEncoder encoder;
+    private final RedisUtil redisUtil;
 
     /**
      * 회원가입
@@ -148,6 +151,69 @@ public class UserService {
         String realUsername = findUsernameByNameAndPhone(name, phoneNumber);
         String username = "회원님의 아이디는 [" + realUsername + "] 입니다.";
         smsService.sendUsernameMessage(phoneNumber, username);
+    }
+
+    public String findPhoneNumberByNameAndEmail(String name, String email) {
+        Buyer buyer = buyerRepository.findByNameAndEmail(name, email);
+        if (buyer != null) {
+            return buyer.getPhoneNumber();
+        }
+        Seller seller = sellerRepository.findByNameAndEmail(name, email);
+        if (seller != null) {
+            return seller.getPhoneNumber();
+        }
+        throw new RuntimeException("해당 이름과 이메일로 가입된 사용자가 없습니다.");
+    }
+
+    public String findEmailByNameAndPhone(String name, String phoneNumber) {
+        Buyer buyer = buyerRepository.findByNameAndPhoneNumber(name, phoneNumber);
+        if (buyer != null) {
+            return buyer.getEmail();
+        }
+
+        Seller seller = sellerRepository.findByNameAndPhoneNumber(name, phoneNumber);
+        if (seller != null) {
+            return seller.getEmail();
+        }
+
+        throw new RuntimeException("해당 이름과 전화번호로 가입된 사용자가 없습니다.");
+    }
+
+    public boolean sendPasswordResetLinkByEmail(String username, String name, String email) {
+        Buyer buyer = buyerRepository.findByUsernameAndNameAndEmail(username, name, email);
+        Seller seller = sellerRepository.findByUsernameAndNameAndEmail(username, name, email);
+
+        if (buyer == null && seller == null) {
+            return false; // 일치하는 유저 없음
+        }
+
+        // 임시 토큰 생성 (10분 만료)
+        String token = UUID.randomUUID().toString();
+        String resetLink = "http://localhost:8080/reset-password?token=" + token;
+
+        // Redis나 DB에 토큰 저장
+        redisUtil.setDataExpire("reset-token:" + token, username, 10 * 60L);
+
+        // 이메일 발송
+        emailService.sendPasswordResetLink(email, resetLink);
+        return true;
+    }
+
+    public boolean sendPasswordResetLinkByPhone(String username, String name, String phoneNumber) {
+        Buyer buyer = buyerRepository.findByUsernameAndNameAndPhoneNumber(username, name, phoneNumber);
+        Seller seller = sellerRepository.findByUsernameAndNameAndPhoneNumber(username, name, phoneNumber);
+
+        if (buyer == null && seller == null) {
+            return false;
+        }
+
+        String token = UUID.randomUUID().toString();
+        String resetLink = "http://localhost:8080/reset-password?token=" + token;
+
+        redisUtil.setDataExpire("reset-token:" + token, username, 30 * 60L);
+
+        smsService.sendPasswordResetLink(phoneNumber, resetLink);
+        return true;
     }
 
     /**

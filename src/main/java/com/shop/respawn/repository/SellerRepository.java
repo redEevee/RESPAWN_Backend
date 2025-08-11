@@ -19,4 +19,7 @@ public interface SellerRepository extends JpaRepository<Seller, Long> {
 
     Seller findByNameAndPhoneNumber(String name, String phoneNumber);
 
+    Seller findByUsernameAndNameAndEmail(String username, String name, String email);
+
+    Seller findByUsernameAndNameAndPhoneNumber(String username, String name, String phoneNumber);
 }

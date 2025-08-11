@@ -7,7 +7,6 @@ import com.shop.respawn.sms.Verification.VerificationCodeGenerator;
 import com.shop.respawn.sms.Verification.VerificationCodeRepository;
 import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 import lombok.RequiredArgsConstructor;
 import net.nurigo.sdk.NurigoApp;
@@ -92,6 +91,14 @@ public class SmsService {
 
         message.setText(text);
 
+        messageService.sendOne(new SingleMessageSendingRequest(message));
+    }
+
+    public void sendPasswordResetLink(String to, String resetLink) {
+        Message message = new Message();
+        message.setFrom(smsSender);
+        message.setTo(to);
+        message.setText("[RESPAWN] 비밀번호 재설정 링크: " + resetLink + "\n10분 안에 변경 완료하세요.");
         messageService.sendOne(new SingleMessageSendingRequest(message));
     }
 }
