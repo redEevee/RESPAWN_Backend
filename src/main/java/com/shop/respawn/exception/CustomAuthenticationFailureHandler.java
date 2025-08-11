@@ -33,10 +33,12 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
 
         boolean locked = false;
         boolean expired = false;
+        int failedAttempts = 0;
 
         Buyer buyer = buyerRepository.findByUsername(username);
         if (buyer != null) {
             buyer.getAccountStatus().increaseFailedLoginAttempts();
+            failedAttempts = buyer.getAccountStatus().getFailedLoginAttempts();
             if(!buyer.getAccountStatus().isAccountNonExpired()) {
                 expired =  true;
             } else if (!buyer.getAccountStatus().isAccountNonLocked()) {
@@ -47,6 +49,7 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
             Seller seller = sellerRepository.findByUsername(username);
             if (seller != null) {
                 seller.getAccountStatus().increaseFailedLoginAttempts();
+                failedAttempts = seller.getAccountStatus().getFailedLoginAttempts();
                 if (!seller.getAccountStatus().isAccountNonLocked()) {
                     locked = true;
                 }
@@ -56,13 +59,11 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
         response.setContentType("application/json;charset=UTF-8");
-        if (expired) {
-            response.getWriter().write("{\"error\":\"expired\"}");
-        } else if (locked) {
-            // 🚨 JSON 응답으로 잠금 메시지 전송
-            response.getWriter().write("{\"error\":\"locked\"}");
-        } else {
-            response.getWriter().write("{\"error\":\"invalid_credentials\"}");
-        }
+
+        String jsonResponse = String.format("{\"error\":\"%s\", \"failedLoginAttempts\": %d}",
+                expired ? "expired" : locked ? "locked" : "invalid_credentials",
+                failedAttempts);
+
+        response.getWriter().write(jsonResponse);
     }
 }
