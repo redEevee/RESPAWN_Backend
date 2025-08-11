@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.shop.respawn.util.MaskingUtil.*;
 
@@ -199,38 +200,47 @@ public class UserController {
         String email = response.get("email");
         String phoneNumber = response.get("phoneNumber");
 
-        if (phoneNumber == null && email != null) {
-            String maskedUsername = userService.findMaskedUsernameByNameAndEmail(name, email);
-            String findPhoneNumber = userService.findPhoneNumberByNameAndEmail(name, email);
+        String realUsername = null;
+        String maskedUsername = null;
+        String maskedEmail = null;
+        String maskedPhone = null;
 
-            if (maskedUsername == null || findPhoneNumber == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("error", "일치하는 계정을 찾을 수 없습니다."));
+        try {
+            if (phoneNumber == null && email != null) {
+                realUsername = userService.getRealUsernameByNameAndEmail(name, email); // 실제 아이디 조회 메서드 새로 만듦
+                maskedUsername = maskMiddleFourChars(realUsername);
+                String findPhoneNumber = userService.findPhoneNumberByNameAndEmail(name, email);
+                if (findPhoneNumber == null) throw new RuntimeException();
+
+                maskedEmail = maskEmail(email);
+                maskedPhone = maskPhoneNumber(findPhoneNumber);
+            } else if (email == null && phoneNumber != null) {
+                realUsername = userService.getRealUsernameByNameAndPhone(name, phoneNumber);
+                maskedUsername = maskMiddleFourChars(realUsername);
+                String findEmail = userService.findEmailByNameAndPhone(name, phoneNumber);
+                if (findEmail == null) throw new RuntimeException();
+
+                maskedPhone = maskPhoneNumber(phoneNumber);
+                maskedEmail = maskEmail(findEmail);
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "이메일 또는 전화번호 중 하나만 입력하세요."));
             }
-
-            return ResponseEntity.ok(Map.of(
-                    "maskedUsername", maskedUsername,
-                    "email", maskEmail(email),
-                    "phoneNumber", maskPhoneNumber(findPhoneNumber)
-            ));
-        } else if (email == null && phoneNumber != null) {
-            String maskedUsername = userService.findMaskedUsernameByNameAndPhone(name, phoneNumber);
-            String findEmail = userService.findEmailByNameAndPhone(name, phoneNumber);
-
-            if (maskedUsername == null || findEmail == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("error", "일치하는 계정을 찾을 수 없습니다."));
-            }
-
-            return ResponseEntity.ok(Map.of(
-                    "maskedUsername", maskedUsername,
-                    "phoneNumber", maskPhoneNumber(phoneNumber),
-                    "email", maskEmail(findEmail)
-            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "일치하는 계정을 찾을 수 없습니다."));
         }
 
-        return ResponseEntity.badRequest()
-                .body(Map.of("error", "이메일 또는 전화번호 중 하나만 입력하세요."));
+        // 임시 토큰 생성 및 레디스 저장
+        String token = UUID.randomUUID().toString();
+        userService.storeUsernameToken(token, realUsername); // userService에서 Redis에 저장하는 메서드 호출
+
+        return ResponseEntity.ok(Map.of(
+                "maskedUsername", maskedUsername,
+                "email", maskedEmail,
+                "phoneNumber", maskedPhone,
+                "token", token  // 프론트로 토큰 전달
+        ));
     }
 
     /**
@@ -238,7 +248,31 @@ public class UserController {
      */
     @PostMapping("/find-id/email/send")
     public ResponseEntity<?> sendIdToEmail(@RequestBody Map<String, String> response) {
-        userService.sendRealUsernameByEmail(response.get("name"), response.get("email"));
+        String token = response.get("token");
+        String name = response.get("name");
+        String email = response.get("email");
+
+        if (token == null || name == null || email == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "필수 정보를 입력하세요."));
+        }
+
+        String realUsername = userService.getUsernameByToken(token);
+        if (realUsername == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "유효하지 않거나 만료된 토큰입니다."));
+        }
+
+        // 이름과 이메일도 함께 검증 (필요에 따라)
+        if (!userService.verifyUsernameNameEmail(realUsername, name, email)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "입력 정보와 토큰이 일치하지 않습니다."));
+        }
+
+        userService.sendRealUsernameByEmail(name, email);
+
+        // 사용 후 토큰 삭제
+        userService.deleteUsernameToken(token);
+
         return ResponseEntity.ok(Map.of("message", "아이디가 이메일로 전송되었습니다."));
     }
 
@@ -247,7 +281,34 @@ public class UserController {
      */
     @PostMapping("/find-id/phone/send")
     public ResponseEntity<?> sendIdToPhone(@RequestBody Map<String, String> response) {
-        userService.sendRealUsernameByPhone(response.get("name"), response.get("phoneNumber"));
+        String token = response.get("token");
+        String name = response.get("name");
+        String phoneNumber = response.get("phoneNumber");
+
+        if (token == null || name == null || phoneNumber == null) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "필수 정보를 입력하세요."));
+        }
+
+        // Redis에서 토큰으로 실제 아이디 조회
+        String realUsername = userService.getUsernameByToken(token);
+        if (realUsername == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "유효하지 않거나 만료된 토큰입니다."));
+        }
+
+        // 입력 정보 검증 (보안)
+        if (!userService.verifyUsernameNamePhone(realUsername, name, phoneNumber)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "입력 정보와 토큰이 일치하지 않습니다."));
+        }
+
+        // 실제 아이디 문자 발송
+        userService.sendRealUsernameByPhone(name, phoneNumber);
+
+        // 토큰 사용 후 삭제
+        userService.deleteUsernameToken(token);
+
         return ResponseEntity.ok(Map.of("message", "아이디가 휴대폰으로 전송되었습니다."));
     }
 

@@ -2,6 +2,7 @@ package com.shop.respawn.email;
 
 import com.shop.respawn.util.RedisUtil;
 import jakarta.mail.MessagingException;
+import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +12,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.io.UnsupportedEncodingException;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
@@ -36,15 +38,17 @@ public class EmailService {
             System.out.println("이메일이 전송 되었습니다.");
         } catch (MessagingException | MailSendException e) {
             log.error("메일 전송 중 오류가 발생하였습니다. 다시 시도해주세요.", e);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private MimeMessage createEmailForm(String email) throws MessagingException {
+    private MimeMessage createEmailForm(String email) throws MessagingException, UnsupportedEncodingException {
 
         String authCode = String.valueOf(ThreadLocalRandom.current().nextInt(100000, 1000000));
 
         MimeMessage message = mailSender.createMimeMessage();
-        message.setFrom(senderEmail);
+        message.setFrom(new InternetAddress(senderEmail, "Respawn"));
         message.setRecipients(MimeMessage.RecipientType.TO, email);
         message.setSubject("인증코드 안내");
         message.setText(setContext(authCode), "utf-8", "html");
@@ -93,13 +97,15 @@ public class EmailService {
             System.out.println("이메일이 전송 되었습니다.");
         } catch (MessagingException | MailSendException e) {
             log.error("메일 전송 중 오류가 발생하였습니다. 다시 시도해주세요.", e);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private MimeMessage createEmailUsernameForm(String email, String username) throws MessagingException {
+    private MimeMessage createEmailUsernameForm(String email, String username) throws MessagingException, UnsupportedEncodingException {
 
         MimeMessage message = mailSender.createMimeMessage();
-        message.setFrom(senderEmail);
+        message.setFrom(new InternetAddress(senderEmail, "Respawn"));
         message.setRecipients(MimeMessage.RecipientType.TO, email);
         message.setSubject("RESPAWN, 요청하신 아이디 입니다.");
         message.setText(setContextUsername(username), "utf-8", "html");

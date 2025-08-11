@@ -122,6 +122,10 @@ public class UserService {
         throw new RuntimeException("해당 이름과 이메일로 가입된 사용자가 없습니다.");
     }
 
+    public String getRealUsernameByNameAndEmail(String name, String email) {
+        return findUsernameByNameAndEmail(name, email);
+    }
+
     /**
      * 전화번호로 실제 username 찾기
      */
@@ -133,6 +137,10 @@ public class UserService {
         if (seller != null) return seller.getUsername();
 
         throw new RuntimeException("해당 이름과 전화번호로 가입된 사용자가 없습니다.");
+    }
+
+    public String getRealUsernameByNameAndPhone(String name, String phone) {
+        return findUsernameByNameAndPhone(name, phone);
     }
 
     /**
@@ -214,6 +222,44 @@ public class UserService {
 
         smsService.sendPasswordResetLink(phoneNumber, resetLink);
         return true;
+    }
+
+    public void storeUsernameToken(String token, String username) {
+        // 예: 10분(600초) 만료시간 설정
+        redisUtil.setDataExpire("find-id-token:" + token, username, 600L);
+    }
+
+    public String getUsernameByToken(String token) {
+        return redisUtil.getData("find-id-token:" + token);
+    }
+
+    public void deleteUsernameToken(String token) {
+        redisUtil.deleteData("find-id-token:" + token);
+    }
+
+    public boolean verifyUsernameNameEmail(String username, String name, String email) {
+        // 이름과 이메일이 실제 유저 정보와 일치하는지 검증
+        Buyer buyer = buyerRepository.findByUsername(username);
+        if (buyer != null) {
+            return buyer.getName().equals(name) && buyer.getEmail().equals(email);
+        }
+        Seller seller = sellerRepository.findByUsername(username);
+        if (seller != null) {
+            return seller.getName().equals(name) && seller.getEmail().equals(email);
+        }
+        return false;
+    }
+
+    public boolean verifyUsernameNamePhone(String username, String name, String phoneNumber) {
+        Buyer buyer = buyerRepository.findByUsername(username);
+        if (buyer != null) {
+            return buyer.getName().equals(name) && buyer.getPhoneNumber().equals(phoneNumber);
+        }
+        Seller seller = sellerRepository.findByUsername(username);
+        if (seller != null) {
+            return seller.getName().equals(name) && seller.getPhoneNumber().equals(phoneNumber);
+        }
+        return false;
     }
 
     /**
