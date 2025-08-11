@@ -327,32 +327,105 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "아이디가 " + ("email".equalsIgnoreCase(type) ? "이메일" : "휴대폰") + "으로 전송되었습니다."));
     }
 
-    @PostMapping("/find-password/email")
-    public ResponseEntity<Map<String, Object>> findPasswordByEmail(@RequestBody Map<String, String> request) {
-        boolean result = userService.sendPasswordResetLinkByEmail(
-                request.get("username"),
-                request.get("name"),
-                request.get("email")
-        );
-        if (result) {
-            return ResponseEntity.ok(Map.of("message", "비밀번호 재설정 링크가 이메일로 전송되었습니다."));
-        } else {
-            return ResponseEntity.badRequest().body(Map.of("error", "일치하는 계정을 찾을 수 없습니다."));
+    @PostMapping("/find-password")
+    public ResponseEntity<Map<String, Object>> findPassword(@RequestBody Map<String, String> request) {
+        String username = request.get("username");
+        String name = request.get("name");
+        String email = request.get("email");
+        String phoneNumber = request.get("phoneNumber");
+
+        String maskedEmail = null;
+        String maskedPhone = null;
+        Long userId = null;
+
+        try {
+            if (phoneNumber == null && email != null) {
+                String findPhoneNumber = userService.findPhoneNumberByNameAndEmail(name, email);
+                if (findPhoneNumber == null) throw new RuntimeException();
+
+                maskedEmail = maskEmail(email);
+                maskedPhone = maskPhoneNumber(findPhoneNumber);
+                userId = userService.getUserIdByUsername(username);
+            } else if (email == null && phoneNumber != null) {
+                String findEmail = userService.findEmailByNameAndPhone(name, phoneNumber);
+                if (findEmail == null) throw new RuntimeException();
+
+                maskedPhone = maskPhoneNumber(phoneNumber);
+                maskedEmail = maskEmail(findEmail);
+                userId = userService.getUserIdByUsername(username);
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "이메일 또는 전화번호 중 하나만 입력하세요."));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "일치하는 계정을 찾을 수 없습니다."));
         }
+
+        return ResponseEntity.ok(Map.of(
+                "email", maskedEmail,
+                "phoneNumber", maskedPhone,
+                "userId", userId
+        ));
     }
 
-    @PostMapping("/find-password/phone")
-    public ResponseEntity<Map<String, Object>> findPasswordByPhone(@RequestBody Map<String, String> request) {
-        boolean result = userService.sendPasswordResetLinkByPhone(
-                request.get("username"),
-                request.get("name"),
-                request.get("phoneNumber")
-        );
-        if (result) {
-            return ResponseEntity.ok(Map.of("message", "비밀번호 재설정 링크가 휴대폰으로 전송되었습니다."));
-        } else {
-            return ResponseEntity.badRequest().body(Map.of("error", "일치하는 계정을 찾을 수 없습니다."));
+    @PostMapping("/find-password/send")
+    public ResponseEntity<Map<String, Object>> sendPassword(@RequestBody Map<String, String> response) {
+        Long userId;
+        String type = response.get("type"); // "email" 또는 "phone"
+
+        if (type == null || response.get("userId") == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "필수 정보를 입력하세요."));
         }
+
+        try {
+            userId = Long.valueOf(response.get("userId"));
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "userId 형식이 올바르지 않습니다."));
+        }
+
+        // DB에서 회원정보 조회
+        String username = null;
+        String name = null;
+        String email = null;
+        String phoneNumber = null;
+
+        Buyer buyer = buyerRepository.findById(userId).orElse(null);
+        if (buyer != null) {
+            username =  buyer.getUsername();
+            name = buyer.getName();
+            email = buyer.getEmail();
+            phoneNumber = buyer.getPhoneNumber();
+        } else {
+            Seller seller = sellerRepository.findById(userId).orElse(null);
+            if (seller != null) {
+                username = seller.getUsername();
+                name = seller.getName();
+                email = seller.getEmail();
+                phoneNumber = seller.getPhoneNumber();
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "해당 회원을 찾을 수 없습니다."));
+            }
+        }
+
+        boolean result = false;
+
+        if ("email".equalsIgnoreCase(type)) {
+            result = userService.sendPasswordResetLinkByEmail(username, name, email);
+            if (result) {
+                return ResponseEntity.ok(Map.of("message", "비밀번호 재설정 링크가 이메일로 전송되었습니다."));
+            }
+        } else if ("phone".equalsIgnoreCase(type)) {
+            result = userService.sendPasswordResetLinkByPhone(username, name, phoneNumber);
+            if (result) {
+                return ResponseEntity.ok(Map.of("message", "비밀번호 재설정 링크가 휴대폰으로 전송되었습니다."));
+            }
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("error", "type은 'email' 또는 'phone' 이어야 합니다."));
+        }
+
+        return ResponseEntity.ok(Map.of("message", "비밀번호 재설정 페이지가 " + ("email".equalsIgnoreCase(type) ? "이메일" : "휴대폰") + "으로 전송되었습니다."));
     }
 
     @PostMapping("/reset-password")
