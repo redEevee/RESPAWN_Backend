@@ -1,15 +1,23 @@
 package com.shop.respawn.service;
 
+import com.nimbusds.oauth2.sdk.GeneralException;
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.domain.Role;
 import com.shop.respawn.domain.Seller;
 import com.shop.respawn.dto.UserDto;
+import com.shop.respawn.email.EmailService;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.SellerRepository;
+import com.shop.respawn.sms.SmsService;
+import com.shop.respawn.util.MaskingUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+
+import static com.shop.respawn.util.MaskingUtil.*;
 
 @Service
 @Transactional
@@ -18,6 +26,8 @@ public class UserService {
 
     private final BuyerRepository buyerRepository;
     private final SellerRepository sellerRepository;
+    private final EmailService emailService;
+    private final SmsService smsService;
     private final BCryptPasswordEncoder encoder;
 
     /**
@@ -78,6 +88,66 @@ public class UserService {
 
     public Seller getSellerInfo(String username){
         return sellerRepository.findByUsername(username);
+    }
+
+    /**
+     * 이름+이메일로 아이디 찾기(마스킹 버전)
+     */
+    public String findMaskedUsernameByNameAndEmail(String name, String email) {
+        String username = findUsernameByNameAndEmail(name, email);
+        return maskUsername(username);
+    }
+
+    /**
+     * 이름+전화번호로 아이디 찾기(마스킹 버전)
+     */
+    public String findMaskedUsernameByNameAndPhone(String name, String phoneNumber) {
+        String username = findUsernameByNameAndPhone(name, phoneNumber);
+        return maskUsername(username);
+    }
+
+    /**
+     * 이메일로 실제 username 찾기
+     */
+    private String findUsernameByNameAndEmail(String name, String email) {
+        Buyer buyer = buyerRepository.findByNameAndEmail(name, email);
+        if (buyer != null) return buyer.getUsername();
+
+        Seller seller = sellerRepository.findByNameAndEmail(name, email);
+        if (seller != null) return seller.getUsername();
+
+        throw new RuntimeException("해당 이름과 이메일로 가입된 사용자가 없습니다.");
+    }
+
+    /**
+     * 전화번호로 실제 username 찾기
+     */
+    private String findUsernameByNameAndPhone(String name, String phone) {
+        Buyer buyer = buyerRepository.findByNameAndPhoneNumber(name, phone);
+        if (buyer != null) return buyer.getUsername();
+
+        Seller seller = sellerRepository.findByNameAndPhoneNumber(name, phone);
+        if (seller != null) return seller.getUsername();
+
+        throw new RuntimeException("해당 이름과 전화번호로 가입된 사용자가 없습니다.");
+    }
+
+    /**
+     * 2단계 - 이메일로 실제 아이디 전송
+     */
+    public void sendRealUsernameByEmail(String name, String email) {
+        String realUsername = findUsernameByNameAndEmail(name, email);
+        String message = "회원님의 아이디는 [" + realUsername + "] 입니다.";
+        emailService.sendEmailUsernameAsync(email, message);
+    }
+
+    /**
+     * 2단계 - 휴대폰으로 실제 아이디 전송
+     */
+    public void sendRealUsernameByPhone(String name, String phoneNumber) {
+        String realUsername = findUsernameByNameAndPhone(name, phoneNumber);
+        String username = "회원님의 아이디는 [" + realUsername + "] 입니다.";
+        smsService.sendUsernameMessage(phoneNumber, username);
     }
 
     /**

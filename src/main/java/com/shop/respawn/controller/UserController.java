@@ -33,6 +33,9 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * 로그인 완료 처리
+     */
     @GetMapping("/loginOk")
     public ResponseEntity<Map<String, String>> loginOk(HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -82,6 +85,9 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * 일반 유저 정보 조회
+     */
     @GetMapping("/user")
     public ResponseEntity<?> getUserPage() {
         System.out.println("일반 인증 성공");
@@ -110,6 +116,9 @@ public class UserController {
         return ResponseEntity.notFound().build();
     }
 
+    /**
+     * 마이페이지에서 비밀번호가 일치하는지 검사하는 메서드
+     */
     @PostMapping("/myPage/checkPassword")
     public ResponseEntity<Boolean> checkPassword(@RequestBody Map<String, String> request) {
 
@@ -137,7 +146,9 @@ public class UserController {
         return ResponseEntity.ok(match);
     }
 
-    // 전화번호 수정 엔드포인트
+    /**
+     * 전화번호 수정 엔드포인트
+     */
     @PutMapping("/myPage/setPhoneNumber")
     public Map<String, String> updatePhoneNumber(Authentication authentication,
                                                  @RequestBody Map<String, String> request) {
@@ -153,7 +164,9 @@ public class UserController {
         return Map.of("message", "전화번호가 성공적으로 변경되었습니다.");
     }
 
-    // 비밀번호 변경 엔드포인트
+    /**
+     * 비밀번호 변경 엔드포인트
+     */
     @PutMapping("/myPage/setPassword")
     public ResponseEntity<?> changePassword(
             Authentication authentication,
@@ -174,17 +187,61 @@ public class UserController {
         }
     }
 
+    /**
+     * 1단계 - 이름+이메일로 마스킹된 아이디 찾기
+     */
+    @PostMapping("/find-id/email")
+    public ResponseEntity<?> findIdByEmail(@RequestBody Map<String, String> response) {
+        String maskedUsername = userService.findMaskedUsernameByNameAndEmail(response.get("name"), response.get("email"));
+        return ResponseEntity.ok(Map.of("maskedUsername", maskedUsername));
+    }
 
+    /**
+     * 1단계 - 이름+전화번호로 마스킹된 아이디 찾기
+     */
+    @PostMapping("/find-id/phone")
+    public ResponseEntity<?> findIdByPhone(@RequestBody Map<String, String> response) {
+        String maskedUsername = userService.findMaskedUsernameByNameAndPhone(response.get("name"), response.get("phoneNumber"));
+        return ResponseEntity.ok(Map.of("maskedUsername", maskedUsername));
+    }
+
+    /**
+     * 2단계 - 이메일로 실제 아이디 전송
+     */
+    @PostMapping("/find-id/email/send")
+    public ResponseEntity<?> sendIdToEmail(@RequestBody Map<String, String> response) {
+        userService.sendRealUsernameByEmail(response.get("name"), response.get("email"));
+        return ResponseEntity.ok(Map.of("message", "아이디가 이메일로 전송되었습니다."));
+    }
+
+    /**
+     * 2단계 - 전화번호로 실제 아이디 전송
+     */
+    @PostMapping("/find-id/phone/send")
+    public ResponseEntity<?> sendIdToPhone(@RequestBody Map<String, String> response) {
+        userService.sendRealUsernameByPhone(response.get("name"), response.get("phoneNumber"));
+        return ResponseEntity.ok(Map.of("message", "아이디가 휴대폰으로 전송되었습니다."));
+    }
+
+    /**
+     * username 중복 체크
+     */
     @GetMapping("signup/username/{username}")
     public Boolean checkUsernameDuplicate(@PathVariable String username) {
         return userService.checkUsernameDuplicate(username);
     }
 
+    /**
+     * phoneNumber 중복 체크
+     */
     @GetMapping("signup/phoneNumber/{phoneNumber}")
     public Boolean checkPhoneNumberDuplicate(@PathVariable String phoneNumber) {
         return userService.checkPhoneNumberDuplicate(phoneNumber);
     }
 
+    /**
+     * email 중복 체크
+     */
     @GetMapping("signup/email/{email}")
     public Boolean checkEmailDuplicate(@PathVariable String email) {
         return userService.checkEmailDuplicate(email);

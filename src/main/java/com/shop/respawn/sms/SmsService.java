@@ -7,6 +7,8 @@ import com.shop.respawn.sms.Verification.VerificationCodeGenerator;
 import com.shop.respawn.sms.Verification.VerificationCodeRepository;
 import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 import lombok.RequiredArgsConstructor;
 import net.nurigo.sdk.NurigoApp;
 import net.nurigo.sdk.message.model.Message;
@@ -68,5 +70,28 @@ public class SmsService {
         }
 
         verificationCodeRepository.remove(verificationCode);
+    }
+
+    public void sendUsernameMessage(String to, String username) {
+        Message message = new Message(); //메시지 객체 생성
+        message.setFrom(smsSender); //메시지 보내는 사람 전화번호 등록
+        message.setTo(to); //메시지 내용 등록
+
+        String text = String.format(
+                """
+                [RESPAWN] 고객님의 회원아이디를 안내드립니다.
+                
+                고객님 안녕하세요.
+                고객님께서 요청하신 아이디를 안내드립니다.
+                
+                %s
+                
+                ※ 타인에게 절대 공유하지 마세요.
+                """,
+                username);
+
+        message.setText(text);
+
+        messageService.sendOne(new SingleMessageSendingRequest(message));
     }
 }
