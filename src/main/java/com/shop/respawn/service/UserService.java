@@ -85,6 +85,23 @@ public class UserService {
         throw new RuntimeException("사용자를 찾을 수 없습니다.");
     }
 
+    public boolean resetPasswordByToken(String username, String newPassword) {
+        Buyer buyer = buyerRepository.findByUsername(username);
+        if (buyer != null) {
+            buyer.updatePassword(encoder.encode(newPassword));
+            return true;
+        }
+
+        Seller seller = sellerRepository.findByUsername(username);
+        if (seller != null) {
+            seller.updatePassword(encoder.encode(newPassword));
+            return true;
+        }
+
+        return false; // 사용자를 찾지 못함
+    }
+
+
     public Buyer getBuyerInfo(String username){
         return buyerRepository.findByUsername(username);
     }

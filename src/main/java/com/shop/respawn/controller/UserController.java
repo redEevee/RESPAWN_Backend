@@ -6,6 +6,7 @@ import com.shop.respawn.dto.UserDto;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.SellerRepository;
 import com.shop.respawn.service.UserService;
+import com.shop.respawn.util.RedisUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class UserController {
     private final UserService userService;
     private final BuyerRepository buyerRepository;
     private final SellerRepository sellerRepository;
+    private final RedisUtil redisUtil;
 
     @PostMapping("/join/{userType}")
     public ResponseEntity<?> join(@RequestBody UserDto userDto) {
@@ -351,6 +353,21 @@ public class UserController {
         } else {
             return ResponseEntity.badRequest().body(Map.of("error", "일치하는 계정을 찾을 수 없습니다."));
         }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, Object>> resetPassword(@RequestBody Map<String, String> request) {
+        String token = request.get("token");
+        String newPassword = request.get("newPassword");
+
+        String username = redisUtil.getData("reset-token:" + token);
+        if (username == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "토큰이 유효하지 않거나 만료되었습니다."));
+        }
+
+        userService.resetPasswordByToken(username, newPassword); // currentPassword 검증 없이 강제 변경
+        redisUtil.deleteData("reset-token:" + token);
+        return ResponseEntity.ok(Map.of("message", "비밀번호가 성공적으로 변경되었습니다."));
     }
 
     /**
