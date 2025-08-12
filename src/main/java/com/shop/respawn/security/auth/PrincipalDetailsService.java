@@ -23,18 +23,20 @@ public class PrincipalDetailsService implements UserDetailsService {
     // 시큐리티 session(내부 Authentication(내부 UserDetails))
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        System.out.println("넘어온 유저네임: " + username);
-        System.out.println("loadUserByUsername 실행");
 
         // 사용자 조회, 없으면 예외 발생
         Buyer buyer = buyerRepository.findByUsername(username);
         Seller seller = sellerRepository.findByUsername(username);
         if (buyer != null) {
+            buyer.getAccountStatus().isAccountNonExpired();
+            buyerRepository.save(buyer);
             return new PrincipalDetails(buyer);
         } else if (seller != null) {
+            seller.getAccountStatus().isAccountNonExpired();
+            sellerRepository.save(seller);
             return new PrincipalDetails(seller);
         } else {
-            throw new UsernameNotFoundException("User not found with username: " + username);
+            throw new UsernameNotFoundException(username + " : 사용자를 찾을 수 없습니다");
         }
 
     }

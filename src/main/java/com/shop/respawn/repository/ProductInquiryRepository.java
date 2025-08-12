@@ -7,9 +7,9 @@ import java.util.List;
 
 public interface ProductInquiryRepository extends MongoRepository<ProductInquiry, String> {
 
-    List<ProductInquiry> findAllByItemId(String itemId);
+    List<ProductInquiry> findAllByItemIdOrderByQuestionDateDesc(String itemId);
 
-    List<ProductInquiry> findAllByBuyerId(String buyerId);
+    List<ProductInquiry> findAllByBuyerIdOrderByQuestionDateDesc(String buyerId);
 
-    List<ProductInquiry> findAllByItemIdIn(List<String> itemIds);
+    List<ProductInquiry> findAllByItemIdInOrderByQuestionDateDesc(List<String> itemIds);
 }

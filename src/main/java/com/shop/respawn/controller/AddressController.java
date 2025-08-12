@@ -2,6 +2,7 @@ package com.shop.respawn.controller;
 
 import com.shop.respawn.dto.AddressDto;
 import com.shop.respawn.service.AddressService;
+import com.shop.respawn.util.SessionUtil;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +11,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import static com.shop.respawn.util.SessionUtil.getBuyerIdFromSession;
 
 @RestController
 @RequestMapping("/api/addresses")
@@ -25,8 +28,8 @@ public class AddressController {
     public ResponseEntity<?> createAddress(
             @RequestBody AddressDto addressDto, HttpSession session) {
         Long buyerId = getBuyerIdFromSession(session);
-        addressService.createAddress(buyerId, addressDto);
-        return ResponseEntity.ok("주소 저장 성공");
+        AddressDto savedAddress = addressService.createAddress(buyerId, addressDto);
+        return ResponseEntity.ok(savedAddress);
     }
 
     /**
@@ -82,16 +85,4 @@ public class AddressController {
         }
     }
 
-    /**
-     * 세션에서 buyerId를 가져오는 헬퍼 메서드
-     */
-    private Long getBuyerIdFromSession(HttpSession session) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String authorities = authentication.getAuthorities().toString();
-
-        if(authorities.equals("[ROLE_USER]")){
-            System.out.println("구매자 권한의 아이디 : " + authorities);
-            return (Long) session.getAttribute("userId");
-        } else throw new RuntimeException("로그인이 필요하거나 판매자 아이디 입니다.");
-    }
 }

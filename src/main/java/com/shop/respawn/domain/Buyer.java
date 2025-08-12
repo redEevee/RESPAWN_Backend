@@ -3,6 +3,7 @@ package com.shop.respawn.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,6 +41,14 @@ public class Buyer {
 
     @Builder.Default
     @OneToMany(mappedBy = "buyer")
+    private List<Point> points = new ArrayList<>();
+
+    // 계정 상태 필드 추가
+    @Embedded
+    private AccountStatus accountStatus = new AccountStatus();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "buyer")
     private List<Address> addresses = new ArrayList<>();
 
     @Builder.Default
@@ -62,11 +71,24 @@ public class Buyer {
 
     //정적 팩토리 메서드
     public static Buyer createBuyer(String name, String username, String password, String email, String phoneNumber, String provider, Role role) {
-        return new Buyer(name, username, password, email, phoneNumber, provider, role);
+        return Buyer.builder()
+                .name(name)
+                .username(username)
+                .password(password)
+                .email(email)
+                .phoneNumber(phoneNumber)
+                .provider(provider)
+                .role(role)
+                .accountStatus(new AccountStatus(true)) // 가입시 1년 만료일 자동 할당
+                .build();
     }
 
     public void updatePhoneNumber(String newPhoneNumber) {
         this.phoneNumber = newPhoneNumber;
+    }
+
+    public void updatePassword(String newPassword) {
+        this.password = newPassword;
     }
 
     // 연관관계 편의 메서드
@@ -77,6 +99,12 @@ public class Buyer {
     public void addAddress(Address address) {
         this.addresses.add(address);
         address.setBuyer(this); // 패키지 레벨 세터 사용
+    }
+
+    public void renewExpiryDate() {
+        if (this.accountStatus != null) {
+            this.accountStatus.setAccountExpiryDate(LocalDateTime.now().plusYears(1));
+        }
     }
 
     // initData 용도

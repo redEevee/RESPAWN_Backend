@@ -28,7 +28,7 @@ public class PaymentController {
     @PostMapping("/prepare")
     public ResponseEntity<String> preparePayment(@RequestBody PrepareRequest request) {
         try {
-            paymentService.preparePayment(request.getMerchantUid(), request.getAmount());
+            paymentService.preparePayment(request.getMerchantUid(), request.getOrderId());
             return ResponseEntity.ok("사전 검증 완료");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("사전 검증 실패: " + e.getMessage());

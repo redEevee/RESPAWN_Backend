@@ -2,16 +2,19 @@ package com.shop.respawn.controller;
 
 import com.shop.respawn.dto.ReviewRequestDto;
 import com.shop.respawn.dto.ReviewWithItemDto;
+import com.shop.respawn.dto.WritableReviewDto;
 import com.shop.respawn.service.ReviewService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import static com.shop.respawn.util.SessionUtil.getSellerIdFromSession;
 
 @RestController
 @RequestMapping("/api/reviews")
@@ -60,13 +63,40 @@ public class ReviewController {
     }
 
     /**
+     * 자신이 작성한 리뷰 조회 및 리뷰 작성 가능 여부
+     */
+    @GetMapping("/my")
+    public ResponseEntity<?> getMyReviews(HttpSession session) {
+        Long buyerId = (Long) session.getAttribute("userId");
+        if (buyerId == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+
+        List<WritableReviewDto> writableItems = reviewService.getWritableReviews(buyerId);
+        List<ReviewWithItemDto> writtenReviews = reviewService.getWrittenReviews(buyerId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("writableItems", writableItems);
+        response.put("writtenReviews", writtenReviews);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * 판매자가 자신이 판매한 아이템에 대한 리뷰 보기
      */
     @GetMapping("/seller/my-reviews")
-    public ResponseEntity<List<ReviewWithItemDto>> getMyItemReviews(HttpSession session) {
+    public ResponseEntity<List<ReviewWithItemDto>> getMyItemReviews(
+            HttpSession session,
+            @RequestParam(required = false) String itemId) {
         try {
             String sellerId = getSellerIdFromSession(session).toString();
-            List<ReviewWithItemDto> reviews = reviewService.getReviewsBySellerId(sellerId);
+            List<ReviewWithItemDto> reviews;
+            if (itemId != null && !itemId.isEmpty()) {
+                reviews = reviewService.getReviewsBySellerIdAndItemId(sellerId, itemId);
+            } else {
+                reviews = reviewService.getReviewsBySellerId(sellerId);
+            }
             return ResponseEntity.ok(reviews);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
@@ -81,17 +111,4 @@ public class ReviewController {
         return ResponseEntity.ok(reviews);
     }
 
-    /**
-     * 세션에서 sellerId를 가져오는 헬퍼 메서드
-     */
-    private Long getSellerIdFromSession(HttpSession session) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String authorities = authentication.getAuthorities().toString();
-        if (authorities.equals("[ROLE_SELLER]")) {
-            System.out.println("판매자 권한의 아이디 : " + authorities);
-            return (Long) session.getAttribute("userId");
-        } else {
-            throw new RuntimeException("판매자 로그인이 필요합니다.");
-        }
-    }
 }

@@ -11,8 +11,8 @@ public class CartItemDto {
 
     private String itemId;
 
-    private int price;
+    private Long price;
 
-    private int count;
+    private Long count;
 
 }

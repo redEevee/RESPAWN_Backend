@@ -2,6 +2,7 @@ package com.shop.respawn.service;
 
 import com.shop.respawn.domain.*;
 import com.shop.respawn.dto.AddressDto;
+import com.shop.respawn.repository.AdminRepository;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.OrderItemRepository;
 import com.shop.respawn.repository.SellerRepository;
@@ -20,16 +21,16 @@ public class MyService {
 
     private final BuyerRepository buyerRepository;
     private final SellerRepository sellerRepository;
+    private final AdminRepository adminRepository;
     private final AddressService addressService;
     private final OrderItemRepository orderItemRepository;
+    private final BCryptPasswordEncoder encoder;
 
     private final EntityManager em;
 
     public void initData() {
 
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-
-        Buyer buyer = Buyer.createBuyerWithInitLists("이지은", "a", encoder.encode("a"), "iu@naver.com", "01012345678", Role.ROLE_USER);
+        Buyer buyer = Buyer.createBuyerWithInitLists("강지원", "kkjjww1122", encoder.encode("kjw741147"), "kkjjww1122@naver.com", "01024466832", Role.ROLE_USER);
         buyerRepository.save(buyer);
         em.persist(buyer);
 
@@ -48,6 +49,10 @@ public class MyService {
         Seller seller3 = Seller.createSeller("로지텍", "d", "Logitech", 9876543211L, encoder.encode("d"), "logitech9876@gmail.com", "01055430909", Role.ROLE_SELLER);
         sellerRepository.save(seller3);
         em.persist(seller3);
+
+        Admin admin = Admin.createAdmin("관리자", "admin", encoder.encode("adminPw"), Role.ROLE_ADMIN);
+        adminRepository.save(admin);
+        em.persist(admin);
 
         em.flush();
         em.clear();
@@ -84,18 +89,18 @@ public class MyService {
             delivery.setStatus(DeliveryStatus.DELIVERED);
 
             if (i % 3 == 0) {
-                OrderItem oi2 = OrderItem.createOrderItem(item2, 20, 2);
+                OrderItem oi2 = OrderItem.createOrderItem(item2, 20L, 2L);
                 order.addOrderItem(oi2);
                 delivery.setOrderItem(oi2);
                 oi2.setDelivery(delivery);
             } else {
-                OrderItem oi3 = OrderItem.createOrderItem(item3, 50, 1);
+                OrderItem oi3 = OrderItem.createOrderItem(item3, 50L, 1L);
                 order.addOrderItem(oi3);
                 delivery.setOrderItem(oi3);
                 oi3.setDelivery(delivery);
             }
 
-            int totalAmount = order.calculateTotalAmount();
+            Long totalAmount = order.calculateTotalAmount();
             order.setTotalAmount(totalAmount);
 
             order.setOrderName(order.generateOrderName());

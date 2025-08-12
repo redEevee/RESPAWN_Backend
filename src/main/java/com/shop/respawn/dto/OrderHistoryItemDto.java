@@ -3,20 +3,18 @@ package com.shop.respawn.dto;
 import com.shop.respawn.domain.DeliveryStatus;
 import com.shop.respawn.domain.Item;
 import com.shop.respawn.domain.OrderItem;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
+@Data
 public class OrderHistoryItemDto {
 
     private Long orderItemId;
     private String itemId;
     private String itemName;
-    private int orderPrice;                 // 주문 시 가격
-    private int count;                      // 수량
+    private Long orderPrice;                 // 주문 시 가격
+    private Long count;                      // 수량
     private String imageUrl;                // 이미지
 
     private LocalDateTime requestedAt;      // 환불 요청일

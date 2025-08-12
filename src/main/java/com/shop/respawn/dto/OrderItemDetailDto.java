@@ -10,12 +10,13 @@ public class OrderItemDetailDto {
     private String itemId;
     private String itemName;
     private String itemDescription;
-    private Integer itemPrice;
-    private Integer orderPrice;
-    private Integer count;
-    private Integer totalPrice;
+    private Long itemPrice;
+    private Long deliveryFee;
+    private Long orderPrice;
+    private Long count;
+    private Long totalPrice;
     private String imageUrl;
-    private Integer stockQuantity;
+    private long stockQuantity;
 
     // 생성자
     private OrderItemDetailDto(OrderItem orderItem, Item item) {
@@ -24,6 +25,7 @@ public class OrderItemDetailDto {
         this.itemName = item.getName();
         this.itemDescription = item.getDescription();
         this.itemPrice = item.getPrice();
+        this.deliveryFee = item.getDeliveryFee();
         this.orderPrice = orderItem.getOrderPrice();
         this.count = orderItem.getCount();
         this.totalPrice = orderItem.getOrderPrice() * orderItem.getCount();

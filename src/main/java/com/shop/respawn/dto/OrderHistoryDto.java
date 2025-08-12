@@ -3,18 +3,16 @@ package com.shop.respawn.dto;
 import com.shop.respawn.domain.Order;
 import com.shop.respawn.domain.OrderStatus;
 import lombok.Data;
-import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Getter
 @Data
 public class OrderHistoryDto {
 
     private Long orderId;
     private LocalDateTime orderDate;
-    private int totalAmount;
+    private Long totalAmount;
     private OrderStatus status;
     private List<OrderHistoryItemDto> items;
 

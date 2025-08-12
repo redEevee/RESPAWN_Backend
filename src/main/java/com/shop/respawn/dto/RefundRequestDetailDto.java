@@ -11,8 +11,8 @@ public class RefundRequestDetailDto {
     // 주문 정보
     private Long orderItemId;
     private String itemName;
-    private int orderPrice;
-    private int count;
+    private Long orderPrice;
+    private Long count;
     private LocalDateTime orderDate;
     private String imageUrl;
     private RefundStatus refundStatus;

@@ -31,6 +31,7 @@ public class OrderService {
     private final ItemService itemService;
     private final OrderItemRepository orderItemRepository;
     private final PaymentRepository paymentRepository;
+    private final PointService pointService;
 
     /**
      * 임시 주문 상세 조회
@@ -40,34 +41,66 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다"));
 
-        // 주문 소유권 확인
+        // 1. 주문 소유권 확인
         if (!order.getBuyer().getId().equals(buyerId)) {
             throw new RuntimeException("해당 주문을 조회할 권한이 없습니다");
         }
 
-        // OrderItemDetailDto 리스트로 변환
-        List<OrderItemDetailDto> orderItemDetails = order.getOrderItems().stream()
-                .map(orderItem -> {
-                    Item item = itemRepository.findById(orderItem.getItemId())
-                            .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + orderItem.getItemId()));
-                    return OrderItemDetailDto.from(orderItem, item);
-                })
-                .toList();
+        List<Address> buyerAddress = addressRepository.findByBuyerAndBasicTrue(order.getBuyer());
 
-        // 총 금액 계산
-        int totalAmount = orderItemDetails.stream()
-                .mapToInt(OrderItemDetailDto::getTotalPrice)
+        // 2. OrderItemDetailDto 리스트 생성 + 판매자별 배송비 계산 준비
+        List<OrderItemDetailDto> orderItemDetails = new ArrayList<>();
+        Map<String, Long> sellerDeliveryFeeMap = new HashMap<>();
+
+        for (OrderItem orderItem : order.getOrderItems()) {
+            Item item = itemRepository.findById(orderItem.getItemId())
+                    .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + orderItem.getItemId()));
+
+            // DTO 변환
+            orderItemDetails.add(OrderItemDetailDto.from(orderItem, item));
+
+            // 문자열 배송비 → Long 변환
+            Long deliveryFee = getDeliveryFee(item);
+
+            // 판매자별 배송비 1번만 추가
+            sellerDeliveryFeeMap.putIfAbsent(item.getSellerId(), deliveryFee);
+        }
+
+        // 3. 상품금액 합계
+        Long totalItemAmount = orderItemDetails.stream()
+                .mapToLong(OrderItemDetailDto::getTotalPrice)
                 .sum();
 
-        // 응답 데이터 구성
+        // 4. 배송비 합계
+        Long totalDeliveryFee = sellerDeliveryFeeMap.values().stream()
+                .mapToLong(Long::longValue)
+                .sum();
+
+        // 5. 총 결제 금액 = 상품금액 + 배송비
+        Long totalAmount = totalItemAmount + totalDeliveryFee;
+
+        // 6. 응답 데이터 구성
         Map<String, Object> response = new HashMap<>();
         response.put("name", order.getBuyer().getName());
         response.put("phoneNumber", order.getBuyer().getPhoneNumber());
         response.put("email", order.getBuyer().getEmail());
         response.put("orderId", order.getId());
-        response.put("orderItems", orderItemDetails); // DTO 객체 그대로 반환
-        response.put("totalAmount", totalAmount);
+        response.put("orderItems", orderItemDetails);
         response.put("itemCount", orderItemDetails.size());
+        response.put("itemTotalAmount", totalItemAmount);       // 상품 금액만
+        response.put("totalDeliveryFee", totalDeliveryFee);     // 총 배송비
+        response.put("totalAmount", totalAmount);               // 배송비 포함 총 금액
+
+        if (!buyerAddress.isEmpty()) {
+            Address address = buyerAddress.getFirst(); // 첫 번째 주소 사용
+            response.put("addressId", address.getId());
+            response.put("addressName", address.getAddressName());
+            response.put("recipient", address.getRecipient());
+            response.put("zoneCode", address.getZoneCode());
+            response.put("baseAddress", address.getBaseAddress());
+            response.put("detailAddress", address.getDetailAddress());
+            response.put("addressPhone", address.getPhone());
+        }
 
         return response;
     }
@@ -108,6 +141,28 @@ public class OrderService {
             order.addOrderItem(orderItem);
         }
 
+        // 1. 상품 총액
+        Long totalItemAmount = orderItems.stream()
+                .mapToLong(item -> item.getOrderPrice() * item.getCount())
+                .sum();
+
+        // 2. 판매자별 배송비 계산
+        Map<String, Long> sellerDeliveryFeeMap = new HashMap<>();
+        for (OrderItem orderItem : orderItems) {
+            Item item = itemRepository.findById(orderItem.getItemId())
+                    .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다"));
+            // 판매자별로 배송비 1회만 적용
+            sellerDeliveryFeeMap.putIfAbsent(item.getSellerId(),
+                    item.getDeliveryFee() != null ? item.getDeliveryFee() : 0L);
+        }
+        Long totalDeliveryFee = sellerDeliveryFeeMap.values().stream()
+                .mapToLong(Long::longValue)
+                .sum();
+
+        // 3. 총 결제금액
+        Long totalAmount = totalItemAmount + totalDeliveryFee;
+        order.setTotalAmount(totalAmount);
+
         // 임시 주문 저장
         Order savedOrder = orderRepository.save(order);
         return savedOrder.getId();
@@ -116,7 +171,7 @@ public class OrderService {
     /**
      * 상품페이지에서 바로 구매
      */
-    public Long createTemporaryOrder(Long buyerId, String itemId, Integer count) {
+    public Long createTemporaryOrder(Long buyerId, String itemId, Long count) {
         Buyer buyer = buyerRepository.findById(buyerId)
                 .orElseThrow(() -> new RuntimeException("구매자를 찾을 수 없습니다"));
 
@@ -143,6 +198,17 @@ public class OrderService {
         orderItem.setCount(count);
         orderItem.setOrderPrice(item.getPrice());
         order.addOrderItem(orderItem);
+
+        // 1. 상품 총액 계산
+        Long totalItemAmount = item.getPrice() * count;
+
+        // 2. 판매자별 배송비 계산 (지금은 상품 1개이지만 구조는 동일)
+        Long deliveryFee = getDeliveryFee(item);
+
+        // 3. 총 결제금액 = 상품금액 + 판매자 배송비
+        Long totalAmount = totalItemAmount + deliveryFee;
+
+        order.setTotalAmount(totalAmount);
 
         Order savedOrder = orderRepository.save(order);
 
@@ -178,6 +244,8 @@ public class OrderService {
         // 주문 상태 주문 완료로 변경
         order.setStatus(OrderStatus.PAID);
 
+        pointService.awardPoints(buyerId, order);
+
         // 장바구니가 존재하면 주문된 아이템 제거
         Optional<Cart> optionalCart = cartRepository.findByBuyerId(buyerId);
         if (optionalCart.isPresent()) {
@@ -197,7 +265,9 @@ public class OrderService {
 
     }
 
-    // OrderItem 기반 재고 확인
+    /**
+     * OrderItem 기반 재고 확인
+     */
     private void validateStockFromOrderItems(List<OrderItem> orderItems) {
         for (OrderItem orderItem : orderItems) {
             Item item = itemRepository.findById(orderItem.getItemId())
@@ -210,7 +280,9 @@ public class OrderService {
         }
     }
 
-    // OrderItem 기반 재고 차감
+    /**
+     * OrderItem 기반 재고 차감
+     */
     private void reduceStockFromOrderItems(List<OrderItem> orderItems) {
         for (OrderItem orderItem : orderItems) {
             Item item = itemRepository.findById(orderItem.getItemId())
@@ -220,26 +292,51 @@ public class OrderService {
         }
     }
 
-    // OrderItem 기반 정보 설정
+    /**
+     * OrderItem기반 주문 정보 설정
+     */
     private void setPaymentInfoFromOrderItems(Order order, List<OrderItem> orderItems) {
-        // 총 금액 계산
-        int totalAmount = orderItems.stream()
-                .mapToInt(orderItem -> orderItem.getOrderPrice() * orderItem.getCount())
+        // 1. 상품 총 금액 계산
+        Long totalItemAmount = orderItems.stream()
+                .mapToLong(orderItem -> orderItem.getOrderPrice() * orderItem.getCount())
                 .sum();
 
-        // 주문명 생성
+        // 2. 판매자별 배송비 계산 (중복 방지)
+        Map<String, Long> sellerDeliveryFeeMap = new HashMap<>();
+        for (OrderItem orderItem : orderItems) {
+            Item item = itemRepository.findById(orderItem.getItemId())
+                    .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + orderItem.getItemId()));
+
+            // 문자열로 저장된 배송비를 int로 변환
+            Long deliveryFee = getDeliveryFee(item);
+
+            // 각 판매자별로 한 번만 추가
+            sellerDeliveryFeeMap.putIfAbsent(item.getSellerId(), deliveryFee);
+        }
+
+        // 3. 배송비 합계
+        Long totalDeliveryFee = sellerDeliveryFeeMap.values().stream()
+                .mapToLong(Long::longValue)
+                .sum();
+
+        // 4. 총 결제금액 = 상품금액 + 배송비
+        Long totalAmount = totalItemAmount + totalDeliveryFee;
+
+        // 5. 주문명 생성
         String orderName = generateOrderNameFromOrderItems(orderItems);
 
-        // pgOrderId 생성
+        // 6. PG 주문번호 생성
         String pgOrderId = "ORDER_" + order.getId() + "_" + System.currentTimeMillis();
 
-        // 필드 설정
+        // 7. 주문 엔티티에 값 설정
         order.setPgOrderId(pgOrderId);
         order.setOrderName(orderName);
         order.setTotalAmount(totalAmount);
     }
 
-    // OrderItem 기반 주문명 생성
+    /**
+     * OrderItem 기반 주문명 생성 메서드
+     */
     private String generateOrderNameFromOrderItems(List<OrderItem> orderItems) {
         if (orderItems.isEmpty()) {
             return "상품";
@@ -251,7 +348,7 @@ public class OrderService {
                 .orElse(null);
         String firstItemName = (item != null) ? item.getName() : "상품";
 
-        int itemCount = orderItems.size();
+        long itemCount = orderItems.size();
         if (itemCount == 1) {
             return firstItemName;
         } else {
@@ -345,6 +442,9 @@ public class OrderService {
         return orderHistoryDtos;
     }
 
+    /**
+     * 주문 내역 조회 메서드
+     */
     public OrderHistoryDto getLatestOrderByBuyerId(Long buyerId) {
         Order order = orderRepository.findTop1ByBuyer_IdAndStatusOrderByOrderDateDesc(buyerId, OrderStatus.PAID);
 
@@ -459,7 +559,7 @@ public class OrderService {
     /**
      * 현재 사용자의 모든 임시 주문 삭제 (TEMPORARY 상태인 주문들을 일괄 삭제)
      */
-    public int deleteAllTemporaryOrders(Long buyerId) {
+    public long deleteAllTemporaryOrders(Long buyerId) {
         // 해당 구매자의 TEMPORARY 상태인 모든 주문 조회
         List<Order> temporaryOrders = orderRepository.findByBuyerIdAndStatus(buyerId, OrderStatus.TEMPORARY);
 
@@ -471,7 +571,7 @@ public class OrderService {
         // 모든 임시 주문 삭제
         orderRepository.deleteAll(temporaryOrders);
 
-        int deletedCount = temporaryOrders.size();
+        long deletedCount = temporaryOrders.size();
         log.info("임시 주문 {}건이 삭제되었습니다. buyerId: {}", deletedCount, buyerId);
 
         return deletedCount;
@@ -785,5 +885,18 @@ public class OrderService {
         orderItem.setOrderPrice(cartItem.getCartPrice());  // 장바구니 가격을 주문 가격으로
         orderItem.setCount(cartItem.getCount());
         return orderItem;
+    }
+
+    /**
+     * 아이템에서 배송비 가져오는 메서드
+     */
+    private static Long getDeliveryFee(Item item) {
+        Long deliveryFee = 0L;
+        try {
+            deliveryFee = item.getDeliveryFee();
+        } catch (NumberFormatException e) {
+            log.info("{}숫자 변환 실패 시 배송비 0 처리", deliveryFee); // 숫자 변환 실패 시 배송비 0 처리
+        }
+        return deliveryFee;
     }
 }

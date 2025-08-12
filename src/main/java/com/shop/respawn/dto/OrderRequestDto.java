@@ -1,13 +1,10 @@
 package com.shop.respawn.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.util.List;
 
-@Getter @Setter
+@Data
 public class OrderRequestDto {
 
     private Long addressId;
@@ -17,5 +14,5 @@ public class OrderRequestDto {
 
     // 상품 바로 주문용
     private String itemId;
-    private Integer count;
+    private Long count;
 }

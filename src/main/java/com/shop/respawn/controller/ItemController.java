@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.shop.respawn.domain.ItemStatus.*;
+import static com.shop.respawn.util.SessionUtil.getSellerIdFromSession;
 
 @RestController
 @RequiredArgsConstructor
@@ -162,20 +163,6 @@ public class ItemController {
             return ResponseEntity.ok(Map.of("message", "상품이 성공적으로 삭제되었습니다."));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    /**
-     * 현재 로그인된 판매자의 ID 가져오기
-     */
-    private Long getSellerIdFromSession(HttpSession session) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String authorities = authentication.getAuthorities().toString();
-        if(authorities.equals("[ROLE_SELLER]")) {
-            // 예시: 세션에 저장된 판매자 ID
-            return (Long) session.getAttribute("userId");
-        } else {
-            throw new RuntimeException("판매자 로그인이 필요합니다.");
         }
     }
 }

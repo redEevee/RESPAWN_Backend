@@ -12,13 +12,12 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+
+import static com.shop.respawn.util.SessionUtil.*;
 
 @RestController
 @RequestMapping("/api/inquiries")
@@ -151,47 +150,6 @@ public class InquiryController {
             return ResponseEntity.ok(Map.of("message", "답변이 등록되었습니다.", "inquiry", updatedInquiry));
         } catch (RuntimeException e) {
             return ResponseEntity.status(403).body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    /**
-     * 현재 로그인된 판매자의 ID 가져오기
-     */
-    private Long getBuyerIdFromSession(HttpSession session) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String authorities = authentication.getAuthorities().toString();
-        if(authorities.equals("[ROLE_USER]")) {
-            // 예시: 세션에 저장된 구매자 ID
-            return (Long) session.getAttribute("userId");
-        } else {
-            throw new RuntimeException("구매자 로그인이 필요합니다.");
-        }
-    }
-
-    /**
-     * 현재 로그인된 판매자의 ID 가져오기
-     */
-    private Long getSellerIdFromSession(HttpSession session) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String authorities = authentication.getAuthorities().toString();
-        if(authorities.equals("[ROLE_SELLER]")) {
-            // 예시: 세션에 저장된 구매자 ID
-            return (Long) session.getAttribute("userId");
-        } else {
-            throw new RuntimeException("판매자 로그인이 필요합니다.");
-        }
-    }
-
-    /**
-     * 현재 로그인된 유저의 ID 가져오기
-     */
-    private Long getUserIdFromSession(HttpSession session) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String authorities = authentication.getAuthorities().toString();
-        if (authorities.contains("ROLE_USER") || authorities.contains("ROLE_SELLER")) {
-            return (Long) session.getAttribute("userId");
-        } else {
-            throw new RuntimeException("로그인이 필요합니다.");
         }
     }
 

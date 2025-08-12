@@ -45,6 +45,20 @@ public class PaymentService {
     // 결제 검증
     public PaymentDto verifyPayment(String impUid, Long buyerId, Long orderId) throws IamportResponseException, IOException {
         IamportResponse<Payment> iamportResponse = iamportClient.paymentByImpUid(impUid);
+        Long paidAmount = iamportResponse.getResponse().getAmount().longValue();
+
+        // 주문 조회
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다: " + orderId));
+
+        System.out.println("order.getTotalAmount() = " + order.getTotalAmount());
+        System.out.println("paidAmount = " + paidAmount);
+        // 결제 금액 검증 (배송비 포함된 totalAmount와 비교)
+        if (!paidAmount.equals(order.getTotalAmount())) {
+            throw new RuntimeException(
+                    "결제 금액 불일치: PG=" + paidAmount + ", 서버계산=" + order.getTotalAmount()
+            );
+        }
 
         Long amount = iamportResponse.getResponse().getAmount().longValue();
         String name = iamportResponse.getResponse().getName();
@@ -75,8 +89,17 @@ public class PaymentService {
     }
 
     // 사전 검증 (결제 금액 위변조 방지)
-    public void preparePayment(String merchantUid, BigDecimal amount)
+    public void preparePayment(String merchantUid, Long orderId)
             throws IamportResponseException, IOException {
+
+        // 1. 주문 조회
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다: " + orderId));
+
+        // 2. totalAmount 가져오기 (배송비 포함된 금액)
+        BigDecimal amount = BigDecimal.valueOf(order.getTotalAmount());
+
+        // 3. 아임포트 사전검증 요청
         PrepareData prepareData = new PrepareData(merchantUid, amount);
         IamportResponse<Prepare> response = iamportClient.postPrepare(prepareData);
 
@@ -84,7 +107,6 @@ public class PaymentService {
             throw new RuntimeException("사전 검증 실패: " + response.getMessage());
         }
     }
-
     /**
      * 결제 정보를 데이터베이스에 저장
      */
