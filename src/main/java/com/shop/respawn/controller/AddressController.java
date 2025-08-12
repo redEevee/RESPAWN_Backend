@@ -28,8 +28,8 @@ public class AddressController {
     public ResponseEntity<?> createAddress(
             @RequestBody AddressDto addressDto, HttpSession session) {
         Long buyerId = getBuyerIdFromSession(session);
-        addressService.createAddress(buyerId, addressDto);
-        return ResponseEntity.ok("주소 저장 성공");
+        AddressDto savedAddress = addressService.createAddress(buyerId, addressDto);
+        return ResponseEntity.ok(savedAddress);
     }
 
     /**

@@ -22,7 +22,7 @@ public class AddressService {
     /**
      * 새 주소를 생성하고 구매자에게 연결
      */
-    public void createAddress(Long buyerId, AddressDto addressDto) {
+    public AddressDto createAddress(Long buyerId, AddressDto addressDto) {
         // 구매자 조회
         Buyer buyer = buyerRepository.findById(buyerId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 구매자입니다."));
@@ -46,7 +46,8 @@ public class AddressService {
         );
 
         // 주소 저장
-        addressRepository.save(address);
+        Address saved = addressRepository.save(address);
+        return new AddressDto(saved);
     }
 
     /**
