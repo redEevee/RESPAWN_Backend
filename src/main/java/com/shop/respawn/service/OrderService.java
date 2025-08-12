@@ -40,34 +40,58 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다"));
 
-        // 주문 소유권 확인
+        // 1. 주문 소유권 확인
         if (!order.getBuyer().getId().equals(buyerId)) {
             throw new RuntimeException("해당 주문을 조회할 권한이 없습니다");
         }
 
-        // OrderItemDetailDto 리스트로 변환
-        List<OrderItemDetailDto> orderItemDetails = order.getOrderItems().stream()
-                .map(orderItem -> {
-                    Item item = itemRepository.findById(orderItem.getItemId())
-                            .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + orderItem.getItemId()));
-                    return OrderItemDetailDto.from(orderItem, item);
-                })
-                .toList();
+        // 2. OrderItemDetailDto 리스트 생성 + 판매자별 배송비 계산 준비
+        List<OrderItemDetailDto> orderItemDetails = new ArrayList<>();
+        Map<String, Integer> sellerDeliveryFeeMap = new HashMap<>();
 
-        // 총 금액 계산
-        int totalAmount = orderItemDetails.stream()
+        for (OrderItem orderItem : order.getOrderItems()) {
+            Item item = itemRepository.findById(orderItem.getItemId())
+                    .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + orderItem.getItemId()));
+
+            // DTO 변환
+            orderItemDetails.add(OrderItemDetailDto.from(orderItem, item));
+
+            // 문자열 배송비 → int 변환
+            int deliveryFee = 0;
+            try {
+                deliveryFee = Integer.parseInt(String.valueOf(item.getDeliveryFee()));
+            } catch (NumberFormatException e) {
+                log.info("{}숫자 변환 실패 시 배송비 0 처리", deliveryFee); // 숫자 변환 실패 시 배송비 0 처리
+            }
+
+            // 판매자별 배송비 1번만 추가
+            sellerDeliveryFeeMap.putIfAbsent(item.getSellerId(), deliveryFee);
+        }
+
+        // 3. 상품금액 합계
+        int totalItemAmount = orderItemDetails.stream()
                 .mapToInt(OrderItemDetailDto::getTotalPrice)
                 .sum();
 
-        // 응답 데이터 구성
+        // 4. 배송비 합계
+        int totalDeliveryFee = sellerDeliveryFeeMap.values().stream()
+                .mapToInt(Integer::intValue)
+                .sum();
+
+        // 5. 총 결제 금액 = 상품금액 + 배송비
+        int totalAmount = totalItemAmount + totalDeliveryFee;
+
+        // 6. 응답 데이터 구성
         Map<String, Object> response = new HashMap<>();
         response.put("name", order.getBuyer().getName());
         response.put("phoneNumber", order.getBuyer().getPhoneNumber());
         response.put("email", order.getBuyer().getEmail());
         response.put("orderId", order.getId());
-        response.put("orderItems", orderItemDetails); // DTO 객체 그대로 반환
-        response.put("totalAmount", totalAmount);
+        response.put("orderItems", orderItemDetails);
         response.put("itemCount", orderItemDetails.size());
+        response.put("itemTotalAmount", totalItemAmount); // 상품 금액만
+        response.put("deliveryFee", totalDeliveryFee);     // 총 배송비
+        response.put("totalAmount", totalAmount);          // 배송비 포함 총 금액
 
         return response;
     }
@@ -143,6 +167,22 @@ public class OrderService {
         orderItem.setCount(count);
         orderItem.setOrderPrice(item.getPrice());
         order.addOrderItem(orderItem);
+
+        // 1. 상품 총액 계산
+        int totalItemAmount = item.getPrice() * count;
+
+        // 2. 판매자별 배송비 계산 (지금은 상품 1개이지만 구조는 동일)
+        int deliveryFee = 0;
+        try {
+            deliveryFee = Integer.parseInt(String.valueOf(item.getDeliveryFee()));
+        } catch (NumberFormatException e) {
+            log.info("{}숫자 변환 실패 시 배송비 0 처리", deliveryFee);
+        }
+
+        // 3. 총 결제금액 = 상품금액 + 판매자 배송비
+        int totalAmount = totalItemAmount + deliveryFee;
+
+        order.setTotalAmount(totalAmount);
 
         Order savedOrder = orderRepository.save(order);
 
@@ -222,18 +262,44 @@ public class OrderService {
 
     // OrderItem 기반 정보 설정
     private void setPaymentInfoFromOrderItems(Order order, List<OrderItem> orderItems) {
-        // 총 금액 계산
-        int totalAmount = orderItems.stream()
+        // 1. 상품 총 금액 계산
+        int totalItemAmount = orderItems.stream()
                 .mapToInt(orderItem -> orderItem.getOrderPrice() * orderItem.getCount())
                 .sum();
 
-        // 주문명 생성
+        // 2. 판매자별 배송비 계산 (중복 방지)
+        Map<String, Integer> sellerDeliveryFeeMap = new HashMap<>();
+        for (OrderItem orderItem : orderItems) {
+            Item item = itemRepository.findById(orderItem.getItemId())
+                    .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + orderItem.getItemId()));
+
+            // 문자열로 저장된 배송비를 int로 변환
+            int deliveryFee = 0;
+            try {
+                deliveryFee = Math.toIntExact(item.getDeliveryFee());
+            } catch (NumberFormatException e) {
+                log.info("{}숫자 변환 실패 시 배송비 0 처리", deliveryFee); // 숫자 변환 실패 시 배송비 0 처리
+            }
+
+            // 각 판매자별로 한 번만 추가
+            sellerDeliveryFeeMap.putIfAbsent(item.getSellerId(), deliveryFee);
+        }
+
+        // 3. 배송비 합계
+        int totalDeliveryFee = sellerDeliveryFeeMap.values().stream()
+                .mapToInt(Integer::intValue)
+                .sum();
+
+        // 4. 총 결제금액 = 상품금액 + 배송비
+        int totalAmount = totalItemAmount + totalDeliveryFee;
+
+        // 5. 주문명 생성
         String orderName = generateOrderNameFromOrderItems(orderItems);
 
-        // pgOrderId 생성
+        // 6. PG 주문번호 생성
         String pgOrderId = "ORDER_" + order.getId() + "_" + System.currentTimeMillis();
 
-        // 필드 설정
+        // 7. 주문 엔티티에 값 설정
         order.setPgOrderId(pgOrderId);
         order.setOrderName(orderName);
         order.setTotalAmount(totalAmount);

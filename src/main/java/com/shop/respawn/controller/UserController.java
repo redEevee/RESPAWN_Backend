@@ -194,7 +194,7 @@ public class UserController {
     }
 
     /**
-     * 1단계 - 이름 + 이메일 or 전화번호로 마스킹된 아이디 찾기
+     * 이름 + 이메일 or 전화번호로 마스킹된 아이디 찾기
      */
     @PostMapping("/find-id")
     public ResponseEntity<?> findId(@RequestBody Map<String, String> response) {
@@ -202,11 +202,11 @@ public class UserController {
         String email = response.get("email");
         String phoneNumber = response.get("phoneNumber");
 
-        String realUsername = null;
-        String maskedUsername = null;
-        String maskedEmail = null;
-        String maskedPhone = null;
-        Long userId = null;
+        String realUsername;
+        String maskedUsername;
+        String maskedEmail;
+        String maskedPhone;
+        Long userId;
 
         try {
             if (phoneNumber == null && email != null) {
@@ -250,7 +250,7 @@ public class UserController {
     }
 
     /**
-     * 2단계 - 이메일 or 전화번호로 실제 아이디 전송
+     * 이메일 or 전화번호로 실제 아이디 전송 컨트롤러
      */
     @PostMapping("/find-id/send")
     public ResponseEntity<?> sendId(
@@ -279,8 +279,8 @@ public class UserController {
 
         // DB에서 회원정보 조회
         String name;
-        String email = null;
-        String phoneNumber = null;
+        String email;
+        String phoneNumber;
 
         Buyer buyer = buyerRepository.findById(userId).orElse(null);
         if (buyer != null) {
@@ -327,6 +327,9 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "아이디가 " + ("email".equalsIgnoreCase(type) ? "이메일" : "휴대폰") + "으로 전송되었습니다."));
     }
 
+    /**
+     * 이메일 or 전화번호 사용 비밀번호 찾을 계정 조회 컨트롤러
+     */
     @PostMapping("/find-password")
     public ResponseEntity<Map<String, Object>> findPassword(@RequestBody Map<String, String> request) {
         String username = request.get("username");
@@ -334,9 +337,9 @@ public class UserController {
         String email = request.get("email");
         String phoneNumber = request.get("phoneNumber");
 
-        String maskedEmail = null;
-        String maskedPhone = null;
-        Long userId = null;
+        String maskedEmail;
+        String maskedPhone;
+        Long userId;
 
         try {
             if (phoneNumber == null && email != null) {
@@ -369,6 +372,9 @@ public class UserController {
         ));
     }
 
+    /**
+     * 이메일 or 전화번호로 비밀번호 재설정 페이지 발송 컨트롤러
+     */
     @PostMapping("/find-password/send")
     public ResponseEntity<Map<String, Object>> sendPassword(@RequestBody Map<String, String> response) {
         Long userId;
@@ -385,10 +391,10 @@ public class UserController {
         }
 
         // DB에서 회원정보 조회
-        String username = null;
-        String name = null;
-        String email = null;
-        String phoneNumber = null;
+        String username;
+        String name;
+        String email;
+        String phoneNumber;
 
         Buyer buyer = buyerRepository.findById(userId).orElse(null);
         if (buyer != null) {
@@ -409,7 +415,7 @@ public class UserController {
             }
         }
 
-        boolean result = false;
+        boolean result;
 
         if ("email".equalsIgnoreCase(type)) {
             result = userService.sendPasswordResetLinkByEmail(username, name, email);
@@ -428,6 +434,9 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "비밀번호 재설정 페이지가 " + ("email".equalsIgnoreCase(type) ? "이메일" : "휴대폰") + "으로 전송되었습니다."));
     }
 
+    /**
+     * 비밀번호 재설정 페이지 컨트롤러
+     */
     @PostMapping("/reset-password")
     public ResponseEntity<Map<String, Object>> resetPassword(@RequestBody Map<String, String> request) {
         String token = request.get("token");

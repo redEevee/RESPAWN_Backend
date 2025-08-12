@@ -11,6 +11,7 @@ public class OrderItemDetailDto {
     private String itemName;
     private String itemDescription;
     private Integer itemPrice;
+    private Long deliveryFee;
     private Integer orderPrice;
     private Integer count;
     private Integer totalPrice;
@@ -24,6 +25,7 @@ public class OrderItemDetailDto {
         this.itemName = item.getName();
         this.itemDescription = item.getDescription();
         this.itemPrice = item.getPrice();
+        this.deliveryFee = item.getDeliveryFee();
         this.orderPrice = orderItem.getOrderPrice();
         this.count = orderItem.getCount();
         this.totalPrice = orderItem.getOrderPrice() * orderItem.getCount();

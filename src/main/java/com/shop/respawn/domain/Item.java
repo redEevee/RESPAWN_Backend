@@ -20,7 +20,7 @@ public class Item {
     private String name;
     @Column(columnDefinition = "TEXT")
     private String deliveryType;
-    private String deliveryFee;
+    private Long deliveryFee;
     private String company;
     private Long companyNumber;
     private int price;

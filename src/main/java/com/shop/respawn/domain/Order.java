@@ -28,9 +28,6 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = ALL)
     private List<OrderItem> orderItems = new ArrayList<>();
 
-//    @OneToMany(mappedBy = "order", cascade = ALL)
-//    private List<CartItem> cartItems = new ArrayList<>();
-
     private LocalDateTime orderDate;
 
     @Enumerated(STRING)
