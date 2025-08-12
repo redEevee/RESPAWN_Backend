@@ -31,6 +31,7 @@ public class OrderService {
     private final ItemService itemService;
     private final OrderItemRepository orderItemRepository;
     private final PaymentRepository paymentRepository;
+    private final PointService pointService;
 
     /**
      * 임시 주문 상세 조회
@@ -86,9 +87,9 @@ public class OrderService {
         response.put("orderId", order.getId());
         response.put("orderItems", orderItemDetails);
         response.put("itemCount", orderItemDetails.size());
-        response.put("itemTotalAmount", totalItemAmount); // 상품 금액만
+        response.put("itemTotalAmount", totalItemAmount);       // 상품 금액만
         response.put("totalDeliveryFee", totalDeliveryFee);     // 총 배송비
-        response.put("totalAmount", totalAmount);          // 배송비 포함 총 금액
+        response.put("totalAmount", totalAmount);               // 배송비 포함 총 금액
 
         if (!buyerAddress.isEmpty()) {
             Address address = buyerAddress.getFirst(); // 첫 번째 주소 사용
@@ -242,6 +243,8 @@ public class OrderService {
 
         // 주문 상태 주문 완료로 변경
         order.setStatus(OrderStatus.PAID);
+
+        pointService.awardPoints(buyerId, order);
 
         // 장바구니가 존재하면 주문된 아이템 제거
         Optional<Cart> optionalCart = cartRepository.findByBuyerId(buyerId);

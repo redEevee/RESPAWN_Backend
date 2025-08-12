@@ -39,6 +39,10 @@ public class Buyer {
     @Enumerated(STRING)
     private Role role;
 
+    @Builder.Default
+    @OneToMany(mappedBy = "buyer")
+    private List<Point> points = new ArrayList<>();
+
     // 계정 상태 필드 추가
     @Embedded
     private AccountStatus accountStatus = new AccountStatus();
