@@ -50,11 +50,6 @@ AWS RDS (MySQL 8.0)
 
       👉 노션을 이용한 API 공동 설계
 
-            :heavy_plus_sign:   방 등록 API ✨
-            :heavy_plus_sign:   상세 페이지 API ✨
-            :heavy_plus_sign:   메인 페이지 API ✨
-
-
 
 💥구현
 
