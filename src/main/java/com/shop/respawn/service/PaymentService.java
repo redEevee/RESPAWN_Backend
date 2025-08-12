@@ -54,7 +54,7 @@ public class PaymentService {
         System.out.println("order.getTotalAmount() = " + order.getTotalAmount());
         System.out.println("paidAmount = " + paidAmount);
         // 결제 금액 검증 (배송비 포함된 totalAmount와 비교)
-        if (!paidAmount.equals(order.getTotalAmount().longValue())) {
+        if (!paidAmount.equals(order.getTotalAmount())) {
             throw new RuntimeException(
                     "결제 금액 불일치: PG=" + paidAmount + ", 서버계산=" + order.getTotalAmount()
             );

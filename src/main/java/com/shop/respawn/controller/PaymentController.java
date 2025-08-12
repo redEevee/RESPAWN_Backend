@@ -1,6 +1,5 @@
 package com.shop.respawn.controller;
 
-import com.shop.respawn.domain.Order;
 import com.shop.respawn.dto.PaymentDto;
 import com.shop.respawn.dto.PrepareRequest;
 import com.shop.respawn.dto.VerifyRequest;
@@ -13,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
