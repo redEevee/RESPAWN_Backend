@@ -9,8 +9,6 @@ import com.shop.respawn.service.ItemService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpSession;
@@ -83,7 +81,7 @@ public class CartController {
                 })
                 .collect(Collectors.toList());
 
-        int totalPrice = cartService.calculateTotalPrice(buyerId);
+        Long totalPrice = cartService.calculateTotalPrice(buyerId);
 
         Map<String, Object> response = new HashMap<>();
         response.put("cartItems", cartItemsWithDetails);

@@ -37,7 +37,7 @@ public class Order {
 
     private String orderName;      // 구매상품명 (예: "상품명 외 2건")
 
-    private Integer totalAmount;   // 총 결제 금액
+    private Long totalAmount;   // 총 결제 금액
 
     private String paymentStatus;  // 결제 상태 (READY, SUCCESS, FAIL 등)
 
@@ -53,9 +53,9 @@ public class Order {
     }
 
     // 총 금액 계산 메서드 추가
-    public int calculateTotalAmount() {
+    public Long calculateTotalAmount() {
         return orderItems.stream()
-                .mapToInt(item -> item.getOrderPrice() * item.getCount())
+                .mapToLong(item -> (long) item.getOrderPrice() * item.getCount())
                 .sum();
     }
 

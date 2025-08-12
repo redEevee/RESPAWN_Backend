@@ -5,7 +5,6 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
-
 @Data
 public class SellerOrderDetailDto {
 
@@ -14,9 +13,9 @@ public class SellerOrderDetailDto {
     private Long orderId;
     private String itemName;
     private String imageUrl;
-    private int orderPrice;
-    private int count;
-    private int totalPrice;
+    private Long orderPrice;
+    private Long count;
+    private Long totalPrice;
     private LocalDateTime orderDate;
     private String orderStatus;
 

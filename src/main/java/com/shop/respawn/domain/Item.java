@@ -23,8 +23,8 @@ public class Item {
     private Long deliveryFee;
     private String company;
     private Long companyNumber;
-    private int price;
-    private int stockQuantity;
+    private Long price;
+    private long stockQuantity;
     private String sellerId;
     private String imageUrl;
     private List<String> categoryIds = new ArrayList<>();
@@ -33,12 +33,12 @@ public class Item {
     private ItemStatus status = SALE;
 
     //==비즈니스 로직==//
-    public void addStock(int quantity) {
+    public void addStock(long quantity) {
         this.stockQuantity += quantity;
     }
 
-    public void removeStock(int quantity) {
-        int restStock = this.stockQuantity - quantity;
+    public void removeStock(long quantity) {
+        long restStock = this.stockQuantity - quantity;
         if (restStock < 0) {
             throw new RuntimeException("재고가 부족합니다");
         }

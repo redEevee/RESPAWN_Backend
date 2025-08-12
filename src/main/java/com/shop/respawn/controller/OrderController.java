@@ -146,7 +146,7 @@ public class OrderController {
     public ResponseEntity<Map<String, Object>> deleteAllTemporaryOrders(HttpSession session) {
         try {
             Long buyerId = getBuyerIdFromSession(session);
-            int deletedCount = orderService.deleteAllTemporaryOrders(buyerId);
+            long deletedCount = orderService.deleteAllTemporaryOrders(buyerId);
 
             return ResponseEntity.ok(Map.of(
                     "message", "임시 주문이 성공적으로 삭제되었습니다.",

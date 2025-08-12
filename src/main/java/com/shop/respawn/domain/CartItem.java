@@ -8,7 +8,8 @@ import static jakarta.persistence.FetchType.*;
 import static lombok.AccessLevel.*;
 
 @Entity
-@Table(name = "cart_item") @Getter
+@Table(name = "cart_item")
+@Getter
 @NoArgsConstructor(access = PROTECTED)
 public class CartItem {
 
@@ -20,16 +21,12 @@ public class CartItem {
     @JoinColumn(name = "cart_id")
     private Cart cart;
 
-//    @ManyToOne(fetch = LAZY)
-//    @JoinColumn(name = "order_id")
-//    private Order order;
-
     private String itemId;
-    private int cartPrice;
-    private int count;
+    private Long cartPrice;
+    private Long count;
 
     //==생성 메서드==//
-    public CartItem(String itemId, int cartPrice, int count) {
+    public CartItem(String itemId, Long cartPrice, Long count) {
         this.itemId = itemId;
         this.cartPrice = cartPrice;
         this.count = count;
@@ -42,7 +39,7 @@ public class CartItem {
 
 
     // 정적 팩토리 메서드 (의도 강조 가능)
-    public static CartItem createCartItem(Cart cart, String itemId, int cartPrice, int count) {
+    public static CartItem createCartItem(Cart cart, String itemId, Long cartPrice, Long count) {
         CartItem cartItem = new CartItem(itemId, cartPrice, count);
         cartItem.assignCart(cart);  // 연관 관계 세팅
         return cartItem;
@@ -50,7 +47,7 @@ public class CartItem {
 
     //==비즈니스 로직==//
     /** 수량 증가 */
-    public void increaseQuantity(int amount) {
+    public void increaseQuantity(Long amount) {
         if (amount <= 0) {
             throw new IllegalArgumentException("증가량은 0보다 커야 합니다.");
         }
@@ -58,7 +55,7 @@ public class CartItem {
     }
 
     /** 수량 감소 */
-    public void decreaseQuantity(int amount) {
+    public void decreaseQuantity(Long amount) {
         if (amount <= 0) {
             throw new IllegalArgumentException("감소량은 0보다 커야 합니다.");
         }
@@ -70,7 +67,7 @@ public class CartItem {
 
     //==조회 로직==//
     /** 주문상품 전체 가격 조회 */
-    public int getTotalPrice() {
+    public Long getTotalPrice() {
         return getCartPrice() * getCount();
     }
 

@@ -21,8 +21,8 @@ public class OrderItem {
     private Order order; //주문
 
     private String itemId; //아이템 객체가 몽고디비 사용
-    private int orderPrice; //주문 가격
-    private int count; //주문 수량
+    private Long orderPrice; //주문 가격
+    private Long count; //주문 수량
 
     @OneToOne(cascade = ALL, fetch = LAZY)
     @JoinColumn(name = "delivery_id")
@@ -36,7 +36,7 @@ public class OrderItem {
     private RefundRequest refundRequest;
 
     //==생성 메서드==//
-    public static OrderItem createOrderItem(Item item, int orderPrice, int count) {
+    public static OrderItem createOrderItem(Item item, Long orderPrice, Long count) {
         OrderItem orderItem = new OrderItem();
         orderItem.setItemId(item.getId());
         orderItem.setOrderPrice(orderPrice);

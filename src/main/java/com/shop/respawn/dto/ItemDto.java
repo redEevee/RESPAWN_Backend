@@ -24,9 +24,9 @@ public class ItemDto {
 
     private Long companyNumber;
 
-    private int price;
+    private Long price;
 
-    private int stockQuantity;
+    private long stockQuantity;
 
     private String sellerId;
 
@@ -36,7 +36,7 @@ public class ItemDto {
 
     private ItemStatus status;
 
-    public ItemDto(String id, String name, String description, String deliveryType, Long deliveryFee, String company, Long companyNumber, int price, int stockQuantity, String sellerId, String imageUrl, List<String> categoryIds) {
+    public ItemDto(String id, String name, String description, String deliveryType, Long deliveryFee, String company, Long companyNumber, Long price, long stockQuantity, String sellerId, String imageUrl, List<String> categoryIds) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -51,7 +51,7 @@ public class ItemDto {
         this.categoryIds = categoryIds;
     }
 
-    public ItemDto(String id, String name, String description, String deliveryType, Long deliveryFee, String company, Long companyNumber, int price, int stockQuantity, String sellerId, String imageUrl, List<String> categoryIds, ItemStatus status) {
+    public ItemDto(String id, String name, String description, String deliveryType, Long deliveryFee, String company, Long companyNumber, Long price, long stockQuantity, String sellerId, String imageUrl, List<String> categoryIds, ItemStatus status) {
         this.id = id;
         this.name = name;
         this.description = description;

@@ -89,18 +89,18 @@ public class MyService {
             delivery.setStatus(DeliveryStatus.DELIVERED);
 
             if (i % 3 == 0) {
-                OrderItem oi2 = OrderItem.createOrderItem(item2, 20, 2);
+                OrderItem oi2 = OrderItem.createOrderItem(item2, 20L, 2L);
                 order.addOrderItem(oi2);
                 delivery.setOrderItem(oi2);
                 oi2.setDelivery(delivery);
             } else {
-                OrderItem oi3 = OrderItem.createOrderItem(item3, 50, 1);
+                OrderItem oi3 = OrderItem.createOrderItem(item3, 50L, 1L);
                 order.addOrderItem(oi3);
                 delivery.setOrderItem(oi3);
                 oi3.setDelivery(delivery);
             }
 
-            int totalAmount = order.calculateTotalAmount();
+            Long totalAmount = order.calculateTotalAmount();
             order.setTotalAmount(totalAmount);
 
             order.setOrderName(order.generateOrderName());

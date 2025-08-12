@@ -24,7 +24,7 @@ public class CartService {
     /**
      * 장바구니에 상품 추가
      */
-    public void addItemToCart(Long buyerId, String itemId, int count) {
+    public void addItemToCart(Long buyerId, String itemId, Long count) {
         // 구매자 조회
         Buyer buyer = buyerRepository.findById(buyerId)
                 .orElseThrow(() -> new RuntimeException("구매자를 찾을 수 없습니다: " + buyerId));
@@ -77,7 +77,7 @@ public class CartService {
     /**
      * 장바구니 아이템 수량 증가
      */
-    public void increaseCartItemQuantity(Long buyerId, Long cartItemId, int amount) {
+    public void increaseCartItemQuantity(Long buyerId, Long cartItemId, Long amount) {
         Cart cart = cartRepository.findByBuyerId(buyerId)
                 .orElseThrow(() -> new RuntimeException("장바구니를 찾을 수 없습니다"));
 
@@ -93,7 +93,7 @@ public class CartService {
     /**
      * 장바구니 아이템 수량 감소
      */
-    public void decreaseCartItemQuantity(Long buyerId, Long cartItemId, int amount) {
+    public void decreaseCartItemQuantity(Long buyerId, Long cartItemId, Long amount) {
         Cart cart = cartRepository.findByBuyerId(buyerId)
                 .orElseThrow(() -> new RuntimeException("장바구니를 찾을 수 없습니다"));
 
@@ -125,12 +125,12 @@ public class CartService {
      * 장바구니 전체 금액 계산
      */
     @Transactional(readOnly = true)
-    public int calculateTotalPrice(Long buyerId) {
+    public Long calculateTotalPrice(Long buyerId) {
         Cart cart = getCartByBuyerId(buyerId);
-        if (cart == null) return 0;
+        if (cart == null) return 0L; // Long 리터럴
 
         return cart.getCartItems().stream()
-                .mapToInt(CartItem::getTotalPrice)
+                .mapToLong(CartItem::getTotalPrice) // long 타입 스트림으로 변환
                 .sum();
     }
 

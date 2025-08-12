@@ -25,7 +25,7 @@ public class ReviewWithItemDto {
     private String itemId;
     private String itemName;
     private String imageUrl;
-    private int price;
+    private Long price;
 
     public ReviewWithItemDto(Review review, Item item, String maskedUsername, Order order) {
         this.reviewId = review.getId();

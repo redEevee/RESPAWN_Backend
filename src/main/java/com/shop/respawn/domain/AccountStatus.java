@@ -1,13 +1,12 @@
 package com.shop.respawn.domain;
 
 import jakarta.persistence.Embeddable;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Embeddable
-@Getter @Setter
+@Data
 public class AccountStatus {
 
     private boolean accountNonExpired = true;

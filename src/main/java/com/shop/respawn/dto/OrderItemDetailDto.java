@@ -10,13 +10,13 @@ public class OrderItemDetailDto {
     private String itemId;
     private String itemName;
     private String itemDescription;
-    private Integer itemPrice;
+    private Long itemPrice;
     private Long deliveryFee;
-    private Integer orderPrice;
-    private Integer count;
-    private Integer totalPrice;
+    private Long orderPrice;
+    private Long count;
+    private Long totalPrice;
     private String imageUrl;
-    private Integer stockQuantity;
+    private long stockQuantity;
 
     // 생성자
     private OrderItemDetailDto(OrderItem orderItem, Item item) {
