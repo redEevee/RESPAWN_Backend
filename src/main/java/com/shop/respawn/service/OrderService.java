@@ -31,7 +31,7 @@ public class OrderService {
     private final ItemService itemService;
     private final OrderItemRepository orderItemRepository;
     private final PaymentRepository paymentRepository;
-    private final PointService pointService;
+    private final LedgerPointService ledgerPointService;
 
     /**
      * 임시 주문 상세 조회
@@ -80,10 +80,7 @@ public class OrderService {
         // 5. 총 결제 금액 = 상품금액 + 배송비
         Long totalAmount = totalItemAmount + totalDeliveryFee;
 
-        // 6. 사용 가능한 포인트 조회
-        Long availablePoints = pointService.getActiveTotalPoints(buyerId);
-
-        // 7. 응답 데이터 구성
+        // 6. 응답 데이터 구성
         Map<String, Object> response = new HashMap<>();
         response.put("name", order.getBuyer().getName());
         response.put("phoneNumber", order.getBuyer().getPhoneNumber());
@@ -94,7 +91,6 @@ public class OrderService {
         response.put("itemTotalAmount", totalItemAmount);       // 상품 금액만
         response.put("totalDeliveryFee", totalDeliveryFee);     // 총 배송비
         response.put("totalAmount", totalAmount);               // 배송비 포함 총 금액
-        response.put("availablePoints", availablePoints);       // 사용 가능한 포인트
 
         if (buyerAddress != null) {
             response.put("addressId", buyerAddress.getId());
@@ -231,18 +227,11 @@ public class OrderService {
         // 1. 재고 확인
         validateStockFromOrderItems(order.getOrderItems());
 
-        // 2. 포인트 사용 설정 및 사용 처리
-        Long usePointAmount = orderRequest.getUsePointAmount() != null
-                ? orderRequest.getUsePointAmount()
-                : 0L;
+        // 2. 포인트 사용 (선 사용)
+        long usePointAmount = orderRequest.getUsePointAmount() != null ? orderRequest.getUsePointAmount() : 0L;
         if (usePointAmount > 0) {
-            // 사용 가능 포인트 확인
-            if (!pointService.canUsePoints(buyerId, usePointAmount)) {
-                throw new RuntimeException("사용 가능한 포인트가 부족합니다.");
-            }
-            // 실제 포인트 사용 처리
-            pointService.usePoints(buyerId, usePointAmount);
-
+            // 가용 확인은 LedgerPointService에서 집계 기준으로 검증
+            ledgerPointService.usePoints(buyerId, usePointAmount, order.getId(), "주문 포인트 사용", "user");
         }
 
         // 3. 배송지 주소 조회 및 권한 체크, 배송 정보 설정
@@ -261,8 +250,14 @@ public class OrderService {
         // 6. 주문 상태 주문 완료로 변경
         order.setStatus(OrderStatus.PAID);
 
-        // 7. 포인트 적립 (결제 완료 후, 포인트 차감된 최종 금액 기준)
-        pointService.awardPoints(buyerId, order);
+        // 7. 포인트 적립 (최종 결제금액 기준)
+        // 만료 1년
+        ledgerPointService.savePoints(buyerId,
+                Math.max(1L, Math.round(order.getTotalAmount() * 0.02)),
+                LocalDateTime.now().plusYears(1),
+                order.getId(),
+                "결제 포인트 적립",
+                "system");
 
         // 8. 장바구니가 존재하면 주문된 아이템 제거
         Optional<Cart> optionalCart = cartRepository.findByBuyerId(buyerId);

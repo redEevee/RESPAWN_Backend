@@ -41,7 +41,7 @@ public class Buyer {
 
     @Builder.Default
     @OneToMany(mappedBy = "buyer")
-    private List<Point> points = new ArrayList<>();
+    private List<PointLedger> pointLedgers = new ArrayList<>();
 
     // 계정 상태 필드 추가
     @Embedded
