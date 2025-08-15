@@ -9,7 +9,7 @@ import java.util.Optional;
 
 public interface AddressRepository extends JpaRepository<Address, Long> {
 
-    List<Address> findByBuyerAndBasicTrue(Buyer buyer);
+    Optional<Address> findByBuyerAndBasicTrue(Buyer buyer);
 
     // 구매자의 모든 주소 조회
     List<Address> findByBuyerOrderByBasicDescIdDesc(Buyer buyer);

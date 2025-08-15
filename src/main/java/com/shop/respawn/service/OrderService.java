@@ -46,7 +46,8 @@ public class OrderService {
             throw new RuntimeException("해당 주문을 조회할 권한이 없습니다");
         }
 
-        List<Address> buyerAddress = addressRepository.findByBuyerAndBasicTrue(order.getBuyer());
+        Address buyerAddress = addressRepository.findByBuyerAndBasicTrue(order.getBuyer())
+                .orElseThrow(()->new RuntimeException("기본 배송지를 찾을 수 없습니다: " + order.getBuyer().getId()));
 
         // 2. OrderItemDetailDto 리스트 생성 + 판매자별 배송비 계산 준비
         List<OrderItemDetailDto> orderItemDetails = new ArrayList<>();
@@ -91,15 +92,14 @@ public class OrderService {
         response.put("totalDeliveryFee", totalDeliveryFee);     // 총 배송비
         response.put("totalAmount", totalAmount);               // 배송비 포함 총 금액
 
-        if (!buyerAddress.isEmpty()) {
-            Address address = buyerAddress.getFirst(); // 첫 번째 주소 사용
-            response.put("addressId", address.getId());
-            response.put("addressName", address.getAddressName());
-            response.put("recipient", address.getRecipient());
-            response.put("zoneCode", address.getZoneCode());
-            response.put("baseAddress", address.getBaseAddress());
-            response.put("detailAddress", address.getDetailAddress());
-            response.put("addressPhone", address.getPhone());
+        if (buyerAddress != null) {
+            response.put("addressId", buyerAddress.getId());
+            response.put("addressName", buyerAddress.getAddressName());
+            response.put("recipient", buyerAddress.getRecipient());
+            response.put("zoneCode", buyerAddress.getZoneCode());
+            response.put("baseAddress", buyerAddress.getBaseAddress());
+            response.put("detailAddress", buyerAddress.getDetailAddress());
+            response.put("addressPhone", buyerAddress.getPhone());
         }
 
         return response;
