@@ -80,7 +80,10 @@ public class OrderService {
         // 5. 총 결제 금액 = 상품금액 + 배송비
         Long totalAmount = totalItemAmount + totalDeliveryFee;
 
-        // 6. 응답 데이터 구성
+        // 6. 사용 가능한 포인트 조회
+        Long availablePoints = pointService.getActiveTotalPoints(buyerId);
+
+        // 7. 응답 데이터 구성
         Map<String, Object> response = new HashMap<>();
         response.put("name", order.getBuyer().getName());
         response.put("phoneNumber", order.getBuyer().getPhoneNumber());
@@ -91,6 +94,8 @@ public class OrderService {
         response.put("itemTotalAmount", totalItemAmount);       // 상품 금액만
         response.put("totalDeliveryFee", totalDeliveryFee);     // 총 배송비
         response.put("totalAmount", totalAmount);               // 배송비 포함 총 금액
+        response.put("usedPointAmount", order.getUsedPointAmount() != null ? order.getUsedPointAmount() : 0L); // 사용된 포인트
+        response.put("availablePoints", availablePoints); // 사용 가능한 포인트
 
         if (buyerAddress != null) {
             response.put("addressId", buyerAddress.getId());
@@ -171,7 +176,7 @@ public class OrderService {
     /**
      * 상품페이지에서 바로 구매
      */
-    public Long createTemporaryOrder(Long buyerId, String itemId, Long count) {
+    public Long createTemporaryOrder(Long buyerId, String itemId, Long count, Long usePointAmount) {
         Buyer buyer = buyerRepository.findById(buyerId)
                 .orElseThrow(() -> new RuntimeException("구매자를 찾을 수 없습니다"));
 
@@ -184,6 +189,17 @@ public class OrderService {
 
         if (item.getStockQuantity() < count) {
             throw new RuntimeException("재고가 부족합니다.");
+        }
+
+        // 포인트 사용량 검증
+        if (usePointAmount == null) {
+            usePointAmount = 0L;
+        }
+
+        if (usePointAmount > 0) {
+            if (!pointService.canUsePoints(buyerId, usePointAmount)) {
+                throw new RuntimeException("사용 가능한 포인트가 부족합니다.");
+            }
         }
 
         // 임시 주문 생성
@@ -202,17 +218,35 @@ public class OrderService {
         // 1. 상품 총액 계산
         Long totalItemAmount = item.getPrice() * count;
 
-        // 2. 판매자별 배송비 계산 (지금은 상품 1개이지만 구조는 동일)
+        // 2. 판매자별 배송비 계산
         Long deliveryFee = getDeliveryFee(item);
 
-        // 3. 총 결제금액 = 상품금액 + 판매자 배송비
-        Long totalAmount = totalItemAmount + deliveryFee;
+        // 3. 포인트 사용 전 총 금액
+        Long originalAmount = totalItemAmount + deliveryFee;
 
-        order.setTotalAmount(totalAmount);
+        // 4. 포인트 사용량이 원 금액을 초과하는지 확인
+        if (usePointAmount > originalAmount) {
+            throw new RuntimeException("포인트 사용 금액이 주문 금액을 초과할 수 없습니다.");
+        }
+
+        // 5. 최종 결제 금액 = 원래 금액 - 포인트 사용 금액
+        Long finalAmount = originalAmount - usePointAmount;
+
+        // 6. 주문에 포인트 정보 설정
+        if (usePointAmount > 0) {
+            order.setPointUsage(originalAmount, usePointAmount);
+        } else {
+            order.setTotalAmount(finalAmount);
+        }
 
         Order savedOrder = orderRepository.save(order);
 
         return savedOrder.getId();
+    }
+
+    // 오버로드된 메서드 (기존 호환성 유지)
+    public Long createTemporaryOrder(Long buyerId, String itemId, Long count) {
+        return createTemporaryOrder(buyerId, itemId, count, 0L);
     }
 
     /**
@@ -226,6 +260,11 @@ public class OrderService {
 
         // 재고 확인
         validateStockFromOrderItems(order.getOrderItems());
+
+        // 주문에 포인트 사용 정보가 있으면 실제로 포인트 사용 처리
+        if (order.getUsedPointAmount() != null && order.getUsedPointAmount() > 0) {
+            pointService.usePoints(buyerId, order.getUsedPointAmount());
+        }
 
         // 배송지 주소 조회 및 권한 체크
         // 배송 정보 설정
@@ -244,6 +283,7 @@ public class OrderService {
         // 주문 상태 주문 완료로 변경
         order.setStatus(OrderStatus.PAID);
 
+        // 포인트 적립 (최종 결제 금액 기준으로 적립)
         pointService.awardPoints(buyerId, order);
 
         // 장바구니가 존재하면 주문된 아이템 제거

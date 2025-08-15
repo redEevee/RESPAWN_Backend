@@ -51,8 +51,20 @@ public class OrderController {
         try {
             Long buyerId = getBuyerIdFromSession(session);  // 로그인된 사용자 ID 가져오기
 
+            // 포인트 사용 금액 가져오기 (없으면 0)
+            Long usePointAmount = orderRequest.getUsePointAmount();
+            if (usePointAmount == null) {
+                usePointAmount = 0L;
+            }
+
+
             // 주문 생성 서비스 호출 (itemId, count, buyerId 전달)
-            Long orderId = orderService.createTemporaryOrder(buyerId, orderRequest.getItemId(), orderRequest.getCount());
+            Long orderId = orderService.createTemporaryOrder(
+                    buyerId,
+                    orderRequest.getItemId(),
+                    orderRequest.getCount(),
+                    usePointAmount
+            );
 
             // 결과 응답
             return ResponseEntity.ok(Map.of("orderId", orderId));

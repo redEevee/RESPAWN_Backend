@@ -22,6 +22,12 @@ public class Point {
     private LocalDateTime pointAwardedDate;
     private LocalDateTime pointExpiryDate;
 
+    // 포인트 사용 여부 추가
+    private boolean used = false;
+
+    // 포인트 사용 날짜 추가
+    private LocalDateTime usedDate;
+
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "buyer_id")
     private Buyer buyer;
@@ -37,5 +43,16 @@ public class Point {
     // 정적 팩토리 메서드
     public static Point CreatePoint(String pointName, Long amount, LocalDateTime pointAwardedDate, LocalDateTime pointExpiryDate, Buyer buyer) {
         return new Point(pointName, amount, pointAwardedDate, pointExpiryDate, buyer);
+    }
+
+    // 포인트 사용 메서드
+    public void use() {
+        this.used = true;
+        this.usedDate = LocalDateTime.now();
+    }
+
+    // 포인트 사용 가능 여부 확인
+    public boolean isUsable() {
+        return !used && LocalDateTime.now().isBefore(pointExpiryDate);
     }
 }

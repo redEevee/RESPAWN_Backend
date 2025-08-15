@@ -15,4 +15,7 @@ public class OrderRequestDto {
     // 상품 바로 주문용
     private String itemId;
     private Long count;
+
+    // 포인트 사용 금액
+    private Long usePointAmount;
 }
