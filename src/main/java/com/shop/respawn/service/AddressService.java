@@ -76,21 +76,18 @@ public class AddressService {
         Buyer buyer = buyerRepository.findById(buyerId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 구매자입니다."));
 
-        List<Address> basicAddresses = addressRepository.findByBuyerAndBasicTrue(buyer);
+        Address basicAddress = addressRepository.findByBuyerAndBasicTrue(buyer)
+                .orElseThrow(()->new RuntimeException("기본 주소가 설정되지 않았습니다."));
 
-        if (basicAddresses.isEmpty()) {
-            throw new IllegalStateException("기본 주소가 설정되지 않았습니다.");
-        }
-
-        return convertToDto(basicAddresses.getFirst());
+        return new AddressDto(basicAddress);
     }
 
     /**
      * 기존 기본 주소를 일반 주소로 변경
      */
     private void updateExistingBasicAddress(Buyer buyer) {
-        List<Address> basicAddresses = addressRepository.findByBuyerAndBasicTrue(buyer);
-        basicAddresses.forEach(address -> address.changeBasicStatus(false));
+        addressRepository.findByBuyerAndBasicTrue(buyer)
+                .ifPresent(address -> address.changeBasicStatus(false));
     }
 
     /**
