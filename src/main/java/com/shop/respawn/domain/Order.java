@@ -74,6 +74,7 @@ public class Order {
         this.originalAmount = originalAmount;
         this.usedPointAmount = usedPointAmount;
         this.totalAmount = originalAmount - usedPointAmount;
+        System.out.println("totalAmount = " + totalAmount);
     }
 
 }

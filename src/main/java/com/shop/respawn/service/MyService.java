@@ -33,6 +33,9 @@ public class MyService {
         Buyer buyer = Buyer.createBuyerWithInitLists("강지원", "kkjjww1122", encoder.encode("kjw741147"), "kkjjww1122@naver.com", "01024466832", Role.ROLE_USER);
         buyerRepository.save(buyer);
         em.persist(buyer);
+        Point point = Point.CreatePoint("기본 포인트", 10000L, LocalDateTime.now(), LocalDateTime.now().plusDays(1), buyer);
+        em.persist(point);
+
 
         Buyer buyer1 = Buyer.createBuyerWithInitLists("test", "testUser", encoder.encode("testPassword"), "test@test.com", "01012345678", Role.ROLE_USER);
         buyerRepository.save(buyer1);
