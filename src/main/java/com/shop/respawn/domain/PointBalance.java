@@ -29,14 +29,14 @@ public class PointBalance {
     private LocalDateTime updatedAt;
 
     public static PointBalance init(Long buyerId) {
-        PointBalance b = new PointBalance();
-        b.buyerId = buyerId;
-        b.total = 0L;
-        b.active = 0L;
-        b.used = 0L;
-        b.expired = 0L;
-        b.updatedAt = LocalDateTime.now();
-        return b;
+        PointBalance balance = new PointBalance();
+        balance.buyerId = buyerId;
+        balance.total = 0L;
+        balance.active = 0L;
+        balance.used = 0L;
+        balance.expired = 0L;
+        balance.updatedAt = LocalDateTime.now();
+        return balance;
     }
 
     public void addTotal(Long delta) { this.total += delta; touch(); }

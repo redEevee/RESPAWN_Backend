@@ -50,15 +50,15 @@ public class PointLedger {
     public static PointLedger of(Buyer buyer, PointTransactionType type, Long amount,
                                  LocalDateTime occurredAt, LocalDateTime expiryAt,
                                  Long refOrderId, String reason, String actor) {
-        PointLedger l = new PointLedger();
-        l.buyer = buyer;
-        l.type = type;
-        l.amount = amount;
-        l.occurredAt = occurredAt;
-        l.expiryAt = expiryAt;
-        l.refOrderId = refOrderId;
-        l.reason = reason;
-        l.actor = actor;
-        return l;
+        PointLedger ledger = new PointLedger();
+        ledger.buyer = buyer;
+        ledger.type = type;
+        ledger.amount = amount;
+        ledger.occurredAt = occurredAt;
+        ledger.expiryAt = expiryAt;
+        ledger.refOrderId = refOrderId;
+        ledger.reason = reason;
+        ledger.actor = actor;
+        return ledger;
     }
 }
