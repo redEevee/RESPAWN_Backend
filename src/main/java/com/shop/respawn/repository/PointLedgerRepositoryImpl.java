@@ -1,7 +1,9 @@
 package com.shop.respawn.repository;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.ComparableExpressionBase;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
@@ -10,11 +12,18 @@ import com.shop.respawn.domain.PointLedger;
 import com.shop.respawn.domain.PointTransactionType;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.shop.respawn.domain.QPointConsumeLink.pointConsumeLink;
 import static com.shop.respawn.domain.QPointLedger.pointLedger;
@@ -81,6 +90,30 @@ public class PointLedgerRepositoryImpl implements PointLedgerRepositoryCustom {
                 )
                 .fetch();
     }
+    @Override
+    public Page<PointLedger> findByBuyerAndTypes(Long buyerId, Iterable<PointTransactionType> types, Pageable pageable) {
+        BooleanBuilder where = new BooleanBuilder();
+        where.and(pointLedger.buyer.id.eq(buyerId));
+        if (types != null) {
+            BooleanBuilder typeOr = new BooleanBuilder();
+            for (PointTransactionType t : types) {
+                typeOr.or(pointLedger.type.eq(t));
+            }
+            if (typeOr.hasValue()) {
+                where.and(typeOr);
+            }
+        }
+
+        return getPointLedgers(pageable, where);
+    }
+
+    @Override
+    public Page<PointLedger> findAllByBuyer(Long buyerId, Pageable pageable) {
+        BooleanBuilder where = new BooleanBuilder();
+        where.and(pointLedger.buyer.id.eq(buyerId));
+
+        return getPointLedgers(pageable, where);
+    }
 
     @NotNull
     private static NumberExpression<BigDecimal> getBigDecimalNumberExpression() {
@@ -104,5 +137,58 @@ public class PointLedgerRepositoryImpl implements PointLedgerRepositoryCustom {
                 consumedSumExpr,
                 BigDecimal.ZERO
         );
+    }
+
+    @NotNull
+    private PageImpl<PointLedger> getPointLedgers(Pageable pageable, BooleanBuilder where) {
+        List<OrderSpecifier<?>> orderSpecifiers = toOrderSpecifiers(pageable.getSort());
+
+        List<PointLedger> content = queryFactory
+                .selectFrom(pointLedger)
+                .where(where)
+                .orderBy(orderSpecifiers.toArray(new OrderSpecifier[0]))
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = queryFactory
+                .select(pointLedger.count())
+                .from(pointLedger)
+                .where(where)
+                .fetchOne();
+
+        long totalCount = (total == null) ? 0L : total;
+        return new PageImpl<>(content, pageable, totalCount);
+    }
+
+    private List<OrderSpecifier<?>> toOrderSpecifiers(Sort sort) {
+        List<OrderSpecifier<?>> orders = new ArrayList<>();
+
+        // 화이트리스트: 허용 정렬 필드만 매핑
+        Map<String, ComparableExpressionBase<?>> sortable = new HashMap<>();
+        sortable.put("occurredAt", pointLedger.occurredAt);
+        sortable.put("expiryAt", pointLedger.expiryAt);
+        sortable.put("amount", pointLedger.amount);
+        sortable.put("id", pointLedger.id);
+        sortable.put("type", pointLedger.type); // 필요 시
+
+        if (sort != null) {
+            for (Sort.Order o : sort) {
+                ComparableExpressionBase<?> expr = sortable.get(o.getProperty());
+                if (expr != null) {
+                    orders.add(new OrderSpecifier<>(
+                            o.isAscending() ? Order.ASC : Order.DESC,
+                            expr
+                    ));
+                }
+            }
+        }
+
+        // 기본 정렬: occurredAt desc, id desc
+        if (orders.isEmpty()) {
+            orders.add(new OrderSpecifier<>(Order.DESC, pointLedger.occurredAt));
+            orders.add(new OrderSpecifier<>(Order.DESC, pointLedger.id));
+        }
+        return orders;
     }
 }
