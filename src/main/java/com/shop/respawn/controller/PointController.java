@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @RestController
@@ -44,10 +47,16 @@ public class PointController {
     public Page<PointLedgerDto> getSaves(HttpSession session,
                                          @RequestParam(defaultValue = "0") int page,
                                          @RequestParam(defaultValue = "20") int size,
-                                         @RequestParam(defaultValue = "occurredAt,desc") String sort) {
+                                         @RequestParam(defaultValue = "occurredAt,desc") String sort,
+                                         @RequestParam(required = false) Integer year,
+                                         @RequestParam(required = false) Integer month) {
         Long buyerId = (Long) session.getAttribute("userId");
         Sort sortObj = toSort(sort);
         Pageable pageable = PageRequest.of(page, size, sortObj);
+        if (year != null && month != null) {
+            LocalDateTime[] range = toMonthRange(year, month);
+            return pointQueryService.getSavesByMonth(buyerId, range[0], range[1], pageable);
+        }
         return pointQueryService.getSaves(buyerId, pageable);
     }
 
@@ -56,10 +65,16 @@ public class PointController {
     public Page<PointLedgerDto> getUses(HttpSession session,
                                         @RequestParam(defaultValue = "0") int page,
                                         @RequestParam(defaultValue = "20") int size,
-                                        @RequestParam(defaultValue = "occurredAt,desc") String sort) {
+                                        @RequestParam(defaultValue = "occurredAt,desc") String sort,
+                                        @RequestParam(required = false) Integer year,
+                                        @RequestParam(required = false) Integer month) {
         Long buyerId = (Long) session.getAttribute("userId");
         Sort sortObj = toSort(sort);
         Pageable pageable = PageRequest.of(page, size, sortObj);
+        if (year != null && month != null) {
+            LocalDateTime[] range = toMonthRange(year, month);
+            return pointQueryService.getUsesByMonth(buyerId, range[0], range[1], pageable);
+        }
         return pointQueryService.getUses(buyerId, pageable);
     }
 
@@ -68,10 +83,16 @@ public class PointController {
     public Page<PointHistoryDto> getAll(HttpSession session,
                                         @RequestParam(defaultValue = "0") int page,
                                         @RequestParam(defaultValue = "20") int size,
-                                        @RequestParam(defaultValue = "occurredAt,desc") String sort) {
+                                        @RequestParam(defaultValue = "occurredAt,desc") String sort,
+                                        @RequestParam(required = false) Integer year,
+                                        @RequestParam(required = false) Integer month) {
         Long buyerId = (Long) session.getAttribute("userId");
         Sort sortObj = toSort(sort);
         Pageable pageable = PageRequest.of(page, size, sortObj);
+        if (year != null && month != null) {
+            LocalDateTime[] range = toMonthRange(year, month);
+            return pointQueryService.getAllByMonth(buyerId, range[0], range[1], pageable);
+        }
         return pointQueryService.getAll(buyerId, pageable);
     }
 
@@ -89,6 +110,19 @@ public class PointController {
         return pointQueryService.getThisMonthExpiringList(buyerId);
     }
 
+    // 특정 월의 소멸 예정 목록(항목 리스트)
+    @GetMapping("/expire/list")
+    public List<ExpiringPointItemDto> getMonthlyExpiringList(
+            HttpSession session,
+            @RequestParam Integer year,
+            @RequestParam Integer month
+    ) {
+        Long buyerId = (Long) session.getAttribute("userId");
+        LocalDateTime[] range = toMonthRange(year, month);
+        return pointQueryService.getMonthlyExpiringList(buyerId, range[0], range[1]);
+    }
+
+    // 유틸: "occurredAt,desc" → Sort
     private Sort toSort(String sortParam) {
         // "occurredAt,desc" 또는 "amount,asc" 형태를 1개 받아 처리
         if (sortParam == null || sortParam.isBlank()) {
@@ -100,5 +134,11 @@ public class PointController {
         Sort.Order order = "asc".equalsIgnoreCase(dir) ? Sort.Order.asc(prop) : Sort.Order.desc(prop);
         // 기본 tie-break
         return Sort.by(order).and(Sort.by(Sort.Order.desc("id")));
+    }
+
+    private static LocalDateTime[] toMonthRange(int year, int month) {
+        LocalDate first = LocalDate.of(year, month, 1);
+        LocalDate last = first.withDayOfMonth(first.lengthOfMonth());
+        return new LocalDateTime[]{ first.atStartOfDay(), last.atTime(LocalTime.MAX) };
     }
 }

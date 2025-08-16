@@ -31,8 +31,18 @@ public class PointQueryService {
                 PointTransactionType.SAVE,
                 PointTransactionType.CANCEL_USE
         );
-        Page<?> page = pointLedgerRepository.findByBuyerAndTypes(buyerId, types, pageable);
-        return page.map(p -> PointLedgerDto.from((com.shop.respawn.domain.PointLedger) p));
+        Page<PointLedger> page = pointLedgerRepository.findByBuyerAndTypes(buyerId, types, pageable);
+        return page.map(PointLedgerDto::from);
+    }
+
+    // 월별: 적립(+)
+    public Page<PointLedgerDto> getSavesByMonth(Long buyerId, LocalDateTime from, LocalDateTime to, Pageable pageable) {
+        EnumSet<PointTransactionType> types = EnumSet.of(
+                PointTransactionType.SAVE,
+                PointTransactionType.CANCEL_USE
+        );
+        Page<PointLedger> page = pointLedgerRepository.findByBuyerAndTypesAndOccurredBetween(buyerId, types, from, to, pageable);
+        return page.map(PointLedgerDto::from);
     }
 
     // 사용(-, USE/EXPIRE/CANCEL_SAVE) 목록
@@ -42,14 +52,31 @@ public class PointQueryService {
                 PointTransactionType.EXPIRE,
                 PointTransactionType.CANCEL_SAVE
         );
-        Page<?> page = pointLedgerRepository.findByBuyerAndTypes(buyerId, types, pageable);
-        return page.map(p -> PointLedgerDto.from((com.shop.respawn.domain.PointLedger) p));
+        Page<PointLedger> page = pointLedgerRepository.findByBuyerAndTypes(buyerId, types, pageable);
+        return page.map(PointLedgerDto::from);
+    }
+
+    // 월별: 사용(-)
+    public Page<PointLedgerDto> getUsesByMonth(Long buyerId, LocalDateTime from, LocalDateTime to, Pageable pageable) {
+        EnumSet<PointTransactionType> types = EnumSet.of(
+                PointTransactionType.USE,
+                PointTransactionType.EXPIRE,
+                PointTransactionType.CANCEL_SAVE
+        );
+        Page<PointLedger> page = pointLedgerRepository.findByBuyerAndTypesAndOccurredBetween(buyerId, types, from, to, pageable);
+        return page.map(PointLedgerDto::from);
     }
 
     // 통합(모든 타입) 목록
     public Page<PointHistoryDto> getAll(Long buyerId, Pageable pageable) {
-        Page<?> page = pointLedgerRepository.findAllByBuyer(buyerId, pageable);
-        return page.map(p -> PointHistoryDto.of(PointLedgerDto.from((com.shop.respawn.domain.PointLedger) p)));
+        Page<PointLedger> page = pointLedgerRepository.findAllByBuyer(buyerId, pageable);
+        return page.map(p -> PointHistoryDto.of(PointLedgerDto.from(p)));
+    }
+
+    // 월별: 통합
+    public Page<PointHistoryDto> getAllByMonth(Long buyerId, LocalDateTime from, LocalDateTime to, Pageable pageable) {
+        Page<PointLedger> page = pointLedgerRepository.findAllByBuyerAndOccurredBetween(buyerId, from, to, pageable);
+        return page.map(p -> PointHistoryDto.of(PointLedgerDto.from(p)));
     }
 
     // 합계 전용
@@ -73,6 +100,24 @@ public class PointQueryService {
         List<PointLedger> candidates = pointLedgerRepository
                 .findMonthlyExpireCandidates(buyerId, range[0], range[1]);
 
+        return candidates.stream()
+                .map(save -> {
+                    long consumed = pointLedgerRepository.sumConsumedAmountOfSave(save);
+                    long remaining = Math.max(0L, save.getAmount() - consumed);
+                    return ExpiringPointItemDto.builder()
+                            .ledgerId(save.getId())
+                            .remainingAmount(remaining)
+                            .expiryAt(save.getExpiryAt())
+                            .refOrderId(save.getRefOrderId())
+                            .reason(save.getReason())
+                            .build();
+                })
+                .toList();
+    }
+
+    // 추가: 특정 월의 만료 예정 목록
+    public List<ExpiringPointItemDto> getMonthlyExpiringList(Long buyerId, LocalDateTime from, LocalDateTime to) {
+        List<PointLedger> candidates = pointLedgerRepository.findMonthlyExpireCandidates(buyerId, from, to);
         return candidates.stream()
                 .map(save -> {
                     long consumed = pointLedgerRepository.sumConsumedAmountOfSave(save);

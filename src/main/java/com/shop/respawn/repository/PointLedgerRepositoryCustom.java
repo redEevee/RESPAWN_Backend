@@ -15,7 +15,14 @@ public interface PointLedgerRepositoryCustom {
 
     Page<PointLedger> findByBuyerAndTypes(Long buyerId, Iterable<PointTransactionType> types, Pageable pageable);
 
-    Page<PointLedger> findAllByBuyer(Long buyerId, Pageable pageable); // 통합(모든 타입) 목록
+    // 통합(모든 타입) 목록
+    Page<PointLedger> findAllByBuyer(Long buyerId, Pageable pageable);
+
+    // 월별(occurredAt between) 조회
+    Page<PointLedger> findByBuyerAndTypesAndOccurredBetween(Long buyerId, Iterable<PointTransactionType> types,
+                                                            LocalDateTime from, LocalDateTime to, Pageable pageable);
+
+    Page<PointLedger> findAllByBuyerAndOccurredBetween(Long buyerId, LocalDateTime from, LocalDateTime to, Pageable pageable);
 
     // 이번 달 범위 내(expiryAt between monthStart~monthEnd) 만료 예정 SAVE(잔여>0)
     List<PointLedger> findMonthlyExpireCandidates(Long buyerId, LocalDateTime monthStart, LocalDateTime monthEnd);

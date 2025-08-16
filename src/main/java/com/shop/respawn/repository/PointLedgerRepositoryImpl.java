@@ -144,6 +144,32 @@ public class PointLedgerRepositoryImpl implements PointLedgerRepositoryCustom {
         return sum == null ? 0L : sum;
     }
 
+    @Override
+    public Page<PointLedger> findByBuyerAndTypesAndOccurredBetween(Long buyerId, Iterable<PointTransactionType> types,
+                                                                   LocalDateTime from, LocalDateTime to, Pageable pageable) {
+        BooleanBuilder where = new BooleanBuilder();
+        where.and(pointLedger.buyer.id.eq(buyerId));
+        if (types != null) {
+            BooleanBuilder typeOr = new BooleanBuilder();
+            for (PointTransactionType t : types) {
+                typeOr.or(pointLedger.type.eq(t));
+            }
+            if (typeOr.hasValue()) {
+                where.and(typeOr);
+            }
+        }
+        where.and(pointLedger.occurredAt.between(from, to));
+        return getPointLedgers(pageable, where);
+    }
+
+    @Override
+    public Page<PointLedger> findAllByBuyerAndOccurredBetween(Long buyerId, LocalDateTime from, LocalDateTime to, Pageable pageable) {
+        BooleanBuilder where = new BooleanBuilder();
+        where.and(pointLedger.buyer.id.eq(buyerId));
+        where.and(pointLedger.occurredAt.between(from, to));
+        return getPointLedgers(pageable, where);
+    }
+
     @NotNull
     private static NumberExpression<BigDecimal> getBigDecimalNumberExpression() {
         // SUM 서브쿼리를 BigDecimal 표현식으로 래핑
