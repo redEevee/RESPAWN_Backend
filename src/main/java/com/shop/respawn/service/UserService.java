@@ -1,6 +1,5 @@
 package com.shop.respawn.service;
 
-import com.nimbusds.oauth2.sdk.GeneralException;
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.domain.Role;
 import com.shop.respawn.domain.Seller;
@@ -9,14 +8,12 @@ import com.shop.respawn.email.EmailService;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.SellerRepository;
 import com.shop.respawn.sms.SmsService;
-import com.shop.respawn.util.MaskingUtil;
 import com.shop.respawn.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static com.shop.respawn.util.MaskingUtil.*;
@@ -74,33 +71,68 @@ public class UserService {
             }
             buyer.updatePassword(encoder.encode(newPassword));
             // 변경감지(트랜잭션 내)로 save 호출 불필요
+            if (buyer.getAccountStatus() != null) {
+                buyer.getAccountStatus().markPasswordChangedNow();
+            }
             return true;
         } else if (seller != null) {
             if (!encoder.matches(currentPassword, seller.getPassword())) {
                 return false;
             }
             seller.updatePassword(encoder.encode(newPassword));
+            if (seller.getAccountStatus() != null) {
+                seller.getAccountStatus().markPasswordChangedNow();
+            }
             return true;
         }
         throw new RuntimeException("사용자를 찾을 수 없습니다.");
     }
 
-    public boolean resetPasswordByToken(String username, String newPassword) {
+    public void resetPasswordByToken(String username, String newPassword) {
         Buyer buyer = buyerRepository.findByUsername(username);
         if (buyer != null) {
             buyer.updatePassword(encoder.encode(newPassword));
-            return true;
+            if (buyer.getAccountStatus() != null) {
+                buyer.getAccountStatus().markPasswordChangedNow();
+            }
+            return;
         }
-
         Seller seller = sellerRepository.findByUsername(username);
         if (seller != null) {
             seller.updatePassword(encoder.encode(newPassword));
-            return true;
+            if (seller.getAccountStatus() != null) {
+                seller.getAccountStatus().markPasswordChangedNow();
+            }
+            return;
         }
-
-        return false; // 사용자를 찾지 못함
+        throw new RuntimeException("사용자를 찾을 수 없습니다.");
     }
 
+    public boolean isPasswordChangeDue(String username) {
+        Buyer buyer = buyerRepository.findByUsername(username);
+        if (buyer != null && buyer.getAccountStatus() != null) {
+            return buyer.getAccountStatus().isPasswordChangeDue(3);
+        }
+        Seller seller = sellerRepository.findByUsername(username);
+        if (seller != null && seller.getAccountStatus() != null) {
+            return seller.getAccountStatus().isPasswordChangeDue(3);
+        }
+        return false;
+    }
+
+    private String snoozeKey(String username) {
+        return "pwd-reminder-snooze:" + username;
+    }
+
+    // 7일간 리마인드 억제
+    public void snoozePasswordReminder(String username, long seconds) {
+        redisUtil.setDataExpire(snoozeKey(username), "1", seconds);
+    }
+
+    public boolean isSnoozed(String username) {
+        String v = redisUtil.getData(snoozeKey(username));
+        return v != null;
+    }
 
     public Buyer getBuyerInfo(String username){
         return buyerRepository.findByUsername(username);

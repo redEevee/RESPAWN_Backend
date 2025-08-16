@@ -71,7 +71,7 @@ public class Buyer {
 
     //정적 팩토리 메서드
     public static Buyer createBuyer(String name, String username, String password, String email, String phoneNumber, String provider, Role role) {
-        return Buyer.builder()
+        Buyer buyer = Buyer.builder()
                 .name(name)
                 .username(username)
                 .password(password)
@@ -81,6 +81,10 @@ public class Buyer {
                 .role(role)
                 .accountStatus(new AccountStatus(true)) // 가입시 1년 만료일 자동 할당
                 .build();
+        if (buyer.accountStatus.getLastPasswordChangedAt() == null) {
+            buyer.accountStatus.setLastPasswordChangedAt(LocalDateTime.now());
+        }
+        return buyer;
     }
 
     public void updatePhoneNumber(String newPhoneNumber) {
@@ -114,5 +118,12 @@ public class Buyer {
         buyer.addresses = new ArrayList<>();
         buyer.cart = new ArrayList<>();
         return buyer;
+    }
+
+    @PrePersist
+    public void prePersist() {
+        if (this.accountStatus != null && this.accountStatus.getLastPasswordChangedAt() == null) {
+            this.accountStatus.setLastPasswordChangedAt(LocalDateTime.now());
+        }
     }
 }

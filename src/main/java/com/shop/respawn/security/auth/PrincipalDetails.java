@@ -1,5 +1,6 @@
 package com.shop.respawn.security.auth;
 
+import com.shop.respawn.domain.Admin;
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.domain.Seller;
 import lombok.Data;
@@ -15,6 +16,7 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
 
     private Buyer buyer;
     private Seller seller;
+    private Admin admin;
     private Map<String, Object> attributes;
 
     // 일반 로그인
@@ -24,6 +26,10 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
 
     public PrincipalDetails(Seller seller) {
         this.seller = seller;
+    }
+
+    public PrincipalDetails(Admin admin) {
+        this.admin = admin;
     }
 
     // OAuth 로그인
@@ -39,6 +45,8 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
             return List.of(new SimpleGrantedAuthority(buyer.getRole().name()));
         } else if (seller != null) {
             return List.of(new SimpleGrantedAuthority(seller.getRole().name()));
+        } else if (admin != null) {
+            return List.of(new SimpleGrantedAuthority(admin.getRole().name()));
         }
         return List.of();
     }
@@ -49,6 +57,8 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
             return buyer.getPassword();
         } else if (seller != null) {
             return seller.getPassword();
+        }  else if (admin != null) {
+            return admin.getPassword();
         }
         return null;
     }
@@ -59,6 +69,8 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
             return buyer.getUsername();
         } else if (seller != null) {
             return seller.getUsername();
+        } else if (admin != null) {
+            return admin.getUsername();
         }
         return null;
     }
@@ -95,11 +107,6 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
 
     @Override
     public boolean isCredentialsNonExpired() {
-        if (buyer != null && buyer.getAccountStatus() != null) {
-            return buyer.getAccountStatus().isCredentialsNonExpired();
-        } else if (seller != null && seller.getAccountStatus() != null) {
-            return seller.getAccountStatus().isCredentialsNonExpired();
-        }
         return true;
     }
 

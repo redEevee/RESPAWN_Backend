@@ -1,10 +1,13 @@
 package com.shop.respawn.controller;
 
+import com.shop.respawn.domain.Admin;
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.domain.Seller;
 import com.shop.respawn.dto.UserDto;
+import com.shop.respawn.repository.AdminRepository;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.SellerRepository;
+import com.shop.respawn.security.auth.PrincipalDetails;
 import com.shop.respawn.service.UserService;
 import com.shop.respawn.util.RedisUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,6 +32,7 @@ public class UserController {
     private final UserService userService;
     private final BuyerRepository buyerRepository;
     private final SellerRepository sellerRepository;
+    private final AdminRepository adminRepository;
     private final RedisUtil redisUtil;
 
     @PostMapping("/join/{userType}")
@@ -47,36 +51,49 @@ public class UserController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         String authorities = authentication.getAuthorities().toString();
+        System.out.println("authorities = " + authorities);
 
-        Buyer buyer = buyerRepository.findByUsername(username);
         String name = null;
         Long userId = null;
-        if (buyer != null) {
-            name = buyer.getName();
-            userId = buyer.getId();
-        } else {
-            Seller seller = sellerRepository.findByUsername(username);
-            if (seller != null) {
-                name = seller.getName();
-                userId = seller.getId();
+
+        switch (authorities) {
+            case "[ROLE_USER]" -> {
+                Buyer buyer = buyerRepository.findByUsername(username);
+                if (buyer != null) {
+                    name = buyer.getName();
+                    userId = buyer.getId();
+                }
+            }
+            case "[ROLE_SELLER]" -> {
+                Seller seller = sellerRepository.findByUsername(username);
+                if (seller != null) {
+                    name = seller.getName();
+                    userId = seller.getId();
+                }
+            }
+            case "[ROLE_ADMIN]" -> {
+                Admin admin = adminRepository.findByUsername(username);
+                if (admin != null) {
+                    name = admin.getName();
+                    userId = admin.getId();
+                }
             }
         }
 
+        boolean due = userService.isPasswordChangeDue(username);
+        boolean snoozed = userService.isSnoozed(username);
+
         HttpSession session = request.getSession();
         session.setAttribute("userId", userId);
-
-        System.out.println("로그인한 유저네임:" + username);
-        System.out.println("유저 권한:" + authentication.getAuthorities());
-        System.out.println("userId = " + userId);
 
         Map<String, String> userInfo = new HashMap<>();
         userInfo.put("name", name);
         userInfo.put("username", username);
         userInfo.put("authorities", authorities);
+        userInfo.put("passwordChangeDue", String.valueOf(due));
+        userInfo.put("passwordChangeSnoozed", String.valueOf(snoozed));
 
-        ResponseEntity<Map<String, String>> ok = ResponseEntity.ok(userInfo);
-        System.out.println("ok = " + ok);
-        return ok;
+        return ResponseEntity.ok(userInfo);
     }
 
     @GetMapping("/logoutOk")
@@ -450,6 +467,34 @@ public class UserController {
         userService.resetPasswordByToken(username, newPassword); // currentPassword 검증 없이 강제 변경
         redisUtil.deleteData("reset-token:" + token);
         return ResponseEntity.ok(Map.of("message", "비밀번호가 성공적으로 변경되었습니다."));
+    }
+
+    @GetMapping("/me")
+    public Map<String, Object> me(Authentication authentication) {
+        Map<String, Object> result = new HashMap<>();
+        if (authentication == null || !(authentication.getPrincipal() instanceof PrincipalDetails pd)) {
+            result.put("authenticated", false);
+            return result;
+        }
+        String username = pd.getUsername();
+        boolean due = userService.isPasswordChangeDue(username);
+        boolean snoozed = userService.isSnoozed(username);
+
+        result.put("authenticated", true);
+        // 프론트에서 이 두 값으로 팝업 노출 여부를 판단
+        result.put("passwordChangeDue", due);
+        result.put("passwordChangeSnoozed", snoozed);
+        return result;
+    }
+
+    // 사용자가 "나중에" 클릭 시 호출
+    @PostMapping("/password-change/snooze")
+    public void snooze(Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof PrincipalDetails pd)) {
+            throw new RuntimeException("인증 필요");
+        }
+        // 7일(604,800초) 억제
+        userService.snoozePasswordReminder(pd.getUsername(), 604800L);
     }
 
     /**
