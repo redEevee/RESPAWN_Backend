@@ -3,7 +3,7 @@ package com.shop.respawn.service;
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.domain.Order;
 import com.shop.respawn.domain.OrderStatus;
-import com.shop.respawn.dto.PaymentDto;
+import com.shop.respawn.dto.Payment.PaymentDto;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.OrderRepository;
 import com.shop.respawn.repository.PaymentRepository;

@@ -20,10 +20,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.shop.respawn.domain.QPointConsumeLink.pointConsumeLink;
 import static com.shop.respawn.domain.QPointLedger.pointLedger;
@@ -113,6 +110,38 @@ public class PointLedgerRepositoryImpl implements PointLedgerRepositoryCustom {
         where.and(pointLedger.buyer.id.eq(buyerId));
 
         return getPointLedgers(pageable, where);
+    }
+
+    @Override
+    public List<PointLedger> findMonthlyExpireCandidates(Long buyerId, LocalDateTime monthStart, LocalDateTime monthEnd) {
+        // 기존 BigDecimal 표현식 재사용 (consumedSum 서브쿼리 -> coalesce)
+        NumberExpression<BigDecimal> consumedSumExpr = getBigDecimalNumberExpression();
+        NumberExpression<BigDecimal> consumedSumCoalesced = getConsumedSumCoalesced(consumedSumExpr);
+
+        return queryFactory
+                .selectFrom(pointLedger)
+                .where(
+                        pointLedger.buyer.id.eq(buyerId),
+                        pointLedger.type.eq(PointTransactionType.SAVE),
+                        pointLedger.expiryAt.goe(monthStart),
+                        pointLedger.expiryAt.loe(monthEnd),
+                        consumedSumCoalesced.lt(pointLedger.amount) // 잔여 > 0
+                )
+                .orderBy(
+                        pointLedger.expiryAt.asc(),
+                        pointLedger.id.asc()
+                )
+                .fetch();
+    }
+
+    @Override
+    public Long sumConsumedAmountOfSave(PointLedger saveLedger) {
+        Long sum = queryFactory
+                .select(pointConsumeLink.consumedAmount.sum())
+                .from(pointConsumeLink)
+                .where(pointConsumeLink.saveLedger.eq(saveLedger))
+                .fetchOne();
+        return sum == null ? 0L : sum;
     }
 
     @NotNull

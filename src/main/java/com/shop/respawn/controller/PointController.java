@@ -1,7 +1,9 @@
 package com.shop.respawn.controller;
 
-import com.shop.respawn.dto.PointHistoryDto;
-import com.shop.respawn.dto.PointLedgerDto;
+import com.shop.respawn.dto.point.ExpiringPointItemDto;
+import com.shop.respawn.dto.point.ExpiringPointTotalDto;
+import com.shop.respawn.dto.point.PointHistoryDto;
+import com.shop.respawn.dto.point.PointLedgerDto;
 import com.shop.respawn.service.LedgerPointService;
 import com.shop.respawn.service.PointQueryService;
 import jakarta.servlet.http.HttpSession;
@@ -14,6 +16,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -69,6 +73,20 @@ public class PointController {
         Sort sortObj = toSort(sort);
         Pageable pageable = PageRequest.of(page, size, sortObj);
         return pointQueryService.getAll(buyerId, pageable);
+    }
+
+    // 이번 달 소멸 예정 합계(숫자만)
+    @GetMapping("/expire/this-month/total")
+    public ExpiringPointTotalDto getThisMonthExpiringTotal(HttpSession session) {
+        Long buyerId = (Long) session.getAttribute("userId");
+        return pointQueryService.getThisMonthExpiringTotal(buyerId);
+    }
+
+    // 이번 달 소멸 예정 목록(항목 리스트)
+    @GetMapping("/expire/this-month/list")
+    public List<ExpiringPointItemDto> getThisMonthExpiringList(HttpSession session) {
+        Long buyerId = (Long) session.getAttribute("userId");
+        return pointQueryService.getThisMonthExpiringList(buyerId);
     }
 
     private Sort toSort(String sortParam) {

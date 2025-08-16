@@ -1,4 +1,4 @@
-package com.shop.respawn.dto;
+package com.shop.respawn.dto.point;
 
 import com.shop.respawn.domain.PointTransactionType;
 import lombok.Builder;

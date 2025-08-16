@@ -1,4 +1,4 @@
-package com.shop.respawn.dto;
+package com.shop.respawn.dto.Payment;
 
 import lombok.Builder;
 import lombok.Data;
