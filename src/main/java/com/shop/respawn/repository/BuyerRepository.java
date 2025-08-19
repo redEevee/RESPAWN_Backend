@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface BuyerRepository extends JpaRepository<Buyer, Long> {
@@ -34,5 +35,16 @@ public interface BuyerRepository extends JpaRepository<Buyer, Long> {
     Page<Buyer> findByEmailContainingIgnoreCase(String email, Pageable pageable);
 
     Page<Buyer> findByPhoneNumberContaining(String phoneNumber, Pageable pageable);
+
+    Page<Buyer> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end, Pageable pageable);
+
+    Page<Buyer> findByNameContainingIgnoreCaseAndCreatedAtBetween(String keyword, LocalDateTime start, LocalDateTime end, Pageable pageable);
+
+    Page<Buyer> findByUsernameContainingIgnoreCaseAndCreatedAtBetween(String keyword, LocalDateTime start, LocalDateTime end, Pageable pageable);
+
+    Page<Buyer> findByEmailContainingIgnoreCaseAndCreatedAtBetween(String keyword, LocalDateTime start, LocalDateTime end, Pageable pageable);
+
+    Page<Buyer> findByPhoneNumberContainingAndCreatedAtBetween(String keyword, LocalDateTime start, LocalDateTime end, Pageable pageable);
+
 
 }

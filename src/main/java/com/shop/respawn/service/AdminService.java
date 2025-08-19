@@ -5,7 +5,6 @@ import com.shop.respawn.domain.Seller;
 import com.shop.respawn.dto.user.BuyerListDto;
 import com.shop.respawn.dto.user.SellerListDto;
 import com.shop.respawn.dto.user.UserSummaryDto;
-import com.shop.respawn.repository.AdminRepository;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.SellerRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +12,10 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 @Service
 @RequiredArgsConstructor
@@ -138,43 +140,126 @@ public class AdminService {
 
     // -------- 구매자 조회 --------
     @Transactional(readOnly = true)
-    public Page<BuyerListDto> findBuyersPaged(int page, int size, String sort, String dir, String keyword, String field) {
+    public Page<BuyerListDto> findBuyersPaged(int page, int size, String sort, String dir, String keyword, String field, String dateRange) {
         Sort.Direction direction = "desc".equalsIgnoreCase(dir) ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortOrDefault(sort)));
+
+        LocalDateTime[] range = parseDateRange(dateRange);
+        LocalDateTime start = range[0];
+        LocalDateTime end = range[1];
+
         Page<Buyer> buyers;
-        if (keyword == null || keyword.isBlank()) {
-            buyers = buyerRepository.findAll(pageable);
+        boolean hasKeyword = keyword != null && !keyword.isBlank();
+
+        if (start != null && end != null) {
+            if (!hasKeyword) {
+                buyers = buyerRepository.findByCreatedAtBetween(start, end, pageable);
+            } else {
+                switch (normalizeField(field)) {
+                    case "name" -> buyers = buyerRepository.findByNameContainingIgnoreCaseAndCreatedAtBetween(keyword, start, end, pageable);
+                    case "username" -> buyers = buyerRepository.findByUsernameContainingIgnoreCaseAndCreatedAtBetween(keyword, start, end, pageable);
+                    case "email" -> buyers = buyerRepository.findByEmailContainingIgnoreCaseAndCreatedAtBetween(keyword, start, end, pageable);
+                    case "phonenumber" -> buyers = buyerRepository.findByPhoneNumberContainingAndCreatedAtBetween(keyword, start, end, pageable);
+                    default -> buyers = buyerRepository.findByNameContainingIgnoreCaseAndCreatedAtBetween(keyword, start, end, pageable);
+                }
+            }
         } else {
-            buyers = switch (normalizeField(field)) {
-                case "name" -> buyerRepository.findByNameContainingIgnoreCase(keyword, pageable);
-                case "username" -> buyerRepository.findByUsernameContainingIgnoreCase(keyword, pageable);
-                case "email" -> buyerRepository.findByEmailContainingIgnoreCase(keyword, pageable);
-                case "phoneNumber" -> buyerRepository.findByPhoneNumberContaining(keyword, pageable);
-                default -> buyerRepository.findByNameContainingIgnoreCase(keyword, pageable);
-            };
+            // 날짜 범위가 없으면 기존 로직
+            if (!hasKeyword) {
+                buyers = buyerRepository.findAll(pageable);
+            } else {
+                switch (normalizeField(field)) {
+                    case "name" -> buyers = buyerRepository.findByNameContainingIgnoreCase(keyword, pageable);
+                    case "username" -> buyers = buyerRepository.findByUsernameContainingIgnoreCase(keyword, pageable);
+                    case "email" -> buyers = buyerRepository.findByEmailContainingIgnoreCase(keyword, pageable);
+                    case "phonenumber" -> buyers = buyerRepository.findByPhoneNumberContaining(keyword, pageable);
+                    default -> buyers = buyerRepository.findByNameContainingIgnoreCase(keyword, pageable);
+                }
+            }
         }
         return buyers.map(BuyerListDto::from);
     }
 
     // -------- 판매자 조회 --------
     @Transactional(readOnly = true)
-    public Page<SellerListDto> findSellersPaged(int page, int size, String sort, String dir, String keyword, String field) {
+    public Page<SellerListDto> findSellersPaged(int page, int size, String sort, String dir, String keyword, String field, String dateRange) {
         Sort.Direction direction = "desc".equalsIgnoreCase(dir) ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortOrDefault(sort)));
 
+        LocalDateTime[] range = parseDateRange(dateRange);
+        LocalDateTime start = range[0];
+        LocalDateTime end = range[1];
+
         Page<Seller> sellers;
-        if (keyword == null || keyword.isBlank()) {
-            sellers = sellerRepository.findAll(pageable);
+        boolean hasKeyword = keyword != null && !keyword.isBlank();
+
+        if (start != null && end != null) {
+            if (!hasKeyword) {
+                sellers = sellerRepository.findByCreatedAtBetween(start, end, pageable);
+            } else {
+                switch (normalizeField(field)) {
+                    case "name" -> sellers = sellerRepository.findByNameContainingIgnoreCaseAndCreatedAtBetween(keyword, start, end, pageable);
+                    case "username" -> sellers = sellerRepository.findByUsernameContainingIgnoreCaseAndCreatedAtBetween(keyword, start, end, pageable);
+                    case "email" -> sellers = sellerRepository.findByEmailContainingIgnoreCaseAndCreatedAtBetween(keyword, start, end, pageable);
+                    case "phonenumber" -> sellers = sellerRepository.findByPhoneNumberContainingAndCreatedAtBetween(keyword, start, end, pageable);
+                    default -> sellers = sellerRepository.findByNameContainingIgnoreCaseAndCreatedAtBetween(keyword, start, end, pageable);
+                }
+            }
         } else {
-            sellers = switch (normalizeField(field)) {
-                case "name" -> sellerRepository.findByNameContainingIgnoreCase(keyword, pageable);
-                case "username" -> sellerRepository.findByUsernameContainingIgnoreCase(keyword, pageable);
-                case "email" -> sellerRepository.findByEmailContainingIgnoreCase(keyword, pageable);
-                case "phoneNumber" -> sellerRepository.findByPhoneNumberContaining(keyword, pageable);
-                default -> sellerRepository.findByNameContainingIgnoreCase(keyword, pageable);
-            };
+            if (!hasKeyword) {
+                sellers = sellerRepository.findAll(pageable);
+            } else {
+                switch (normalizeField(field)) {
+                    case "name" -> sellers = sellerRepository.findByNameContainingIgnoreCase(keyword, pageable);
+                    case "username" -> sellers = sellerRepository.findByUsernameContainingIgnoreCase(keyword, pageable);
+                    case "email" -> sellers = sellerRepository.findByEmailContainingIgnoreCase(keyword, pageable);
+                    case "phonenumber" -> sellers = sellerRepository.findByPhoneNumberContaining(keyword, pageable);
+                    default -> sellers = sellerRepository.findByNameContainingIgnoreCase(keyword, pageable);
+                }
+            }
         }
         return sellers.map(SellerListDto::from);
+    }
+
+    private LocalDateTime[] parseDateRange(String dateRange) {
+        if (dateRange == null) return new LocalDateTime[]{null, null};
+
+        String raw = dateRange.trim();
+        if (raw.isEmpty()) return new LocalDateTime[]{null, null};
+
+        String[] parts = raw.split("~", -1); // 빈 오른쪽도 보존
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyyMMdd");
+
+        String left = (parts.length >= 1 && parts[0] != null) ? parts[0].trim() : null;
+        String right = (parts.length >= 2 && parts[1] != null) ? parts[1].trim() : null;
+
+        LocalDateTime start = null;
+        LocalDateTime end = null;
+
+        try {
+            if (left != null && !left.isEmpty()) {
+                LocalDate d = LocalDate.parse(left, fmt);
+                start = d.atStartOfDay();
+            }
+            if (right != null && !right.isEmpty()) {
+                LocalDate d = LocalDate.parse(right, fmt);
+                end = d.atTime(LocalTime.MAX);
+            }
+
+             if (start == null && end != null) start = LocalDate.MIN.atStartOfDay();
+             if (start != null && end == null) end = LocalDate.MAX.atTime(LocalTime.MAX);
+
+            if (start != null && start.isAfter(end)) {
+                LocalDateTime tmp = start; start = end; end = tmp;
+            }
+        } catch (Exception e) {
+            // 형식 오류 시 범위 미적용
+            return new LocalDateTime[]{null, null};
+        }
+
+        // 둘 다 없는 경우 미적용
+        if (start == null) return new LocalDateTime[]{null, null};
+        return new LocalDateTime[]{start, end};
     }
 
     private String normalizeField(String field) {

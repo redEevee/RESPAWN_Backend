@@ -116,9 +116,10 @@ public class AdminController {
             @RequestParam(defaultValue = "username") String sort,
             @RequestParam(defaultValue = "asc") String dir,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false, defaultValue = "name") String field
+            @RequestParam(required = false, defaultValue = "name") String field,
+            @RequestParam(required = false) String dateRange
     ) {
-        return ResponseEntity.ok(adminService.findBuyersPaged(page, size, sort, dir, keyword, field));
+        return ResponseEntity.ok(adminService.findBuyersPaged(page, size, sort, dir, keyword, field, dateRange));
     }
 
     // ----- 판매자 조회 -----
@@ -129,9 +130,10 @@ public class AdminController {
             @RequestParam(defaultValue = "username") String sort,
             @RequestParam(defaultValue = "asc") String dir,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false, defaultValue = "name") String field
+            @RequestParam(required = false, defaultValue = "name") String field,
+            @RequestParam(required = false) String dateRange
     ) {
-        return ResponseEntity.ok(adminService.findSellersPaged(page, size, sort, dir, keyword, field));
+        return ResponseEntity.ok(adminService.findSellersPaged(page, size, sort, dir, keyword, field, dateRange));
     }
 
     @GetMapping("/{userType}/{userId}/summary")
