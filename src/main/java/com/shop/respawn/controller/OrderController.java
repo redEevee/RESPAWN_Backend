@@ -1,10 +1,7 @@
 package com.shop.respawn.controller;
 
 import com.shop.respawn.dto.*;
-import com.shop.respawn.dto.order.OrderCompleteInfoDto;
-import com.shop.respawn.dto.order.OrderHistoryDto;
-import com.shop.respawn.dto.order.OrderRefundRequestDto;
-import com.shop.respawn.dto.order.OrderRequestDto;
+import com.shop.respawn.dto.order.*;
 import com.shop.respawn.service.OrderService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -103,16 +100,15 @@ public class OrderController {
      * 임시 주문 상세 조회 (주문 페이지용)
      */
     @GetMapping("/{orderId}")
-    public ResponseEntity<Map<String, Object>> getOrderDetails(
+    public ResponseEntity<OrderDetailsDto> getOrderDetails(
             @PathVariable Long orderId,
             HttpSession session) {
         try {
             Long buyerId = getBuyerIdFromSession(session);
-            Map<String, Object> orderDetails = orderService.getOrderDetails(orderId, buyerId);
-
+            OrderDetailsDto orderDetails = orderService.getOrderDetails(orderId, buyerId);
             return ResponseEntity.ok(orderDetails);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().build();
         }
     }
 

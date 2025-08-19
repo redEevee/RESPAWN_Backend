@@ -33,78 +33,27 @@ public class OrderService {
     private final PaymentRepository paymentRepository;
     private final LedgerPointService ledgerPointService;
     private final PointLedgerRepository pointLedgerRepository;
+    private final OrderDetailsAssembler orderDetailsAssembler;
 
     /**
      * 임시 주문 상세 조회
      */
     @Transactional(readOnly = true)
-    public Map<String, Object> getOrderDetails(Long orderId, Long buyerId) {
+    public OrderDetailsDto getOrderDetails(Long orderId, Long buyerId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다"));
 
-        // 1. 주문 소유권 확인
         if (!order.getBuyer().getId().equals(buyerId)) {
-            throw new RuntimeException("해당 주문을 조회할 권한이 없습니다");
+            throw new RuntimeException("해당 주문을 조회할 권한이 없습니다.");
         }
 
         Address buyerAddress = addressRepository.findByBuyerAndBasicTrue(order.getBuyer())
-                .orElseThrow(()->new RuntimeException("기본 배송지를 찾을 수 없습니다: " + order.getBuyer().getId()));
+                .orElseThrow(() -> new RuntimeException("기본 배송지를 찾을 수 없습니다: " + order.getBuyer().getId()));
 
-        // 2. OrderItemDetailDto 리스트 생성 + 판매자별 배송비 계산 준비
-        List<OrderItemDetailDto> orderItemDetails = new ArrayList<>();
-        Map<String, Long> sellerDeliveryFeeMap = new HashMap<>();
-
-        for (OrderItem orderItem : order.getOrderItems()) {
-            Item item = itemRepository.findById(orderItem.getItemId())
-                    .orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " + orderItem.getItemId()));
-
-            // DTO 변환
-            orderItemDetails.add(OrderItemDetailDto.from(orderItem, item));
-
-            // 문자열 배송비 → Long 변환
-            Long deliveryFee = getDeliveryFee(item);
-
-            // 판매자별 배송비 1번만 추가
-            sellerDeliveryFeeMap.putIfAbsent(item.getSellerId(), deliveryFee);
-        }
-
-        // 3. 상품금액 합계
-        Long totalItemAmount = orderItemDetails.stream()
-                .mapToLong(OrderItemDetailDto::getTotalPrice)
-                .sum();
-
-        // 4. 배송비 합계
-        Long totalDeliveryFee = sellerDeliveryFeeMap.values().stream()
-                .mapToLong(Long::longValue)
-                .sum();
-
-        // 5. 총 결제 금액 = 상품금액 + 배송비
-        Long totalAmount = totalItemAmount + totalDeliveryFee;
-
-        // 6. 응답 데이터 구성
-        Map<String, Object> response = new HashMap<>();
-        response.put("name", order.getBuyer().getName());
-        response.put("phoneNumber", order.getBuyer().getPhoneNumber());
-        response.put("email", order.getBuyer().getEmail());
-        response.put("orderId", order.getId());
-        response.put("orderItems", orderItemDetails);
-        response.put("itemCount", orderItemDetails.size());
-        response.put("itemTotalAmount", totalItemAmount);       // 상품 금액만
-        response.put("totalDeliveryFee", totalDeliveryFee);     // 총 배송비
-        response.put("totalAmount", totalAmount);               // 배송비 포함 총 금액
-
-        if (buyerAddress != null) {
-            response.put("addressId", buyerAddress.getId());
-            response.put("addressName", buyerAddress.getAddressName());
-            response.put("recipient", buyerAddress.getRecipient());
-            response.put("zoneCode", buyerAddress.getZoneCode());
-            response.put("baseAddress", buyerAddress.getBaseAddress());
-            response.put("detailAddress", buyerAddress.getDetailAddress());
-            response.put("addressPhone", buyerAddress.getPhone());
-        }
-
-        return response;
+        // ⚡️ Assembler에 위임
+        return orderDetailsAssembler.toDto(order, buyerAddress);
     }
+
 
     /**
      * 장바구니 선택 상품으로 주문페이지 이동 (선택된 CartItem을 OrderItem으로 복사만)
