@@ -1,4 +1,4 @@
-package com.shop.respawn.dto;
+package com.shop.respawn.dto.productInquiry;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

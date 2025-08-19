@@ -1,8 +1,8 @@
 package com.shop.respawn.controller;
 
-import com.shop.respawn.dto.ProductInquiryRequestDto;
-import com.shop.respawn.dto.ProductInquiryResponseDto;
-import com.shop.respawn.dto.ProductInquiryResponseTitlesDto;
+import com.shop.respawn.dto.productInquiry.ProductInquiryRequestDto;
+import com.shop.respawn.dto.productInquiry.ProductInquiryResponseDto;
+import com.shop.respawn.dto.productInquiry.ProductInquiryResponseTitlesDto;
 import com.shop.respawn.service.ItemService;
 import com.shop.respawn.service.ProductInquiryService;
 
