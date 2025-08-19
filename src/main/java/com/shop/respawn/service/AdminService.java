@@ -1,6 +1,5 @@
 package com.shop.respawn.service;
 
-import com.shop.respawn.domain.Admin;
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.domain.Seller;
 import com.shop.respawn.dto.user.BuyerListDto;
@@ -14,9 +13,7 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +22,47 @@ public class AdminService {
 
     private final BuyerRepository buyerRepository;
     private final SellerRepository sellerRepository;
-    private final AdminRepository adminRepository;
+
+    public void expireUserById(String userType, Long userId) {
+        switch (userType.toLowerCase()) {
+            case "buyer" -> {
+                Buyer buyer = buyerRepository.findById(userId)
+                        .orElseThrow(() -> new RuntimeException("구매자 없음: " + userId));
+                if (buyer.getAccountStatus() != null) {
+                    // 현재 시각보다 과거로 설정하여 만료 상태가 되게 함
+                    buyer.getAccountStatus().setAccountExpiryDate(LocalDateTime.now().minusSeconds(1));
+                }
+            }
+            case "seller" -> {
+                Seller seller = sellerRepository.findById(userId)
+                        .orElseThrow(() -> new RuntimeException("판매자 없음: " + userId));
+                if (seller.getAccountStatus() != null) {
+                    seller.getAccountStatus().setAccountExpiryDate(LocalDateTime.now().minusSeconds(1));
+                }
+            }
+            default -> throw new IllegalArgumentException("userType은 buyer 또는 seller여야 합니다.");
+        }
+    }
+
+    public void unexpireUserById(String userType, Long userId) {
+        switch (userType.toLowerCase()) {
+            case "buyer" -> {
+                Buyer buyer = buyerRepository.findById(userId)
+                        .orElseThrow(() -> new RuntimeException("구매자 없음: " + userId));
+                if (buyer.getAccountStatus() != null) {
+                    buyer.renewExpiryDate();
+                }
+            }
+            case "seller" -> {
+                Seller seller = sellerRepository.findById(userId)
+                        .orElseThrow(() -> new RuntimeException("판매자 없음: " + userId));
+                if (seller.getAccountStatus() != null) {
+                    seller.renewExpiryDate();
+                }
+            }
+            default -> throw new IllegalArgumentException("userType은 buyer 또는 seller여야 합니다.");
+        }
+    }
 
     public void enableUserById(String userType, Long userId) {
         switch (userType.toLowerCase()) {

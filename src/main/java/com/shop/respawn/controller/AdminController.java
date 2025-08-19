@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -19,6 +18,36 @@ import java.util.Map;
 public class AdminController {
 
     private final AdminService adminService;
+
+    /**
+     * 사용자 계정 만료 처리
+     */
+    @PostMapping("/{userType}/{userId}/expire")
+    @Secured("ROLE_ADMIN")
+    public ResponseEntity<Map<String, Object>> expire(@PathVariable String userType,
+                                                      @PathVariable Long userId) {
+        adminService.expireUserById(userType, userId); // 만료(비활성: isAccountNonExpired=false 상태 유도)
+        return ResponseEntity.ok(Map.of(
+                "userType", userType,
+                "userId", userId,
+                "message", "계정을 만료 처리했습니다."
+        ));
+    }
+
+    /**
+     * 사용자 계정 만료 해제
+     */
+    @PostMapping("/{userType}/{userId}/unexpire")
+    @Secured("ROLE_ADMIN")
+    public ResponseEntity<Map<String, Object>> unexpire(@PathVariable String userType,
+                                                        @PathVariable Long userId) {
+        adminService.unexpireUserById(userType, userId); // 만료 해제(유효: isAccountNonExpired=true 상태 유도)
+        return ResponseEntity.ok(Map.of(
+                "userType", userType,
+                "userId", userId,
+                "message", "계정 만료를 해제했습니다."
+        ));
+    }
 
     /**
      * 사용자 계정 활성화

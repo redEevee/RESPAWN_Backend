@@ -1,5 +1,6 @@
 package com.shop.respawn.exception;
 
+import com.shop.respawn.domain.AccountStatus;
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.domain.Seller;
 import com.shop.respawn.repository.BuyerRepository;
@@ -27,49 +28,22 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
                                         AuthenticationException exception) throws IOException {
         String username = request.getParameter("username");
 
-        boolean disabled = false;
-        boolean locked = false;
-        boolean expired = false;
-        int failedAttempts = 0;
+        FailureResult result = null;
 
         Buyer buyer = buyerRepository.findByUsername(username);
         if (buyer != null) {
-            // 1) 정지(enabled=false) 우선 체크
-            if (buyer.getAccountStatus() != null && !buyer.getAccountStatus().isEnabled()) {
-                disabled = true;
-            } else {
-                // 2) 정지가 아니라면 기존 실패 처리
-                assert buyer.getAccountStatus() != null;
-                buyer.getAccountStatus().increaseFailedLoginAttempts();
-                failedAttempts = buyer.getAccountStatus().getFailedLoginAttempts();
-
-                if (!buyer.getAccountStatus().isAccountNonExpired()) {
-                    expired = true;
-                } else if (!buyer.getAccountStatus().isAccountNonLocked()) {
-                    locked = true;
-                }
-                buyerRepository.save(buyer);
-            }
+            result = handleFailureForUser(buyer.getAccountStatus(), () -> buyerRepository.save(buyer));
         } else {
             Seller seller = sellerRepository.findByUsername(username);
             if (seller != null) {
-                // 1) 정지(enabled=false) 우선 체크
-                if (seller.getAccountStatus() != null && !seller.getAccountStatus().isEnabled()) {
-                    disabled = true;
-                } else {
-                    // 2) 정지가 아니라면 기존 실패 처리
-                    assert seller.getAccountStatus() != null;
-                    seller.getAccountStatus().increaseFailedLoginAttempts();
-                    failedAttempts = seller.getAccountStatus().getFailedLoginAttempts();
-
-                    // 판매자에는 만료 체크가 없는 코드였으므로 잠금만 체크
-                    if (!seller.getAccountStatus().isAccountNonLocked()) {
-                        locked = true;
-                    }
-                    sellerRepository.save(seller);
-                }
+                result = handleFailureForUser(seller.getAccountStatus(), () -> sellerRepository.save(seller));
             }
         }
+
+        boolean disabled = result != null && result.disabled;
+        boolean expired  = result != null && result.expired;
+        boolean locked   = result != null && result.locked;
+        int failedAttempts = result != null ? result.failedAttempts : 0;
 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
         response.setContentType("application/json;charset=UTF-8");
@@ -85,5 +59,37 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
         String jsonResponse = String.format("{\"error\":\"%s\", \"failedLoginAttempts\": %d}",
                 errorCode, attemptsForResponse);
         response.getWriter().write(jsonResponse);
+    }
+
+    private FailureResult handleFailureForUser(AccountStatus status, Runnable saveEntity) {
+        FailureResult result = new FailureResult();
+        if (status != null && !status.isEnabled()) {
+            result.disabled = true;
+            // disabled이면 실패횟수는 응답 표시용으로 0으로 내릴 수도 있음
+            result.failedAttempts = 0;
+            return result;
+        }
+
+        // 정지가 아니라면 기존 실패 처리
+        assert status != null;
+        status.increaseFailedLoginAttempts();
+        result.failedAttempts = status.getFailedLoginAttempts();
+
+        if (!status.isAccountNonExpired()) {
+            result.expired = true;
+        } else if (!status.isAccountNonLocked()) {
+            result.locked = true;
+        }
+
+        // 변경사항 저장
+        saveEntity.run();
+        return result;
+    }
+
+    private static class FailureResult {
+        boolean disabled;
+        boolean locked;
+        boolean expired;
+        int failedAttempts;
     }
 }

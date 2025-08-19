@@ -46,9 +46,11 @@ public class UserService {
 
         if(userType.equals("buyer")){
             Buyer buyer = Buyer.createBuyer(name, username, password, email, phoneNumber, "local", Role.ROLE_USER);
+            buyer.renewExpiryDate();
             buyerRepository.save(buyer);
         } else if (userType.equals("seller")){
             Seller seller = Seller.createSeller(name, username, company, companyNumber, password, email, phoneNumber, Role.ROLE_SELLER);
+            seller.renewExpiryDate();
             sellerRepository.save(seller);
         }
     }
@@ -140,22 +142,6 @@ public class UserService {
 
     public Seller getSellerInfo(String username){
         return sellerRepository.findByUsername(username);
-    }
-
-    /**
-     * 이름+이메일로 아이디 찾기(마스킹 버전)
-     */
-    public String findMaskedUsernameByNameAndEmail(String name, String email) {
-        String username = findUsernameByNameAndEmail(name, email);
-        return maskMiddleFourChars(username);
-    }
-
-    /**
-     * 이름+전화번호로 아이디 찾기(마스킹 버전)
-     */
-    public String findMaskedUsernameByNameAndPhone(String name, String phoneNumber) {
-        String username = findUsernameByNameAndPhone(name, phoneNumber);
-        return maskMiddleFourChars(username);
     }
 
     /**
