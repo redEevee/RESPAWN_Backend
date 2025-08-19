@@ -144,4 +144,28 @@ public class ItemService {
         // 모든 조건 통과 시 삭제 처리
         itemRepository.delete(item);
     }
+
+    public List<Item> searchItems(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            // 키워드가 없으면 전체 조회 대신 빈 리스트 반환을 권장
+            return List.of();
+        }
+        // 우선 정규식 기반 부분 일치
+        // return itemRepository.searchByKeywordRegex(keyword.trim());
+        // 텍스트 검색으로 전환하려면:
+        return itemRepository.fullTextSearch(keyword.trim());
+    }
+
+    public List<Item> searchItemsByCategory(String keyword, List<String> categoryIds) {
+        if ((keyword == null || keyword.isBlank()) && (categoryIds == null || categoryIds.isEmpty())) {
+            return List.of();
+        }
+        if (categoryIds == null || categoryIds.isEmpty()) {
+            return searchItems(keyword);
+        }
+        return itemRepository.searchByKeywordAndCategories(
+                keyword == null ? "" : keyword.trim(),
+                categoryIds
+        );
+    }
 }

@@ -1,5 +1,7 @@
 package com.shop.respawn.controller;
 
+import com.shop.respawn.dto.user.BuyerListDto;
+import com.shop.respawn.dto.user.SellerListDto;
 import com.shop.respawn.dto.user.UserSummaryDto;
 import com.shop.respawn.service.AdminService;
 import lombok.RequiredArgsConstructor;
@@ -83,15 +85,9 @@ public class AdminController {
     }
 
     // ----- 구매자 조회 -----
-    @GetMapping("/buyers")
-    @Secured("ROLE_ADMIN")
-    public ResponseEntity<List<UserSummaryDto>> getAllBuyers() {
-        return ResponseEntity.ok(adminService.findAllBuyers());
-    }
-
     @GetMapping("/buyers/paged")
     @Secured("ROLE_ADMIN")
-    public ResponseEntity<Page<UserSummaryDto>> getBuyersPaged(
+    public ResponseEntity<Page<BuyerListDto>> getBuyersPaged(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "username") String sort,
@@ -101,20 +97,23 @@ public class AdminController {
     }
 
     // ----- 판매자 조회 -----
-    @GetMapping("/sellers")
-    @Secured("ROLE_ADMIN")
-    public ResponseEntity<List<UserSummaryDto>> getAllSellers() {
-        return ResponseEntity.ok(adminService.findAllSellers());
-    }
-
     @GetMapping("/sellers/paged")
     @Secured("ROLE_ADMIN")
-    public ResponseEntity<Page<UserSummaryDto>> getSellersPaged(
+    public ResponseEntity<Page<SellerListDto>> getSellersPaged(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "username") String sort,
             @RequestParam(defaultValue = "asc") String dir
     ) {
         return ResponseEntity.ok(adminService.findSellersPaged(page, size, sort, dir));
+    }
+
+    @GetMapping("/{userType}/{userId}/summary")
+    @Secured("ROLE_ADMIN")
+    public ResponseEntity<UserSummaryDto> getUserSummary(
+            @PathVariable String userType,
+            @PathVariable Long userId
+    ) {
+        return ResponseEntity.ok(adminService.findUserSummaryById(userType, userId));
     }
 }

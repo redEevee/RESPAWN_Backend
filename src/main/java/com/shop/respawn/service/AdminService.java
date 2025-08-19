@@ -3,6 +3,8 @@ package com.shop.respawn.service;
 import com.shop.respawn.domain.Admin;
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.domain.Seller;
+import com.shop.respawn.dto.user.BuyerListDto;
+import com.shop.respawn.dto.user.SellerListDto;
 import com.shop.respawn.dto.user.UserSummaryDto;
 import com.shop.respawn.repository.AdminRepository;
 import com.shop.respawn.repository.BuyerRepository;
@@ -99,33 +101,36 @@ public class AdminService {
 
     // -------- 구매자 조회 --------
     @Transactional(readOnly = true)
-    public List<UserSummaryDto> findAllBuyers() {
-        return buyerRepository.findAll().stream()
-                .map(UserSummaryDto::fromBuyer)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
-    public Page<UserSummaryDto> findBuyersPaged(int page, int size, String sort, String dir) {
+    public Page<BuyerListDto> findBuyersPaged(int page, int size, String sort, String dir) {
         Sort.Direction direction = "desc".equalsIgnoreCase(dir) ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortOrDefault(sort)));
         Page<Buyer> buyers = buyerRepository.findAll(pageable);
-        return buyers.map(UserSummaryDto::fromBuyer);
+        return buyers.map(BuyerListDto::from);
     }
 
     // -------- 판매자 조회 --------
     @Transactional(readOnly = true)
-    public List<UserSummaryDto> findAllSellers() {
-        return sellerRepository.findAll().stream()
-                .map(UserSummaryDto::fromSeller)
-                .collect(Collectors.toList());
+    public Page<SellerListDto> findSellersPaged(int page, int size, String sort, String dir) {
+        Sort.Direction direction = "desc".equalsIgnoreCase(dir) ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortOrDefault(sort)));
+        return sellerRepository.findAll(pageable).map(SellerListDto::from);
     }
 
     @Transactional(readOnly = true)
-    public Page<UserSummaryDto> findSellersPaged(int page, int size, String sort, String dir) {
-        Sort.Direction direction = "desc".equalsIgnoreCase(dir) ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortOrDefault(sort)));
-        return sellerRepository.findAll(pageable).map(UserSummaryDto::fromSeller);
+    public UserSummaryDto findUserSummaryById(String userType, Long userId) {
+        return switch (userType.toLowerCase()) {
+            case "buyer" -> {
+                Buyer buyer = buyerRepository.findById(userId)
+                        .orElseThrow(() -> new RuntimeException("구매자 없음: " + userId));
+                yield UserSummaryDto.fromBuyer(buyer);
+            }
+            case "seller" -> {
+                Seller seller = sellerRepository.findById(userId)
+                        .orElseThrow(() -> new RuntimeException("판매자 없음: " + userId));
+                yield UserSummaryDto.fromSeller(seller);
+            }
+            default -> throw new IllegalArgumentException("userType은 buyer 또는 seller여야 합니다.");
+        };
     }
 
     private String sortOrDefault(String sort) {

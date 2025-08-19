@@ -1,5 +1,6 @@
 package com.shop.respawn.domain;
 
+import com.shop.respawn.config.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,7 +16,7 @@ import static lombok.AccessLevel.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = PROTECTED)
-public class Buyer {
+public class Buyer extends BaseTimeEntity {
 
     @Id @GeneratedValue
     @Column(name = "buyer_id")
