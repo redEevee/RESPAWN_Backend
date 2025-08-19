@@ -3,6 +3,7 @@ package com.shop.respawn.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -51,6 +52,12 @@ public class Order {
     public void addOrderItem(OrderItem orderItem) {
         orderItems.add(orderItem);
         orderItem.setOrder(this);
+    }
+
+    public void validateOwner(Long buyerId) {
+        if (this.getBuyer() == null || !this.getBuyer().getId().equals(buyerId)) {
+            throw new AccessDeniedException("해당 주문의 소유자가 아닙니다.");
+        }
     }
 
     // 총 금액 계산 메서드 추가

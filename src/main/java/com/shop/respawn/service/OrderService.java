@@ -2,15 +2,11 @@ package com.shop.respawn.service;
 
 import com.shop.respawn.domain.*;
 import com.shop.respawn.dto.*;
-import com.shop.respawn.dto.order.OrderHistoryDto;
-import com.shop.respawn.dto.order.OrderHistoryItemDto;
-import com.shop.respawn.dto.order.OrderItemDetailDto;
-import com.shop.respawn.dto.order.OrderRequestDto;
+import com.shop.respawn.dto.order.*;
 import com.shop.respawn.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +32,7 @@ public class OrderService {
     private final OrderItemRepository orderItemRepository;
     private final PaymentRepository paymentRepository;
     private final LedgerPointService ledgerPointService;
+    private final PointLedgerRepository pointLedgerRepository;
 
     /**
      * 임시 주문 상세 조회
@@ -502,78 +499,30 @@ public class OrderService {
      * 주문 완료 페이지 정보
      */
     @Transactional(readOnly = true)
-    public Map<String, Object> getOrderCompleteInfo(Long orderId, Long buyerId) {
-        // 1. 주문 상세 정보 조회 (기존 로직 재활용)
-        Map<String, Object> orderDetails = getOrderDetails(orderId, buyerId);
-
-        // 2. 주문 엔티티 조회 (권한 및 존재 확인 포함)
+    public OrderCompleteInfoDto getOrderCompleteInfo(Long orderId, Long buyerId) {
         Order order = getOrderById(orderId);
+        order.validateOwner(buyerId);   //주문 권한 체크
 
-        // 3. 결제 정보 조회
         Payment payment = paymentRepository.findByOrder(order).orElse(null);
 
-        // 4. 배송지 정보 구성 (각 주문 아이템마다)
-        List<Map<String,Object>> deliveryInfoList = order.getOrderItems().stream()
-                .map(orderItem -> {
-                    Map<String, Object> deliveryMap = new HashMap<>();
-                    Delivery delivery = orderItem.getDelivery();
-
-                    if (delivery != null) {
-                        Address address = delivery.getAddress();
-                        if (address != null) {
-                            Map<String, Object> addressMap = getAddressMap(address);
-                            deliveryMap.put("address", addressMap);
-                        } else {
-                            deliveryMap.put("address", null);
-                        }
-                        deliveryMap.put("status", delivery.getStatus());
-                    } else {
-                        deliveryMap.put("address", null);
-                        deliveryMap.put("status", null);
-                    }
-
-                    deliveryMap.put("orderItemId", orderItem.getId());
-                    deliveryMap.put("itemId", orderItem.getItemId());
-
-                    return deliveryMap;
-                })
+        // 상품 DTO 변환
+        List<OrderCompleteInfoDto.OrderCompleteItemDto> itemDtos = order.getOrderItems().stream()
+                .map(oi -> OrderCompleteInfoDto.OrderCompleteItemDto.from(oi, itemService.getItemById(oi.getItemId())))
                 .toList();
 
-        // 5. 응답 데이터 구성
-        Map<String, Object> response = new HashMap<>(orderDetails);
-        response.put("paymentStatus", order.getPaymentStatus());
-        response.put("pgOrderId", order.getPgOrderId());
-        response.put("orderName", order.getOrderName());
-        response.put("orderDate", order.getOrderDate());
-        response.put("deliveryInfo", deliveryInfoList);
+        // 배송 DTO 변환
+        List<OrderCompleteInfoDto.OrderCompleteDeliveryDto> deliveryDtos = order.getOrderItems().stream()
+                .map(OrderCompleteInfoDto.OrderCompleteDeliveryDto::from)
+                .toList();
 
-        if (payment != null) {
-            response.put("cardName", payment.getCardName());
-            response.put("paymentMethod", payment.getPaymentMethod());
-            response.put("pgProvider", payment.getPgProvider());
-        } else {
-            response.put("paymentInfo", "결제 정보가 없습니다.");
-        }
+        // 적립 포인트 Ledger 조회
+        PointLedger savedLedger = pointLedgerRepository.findTopByBuyer_IdAndTypeAndRefOrderIdOrderByOccurredAtDesc(
+                buyerId, PointTransactionType.SAVE, order.getId()
+        ).orElse(null);
 
-        return response;
+        // 최종 DTO 생성
+        return OrderCompleteInfoDto.from(order, itemDtos, deliveryDtos, payment, savedLedger);
     }
-
-    /**
-     * 주소 Map으로 가져오기
-     */
-    @NotNull
-    private static Map<String, Object> getAddressMap(Address address) {
-        Map<String, Object> addressMap = new HashMap<>();
-        addressMap.put("addressName", address.getAddressName());
-        addressMap.put("recipient", address.getRecipient());
-        addressMap.put("zoneCode", address.getZoneCode());
-        addressMap.put("baseAddress", address.getBaseAddress());
-        addressMap.put("detailAddress", address.getDetailAddress());
-        addressMap.put("phone", address.getPhone());
-        addressMap.put("subPhone", address.getSubPhone());
-        return addressMap;
-    }
-
 
     /**
      * 현재 사용자의 모든 임시 주문 삭제 (TEMPORARY 상태인 주문들을 일괄 삭제)

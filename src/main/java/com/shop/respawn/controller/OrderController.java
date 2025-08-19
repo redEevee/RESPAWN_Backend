@@ -1,6 +1,7 @@
 package com.shop.respawn.controller;
 
 import com.shop.respawn.dto.*;
+import com.shop.respawn.dto.order.OrderCompleteInfoDto;
 import com.shop.respawn.dto.order.OrderHistoryDto;
 import com.shop.respawn.dto.order.OrderRefundRequestDto;
 import com.shop.respawn.dto.order.OrderRequestDto;
@@ -91,16 +92,12 @@ public class OrderController {
     public ResponseEntity<?> getOrderCompleteInfo(@PathVariable Long orderId, HttpSession session) {
         try {
             Long buyerId = getBuyerIdFromSession(session);
-
-            // 서비스 호출하여 주문 완료 상세 정보 조회
-            Map<String, Object> response = orderService.getOrderCompleteInfo(orderId, buyerId);
-
+            OrderCompleteInfoDto response = orderService.getOrderCompleteInfo(orderId, buyerId);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
-
 
     /**
      * 임시 주문 상세 조회 (주문 페이지용)
