@@ -30,15 +30,18 @@ public class PaymentService {
     private final IamportClient iamportClient;
     private final BuyerRepository buyerRepository;
     private final OrderRepository orderRepository;
+    private final LedgerPointService ledgerPointService;
 
     public PaymentService(PaymentRepository paymentRepository,
                           BuyerRepository buyerRepository,
                           OrderRepository orderRepository,
+                          LedgerPointService ledgerPointService,
                           @Value("${imp.api.key}") String impKey,
                           @Value("${imp.api.secretkey}") String impSecret) {
         this.buyerRepository = buyerRepository;
         this.orderRepository = orderRepository;
         this.paymentRepository = paymentRepository;
+        this.ledgerPointService = ledgerPointService;
         this.iamportClient = new IamportClient(impKey, impSecret);
     }
 
@@ -130,6 +133,14 @@ public class PaymentService {
                 .order(order)  // Order 엔티티 설정
                 .build();
         paymentRepository.save(payment);
+
+        if (order.getUsedPointAmount() != null && order.getUsedPointAmount() > 0) {
+            ledgerPointService.usePoints(buyer.getId(),
+                    order.getUsedPointAmount(),
+                    order.getId(),
+                    "주문 포인트 사용",
+                    "user");
+        }
 
         // 주문의 결제 상태도 업데이트
         order.setPaymentStatus("SUCCESS");

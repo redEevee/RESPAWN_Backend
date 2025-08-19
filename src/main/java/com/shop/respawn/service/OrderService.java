@@ -180,11 +180,11 @@ public class OrderService {
         validateStockFromOrderItems(order.getOrderItems());
 
         // 2. 포인트 사용 (선 사용)
-        long usePointAmount = orderRequest.getUsePointAmount() != null ? orderRequest.getUsePointAmount() : 0L;
-        if (usePointAmount > 0) {
-            // 가용 확인은 LedgerPointService에서 집계 기준으로 검증
-            ledgerPointService.usePoints(buyerId, usePointAmount, order.getId(), "주문 포인트 사용", "user");
-        }
+//        long usePointAmount = orderRequest.getUsePointAmount() != null ? orderRequest.getUsePointAmount() : 0L;
+//        if (usePointAmount > 0) {
+//            // 가용 확인은 LedgerPointService에서 집계 기준으로 검증
+//            ledgerPointService.usePoints(buyerId, usePointAmount, order.getId(), "주문 포인트 사용", "user");
+//        }
 
         // 3. 배송지 주소 조회 및 권한 체크, 배송 정보 설정
         for (OrderItem orderItem : order.getOrderItems()) {
@@ -194,7 +194,7 @@ public class OrderService {
         }
 
         // 4. 결제 정보 설정 (총금액, 주문명, pgOrderId 등)
-        setPaymentInfoFromOrderItems(order, order.getOrderItems(), usePointAmount);
+        setPaymentInfoFromOrderItems(order, order.getOrderItems(), order.getUsedPointAmount());
 
         // 5. 재고 차감
         reduceStockFromOrderItems(order.getOrderItems());

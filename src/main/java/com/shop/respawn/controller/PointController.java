@@ -1,9 +1,11 @@
 package com.shop.respawn.controller;
 
+import com.shop.respawn.domain.Order;
 import com.shop.respawn.dto.point.ExpiringPointItemDto;
 import com.shop.respawn.dto.point.ExpiringPointTotalDto;
 import com.shop.respawn.dto.point.PointHistoryDto;
 import com.shop.respawn.dto.point.PointLedgerDto;
+import com.shop.respawn.repository.OrderRepository;
 import com.shop.respawn.service.LedgerPointService;
 import com.shop.respawn.service.PointQueryService;
 import jakarta.servlet.http.HttpSession;
@@ -12,10 +14,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -29,6 +29,7 @@ public class PointController {
 
     private final LedgerPointService ledgerPointService;
     private final PointQueryService pointQueryService;
+    private final OrderRepository orderRepository;
 
     @GetMapping("/total")
     public long getMyTotalPointsV2(HttpSession session) {
@@ -40,6 +41,36 @@ public class PointController {
     public long getMyActiveTotalPointsV2(HttpSession session) {
         Long buyerId = (Long) session.getAttribute("userId");
         return ledgerPointService.getActive(buyerId);
+    }
+
+    /**
+     * 임시 주문에 포인트 사용 적용 (DB에는 차감하지 않음)
+     */
+    @PostMapping("/apply")
+    public ResponseEntity<String> applyPoints(
+            @RequestParam Long orderId,
+            @RequestParam Long buyerId,
+            @RequestParam Long usePointAmount) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다."));
+
+        if (!order.getBuyer().getId().equals(buyerId)) {
+            return ResponseEntity.status(403).body("권한이 없습니다.");
+        }
+
+        long activePoints = ledgerPointService.getActive(buyerId);
+        if (usePointAmount > activePoints) {
+            return ResponseEntity.badRequest().body("사용가능 포인트 부족");
+        }
+
+        // 주문 엔티티에 포인트 사용만 저장
+        Long originalAmount = order.calculateTotalAmount();
+        order.setPointUsage(originalAmount, usePointAmount);
+
+        orderRepository.save(order);
+
+        return ResponseEntity.ok("포인트 " + usePointAmount + "원이 적용되었습니다.");
     }
 
     // 적립 내역: /api/points/saves?page=0&size=20&sort=occurredAt,desc
