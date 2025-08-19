@@ -138,19 +138,47 @@ public class AdminService {
 
     // -------- 구매자 조회 --------
     @Transactional(readOnly = true)
-    public Page<BuyerListDto> findBuyersPaged(int page, int size, String sort, String dir) {
+    public Page<BuyerListDto> findBuyersPaged(int page, int size, String sort, String dir, String keyword, String field) {
         Sort.Direction direction = "desc".equalsIgnoreCase(dir) ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortOrDefault(sort)));
-        Page<Buyer> buyers = buyerRepository.findAll(pageable);
+        Page<Buyer> buyers;
+        if (keyword == null || keyword.isBlank()) {
+            buyers = buyerRepository.findAll(pageable);
+        } else {
+            buyers = switch (normalizeField(field)) {
+                case "name" -> buyerRepository.findByNameContainingIgnoreCase(keyword, pageable);
+                case "username" -> buyerRepository.findByUsernameContainingIgnoreCase(keyword, pageable);
+                case "email" -> buyerRepository.findByEmailContainingIgnoreCase(keyword, pageable);
+                case "phoneNumber" -> buyerRepository.findByPhoneNumberContaining(keyword, pageable);
+                default -> buyerRepository.findByNameContainingIgnoreCase(keyword, pageable);
+            };
+        }
         return buyers.map(BuyerListDto::from);
     }
 
     // -------- 판매자 조회 --------
     @Transactional(readOnly = true)
-    public Page<SellerListDto> findSellersPaged(int page, int size, String sort, String dir) {
+    public Page<SellerListDto> findSellersPaged(int page, int size, String sort, String dir, String keyword, String field) {
         Sort.Direction direction = "desc".equalsIgnoreCase(dir) ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortOrDefault(sort)));
-        return sellerRepository.findAll(pageable).map(SellerListDto::from);
+
+        Page<Seller> sellers;
+        if (keyword == null || keyword.isBlank()) {
+            sellers = sellerRepository.findAll(pageable);
+        } else {
+            sellers = switch (normalizeField(field)) {
+                case "name" -> sellerRepository.findByNameContainingIgnoreCase(keyword, pageable);
+                case "username" -> sellerRepository.findByUsernameContainingIgnoreCase(keyword, pageable);
+                case "email" -> sellerRepository.findByEmailContainingIgnoreCase(keyword, pageable);
+                case "phoneNumber" -> sellerRepository.findByPhoneNumberContaining(keyword, pageable);
+                default -> sellerRepository.findByNameContainingIgnoreCase(keyword, pageable);
+            };
+        }
+        return sellers.map(SellerListDto::from);
+    }
+
+    private String normalizeField(String field) {
+        return field == null ? "name" : field.replaceAll("\\s+", "").toLowerCase();
     }
 
     @Transactional(readOnly = true)

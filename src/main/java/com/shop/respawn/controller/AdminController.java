@@ -15,6 +15,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin")
+@Secured("ROLE_ADMIN")
 public class AdminController {
 
     private final AdminService adminService;
@@ -23,7 +24,6 @@ public class AdminController {
      * 사용자 계정 만료 처리
      */
     @PostMapping("/{userType}/{userId}/expire")
-    @Secured("ROLE_ADMIN")
     public ResponseEntity<Map<String, Object>> expire(@PathVariable String userType,
                                                       @PathVariable Long userId) {
         adminService.expireUserById(userType, userId); // 만료(비활성: isAccountNonExpired=false 상태 유도)
@@ -38,7 +38,6 @@ public class AdminController {
      * 사용자 계정 만료 해제
      */
     @PostMapping("/{userType}/{userId}/unexpire")
-    @Secured("ROLE_ADMIN")
     public ResponseEntity<Map<String, Object>> unexpire(@PathVariable String userType,
                                                         @PathVariable Long userId) {
         adminService.unexpireUserById(userType, userId); // 만료 해제(유효: isAccountNonExpired=true 상태 유도)
@@ -53,7 +52,6 @@ public class AdminController {
      * 사용자 계정 활성화
      */
     @PostMapping("/{userType}/{userId}/enable")
-    @Secured("ROLE_ADMIN")
     public ResponseEntity<Map<String, Object>> enable(@PathVariable String userType,
                                                       @PathVariable Long userId) {
         adminService.enableUserById(userType, userId);
@@ -70,7 +68,6 @@ public class AdminController {
      * 사용자 계정 비활성화(정지)
      */
     @PostMapping("/{userType}/{userId}/disable")
-    @Secured("ROLE_ADMIN")
     public ResponseEntity<Map<String, Object>> disable(@PathVariable String userType,
                                                        @PathVariable Long userId) {
         adminService.disableUserById(userType, userId);
@@ -87,7 +84,6 @@ public class AdminController {
      * 사용자 계정 정지 해제
      */
     @PostMapping("/{userType}/{userId}/unlock")
-    @Secured("ROLE_ADMIN")
     public ResponseEntity<Map<String, Object>> unlock(@PathVariable String userType,
                                                       @PathVariable Long userId) {
         adminService.unlockById(userType, userId);
@@ -102,7 +98,6 @@ public class AdminController {
      * 사용자 계정 상태 조회
      */
     @GetMapping("/{userType}/{userId}")
-    @Secured("ROLE_ADMIN")
     public ResponseEntity<Map<String, Object>> status(@PathVariable String userType,
                                                       @PathVariable Long userId) {
         boolean enabled = adminService.isEnabledById(userType, userId);
@@ -115,30 +110,31 @@ public class AdminController {
 
     // ----- 구매자 조회 -----
     @GetMapping("/buyers/paged")
-    @Secured("ROLE_ADMIN")
     public ResponseEntity<Page<BuyerListDto>> getBuyersPaged(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "username") String sort,
-            @RequestParam(defaultValue = "asc") String dir
+            @RequestParam(defaultValue = "asc") String dir,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, defaultValue = "name") String field
     ) {
-        return ResponseEntity.ok(adminService.findBuyersPaged(page, size, sort, dir));
+        return ResponseEntity.ok(adminService.findBuyersPaged(page, size, sort, dir, keyword, field));
     }
 
     // ----- 판매자 조회 -----
     @GetMapping("/sellers/paged")
-    @Secured("ROLE_ADMIN")
     public ResponseEntity<Page<SellerListDto>> getSellersPaged(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "username") String sort,
-            @RequestParam(defaultValue = "asc") String dir
+            @RequestParam(defaultValue = "asc") String dir,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, defaultValue = "name") String field
     ) {
-        return ResponseEntity.ok(adminService.findSellersPaged(page, size, sort, dir));
+        return ResponseEntity.ok(adminService.findSellersPaged(page, size, sort, dir, keyword, field));
     }
 
     @GetMapping("/{userType}/{userId}/summary")
-    @Secured("ROLE_ADMIN")
     public ResponseEntity<UserSummaryDto> getUserSummary(
             @PathVariable String userType,
             @PathVariable Long userId
