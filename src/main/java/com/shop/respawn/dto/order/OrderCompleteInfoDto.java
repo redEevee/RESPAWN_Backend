@@ -64,6 +64,7 @@ public class OrderCompleteInfoDto {
         private Long orderItemId;
         private String itemId;
         private String itemName;
+        private String imageUrl;
         private Long orderPrice;
         private Long count;
         private Long totalPrice;
@@ -73,6 +74,7 @@ public class OrderCompleteInfoDto {
                     .orderItemId(orderItem.getId())
                     .itemId(item.getId())
                     .itemName(item.getName())
+                    .imageUrl(item.getImageUrl())
                     .orderPrice(orderItem.getOrderPrice())
                     .count(orderItem.getCount())
                     .totalPrice(orderItem.getOrderPrice() * orderItem.getCount())
