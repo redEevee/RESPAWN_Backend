@@ -1,11 +1,14 @@
 package com.shop.respawn.controller;
 
+import com.shop.respawn.dto.user.UserSummaryDto;
 import com.shop.respawn.service.AdminService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -77,5 +80,41 @@ public class AdminController {
                 "userId", userId,
                 "enabled", enabled
         ));
+    }
+
+    // ----- 구매자 조회 -----
+    @GetMapping("/buyers")
+    @Secured("ROLE_ADMIN")
+    public ResponseEntity<List<UserSummaryDto>> getAllBuyers() {
+        return ResponseEntity.ok(adminService.findAllBuyers());
+    }
+
+    @GetMapping("/buyers/paged")
+    @Secured("ROLE_ADMIN")
+    public ResponseEntity<Page<UserSummaryDto>> getBuyersPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "username") String sort,
+            @RequestParam(defaultValue = "asc") String dir
+    ) {
+        return ResponseEntity.ok(adminService.findBuyersPaged(page, size, sort, dir));
+    }
+
+    // ----- 판매자 조회 -----
+    @GetMapping("/sellers")
+    @Secured("ROLE_ADMIN")
+    public ResponseEntity<List<UserSummaryDto>> getAllSellers() {
+        return ResponseEntity.ok(adminService.findAllSellers());
+    }
+
+    @GetMapping("/sellers/paged")
+    @Secured("ROLE_ADMIN")
+    public ResponseEntity<Page<UserSummaryDto>> getSellersPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "username") String sort,
+            @RequestParam(defaultValue = "asc") String dir
+    ) {
+        return ResponseEntity.ok(adminService.findSellersPaged(page, size, sort, dir));
     }
 }

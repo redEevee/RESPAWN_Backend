@@ -3,6 +3,8 @@ package com.shop.respawn.service;
 import com.shop.respawn.domain.*;
 import com.shop.respawn.dto.*;
 import com.shop.respawn.dto.order.*;
+import com.shop.respawn.dto.user.SellerOrderDetailDto;
+import com.shop.respawn.dto.user.SellerOrderDto;
 import com.shop.respawn.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;

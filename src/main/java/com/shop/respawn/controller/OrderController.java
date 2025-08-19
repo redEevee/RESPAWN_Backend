@@ -2,6 +2,8 @@ package com.shop.respawn.controller;
 
 import com.shop.respawn.dto.*;
 import com.shop.respawn.dto.order.*;
+import com.shop.respawn.dto.user.SellerOrderDetailDto;
+import com.shop.respawn.dto.user.SellerOrderDto;
 import com.shop.respawn.service.OrderService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;

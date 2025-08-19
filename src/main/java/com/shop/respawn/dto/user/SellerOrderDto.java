@@ -1,4 +1,4 @@
-package com.shop.respawn.dto;
+package com.shop.respawn.dto.user;
 
 import com.shop.respawn.domain.Item;
 import com.shop.respawn.domain.Order;

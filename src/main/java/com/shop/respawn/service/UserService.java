@@ -3,7 +3,7 @@ package com.shop.respawn.service;
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.domain.Role;
 import com.shop.respawn.domain.Seller;
-import com.shop.respawn.dto.UserDto;
+import com.shop.respawn.dto.user.UserDto;
 import com.shop.respawn.email.EmailService;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.SellerRepository;
