@@ -1,4 +1,4 @@
-package com.shop.respawn.config;
+package com.shop.respawn.util;
 
 import com.shop.respawn.domain.MembershipTier;
 import org.springframework.stereotype.Component;

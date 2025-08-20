@@ -5,7 +5,6 @@ import com.shop.respawn.dto.MembershipTierResponse;
 import com.shop.respawn.dto.gradeRecalc.GradeRecalcRequest;
 import com.shop.respawn.dto.gradeRecalc.GradeRecalcResponse;
 import com.shop.respawn.repository.BuyerRepository;
-import com.shop.respawn.service.UserGradeQueryService;
 import com.shop.respawn.service.UserGradeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +12,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @RestController
@@ -22,11 +20,8 @@ import java.util.List;
 @Slf4j
 public class MembershipController {
 
-    private final UserGradeQueryService userGradeQueryService;
     private final UserGradeService userGradeService;
     private final BuyerRepository buyerRepository;
-
-    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     // 1) 내 멤버십 등급 조회 (로그인 필요)
     @GetMapping("/me")
@@ -35,28 +30,22 @@ public class MembershipController {
         Buyer buyer = buyerRepository.findByUsername(username);
         if (buyer == null) throw new RuntimeException("구매자 없음: " + username);
 
-        var result = userGradeQueryService.getPrevMonthTier(buyer.getId());
-        String period = result.start().format(FMT) + " ~ " + result.end().format(FMT);
         return new MembershipTierResponse(
-                result.buyer().getId(),
-                result.buyer().getUsername(),
-                result.tier(),
-                result.amount(),
-                period
+                buyer.getId(),
+                buyer.getUsername(),
+                buyer.getMembershipTier()
         );
     }
 
     // 2) 특정 구매자 등급 조회 (관리자/운영자용)
     @GetMapping("/{buyerId}")
     public MembershipTierResponse tierByBuyerId(@PathVariable Long buyerId) {
-        var result = userGradeQueryService.getPrevMonthTier(buyerId);
-        String period = result.start().format(FMT) + " ~ " + result.end().format(FMT);
+        Buyer buyer = buyerRepository.findById(buyerId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
         return new MembershipTierResponse(
-                result.buyer().getId(),
-                result.buyer().getUsername(),
-                result.tier(),
-                result.amount(),
-                period
+                buyer.getId(),
+                buyer.getUsername(),
+                buyer.getMembershipTier()
         );
     }
 

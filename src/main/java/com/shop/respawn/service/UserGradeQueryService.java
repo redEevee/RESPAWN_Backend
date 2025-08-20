@@ -1,6 +1,6 @@
 package com.shop.respawn.service;
 
-import com.shop.respawn.config.GradePolicy;
+import com.shop.respawn.util.GradePolicy;
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.domain.MembershipTier;
 import com.shop.respawn.repository.BuyerRepository;

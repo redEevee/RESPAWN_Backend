@@ -1,6 +1,6 @@
 package com.shop.respawn.service;
 
-import com.shop.respawn.config.GradePolicy;
+import com.shop.respawn.util.GradePolicy;
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.domain.MembershipTier;
 import com.shop.respawn.repository.BuyerRepository;
@@ -19,6 +19,7 @@ public class UserGradeService {
 
     private final BuyerRepository buyerRepository;
     private final PaymentRepository paymentRepository;
+    private final CouponService couponService;
     private final GradePolicy gradePolicy;
 
     // 저번달 기준으로 재계산
@@ -28,11 +29,15 @@ public class UserGradeService {
         LocalDateTime end   = range[1];
 
         Long monthlyAmount = paymentRepository.sumMonthlyAmountByBuyer(buyerId, start, end);
-        MembershipTier tier = gradePolicy.resolveTier(monthlyAmount);
-
+        MembershipTier newTier = gradePolicy.resolveTier(monthlyAmount);
         Buyer buyer = buyerRepository.findById(buyerId)
                 .orElseThrow(() -> new RuntimeException("구매자 없음: " + buyerId));
-        buyer.updateMembershipTier(tier);
+        MembershipTier oldTier = buyer.getMembershipTier();
+        if (oldTier != newTier) {
+            buyer.updateMembershipTier(newTier);
+            // 등급 변경 시 쿠폰 발급
+            couponService.issueTierCoupon(buyerId, newTier);
+        }
         // 변경감지로 flush
     }
 
