@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.shop.respawn.domain.MembershipTier.*;
 import static jakarta.persistence.EnumType.STRING;
 import static lombok.AccessLevel.*;
 
@@ -39,6 +40,9 @@ public class Buyer extends BaseTimeEntity {
 
     @Enumerated(STRING)
     private Role role;
+
+    @Enumerated(EnumType.STRING)
+    private MembershipTier membershipTier = BASIC;
 
     @Builder.Default
     @OneToMany(mappedBy = "buyer")
@@ -110,6 +114,11 @@ public class Buyer extends BaseTimeEntity {
         if (this.accountStatus != null) {
             this.accountStatus.setAccountExpiryDate(LocalDateTime.now().plusYears(1));
         }
+    }
+
+    // 맴버십 변경
+    public void updateMembershipTier(MembershipTier tier) {
+        this.membershipTier = tier;
     }
 
     // initData 용도

@@ -1,0 +1,35 @@
+package com.shop.respawn.service;
+
+import com.shop.respawn.config.GradePolicy;
+import com.shop.respawn.domain.Buyer;
+import com.shop.respawn.domain.MembershipTier;
+import com.shop.respawn.repository.BuyerRepository;
+import com.shop.respawn.repository.PaymentRepository;
+import com.shop.respawn.util.MonthlyPeriodUtil;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+
+@Service
+@Transactional(readOnly = true)
+@RequiredArgsConstructor
+public class UserGradeQueryService {
+
+    private final BuyerRepository buyerRepository;
+    private final PaymentRepository paymentRepository;
+    private final GradePolicy gradePolicy;
+
+    public Result getPrevMonthTier(Long buyerId) {
+        Buyer buyer = buyerRepository.findById(buyerId)
+                .orElseThrow(() -> new RuntimeException("구매자 없음: " + buyerId));
+
+        LocalDateTime[] range = MonthlyPeriodUtil.previousMonthRange();
+        Long amount = paymentRepository.sumMonthlyAmountByBuyer(buyerId, range[0], range[1]);
+        MembershipTier tier = gradePolicy.resolveTier(amount);
+        return new Result(buyer, amount, range[0], range[1], tier);
+    }
+
+    public record Result(Buyer buyer, Long amount, LocalDateTime start, LocalDateTime end, MembershipTier tier) {}
+}

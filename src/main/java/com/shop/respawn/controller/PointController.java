@@ -65,7 +65,7 @@ public class PointController {
         }
 
         // 주문 엔티티에 포인트 사용만 저장
-        Long originalAmount = order.calculateTotalAmount();
+        Long originalAmount = order.getTotalAmount();
         order.setPointUsage(originalAmount, usePointAmount);
 
         orderRepository.save(order);

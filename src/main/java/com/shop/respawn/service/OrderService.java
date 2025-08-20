@@ -179,30 +179,23 @@ public class OrderService {
         // 1. 재고 확인
         validateStockFromOrderItems(order.getOrderItems());
 
-        // 2. 포인트 사용 (선 사용)
-//        long usePointAmount = orderRequest.getUsePointAmount() != null ? orderRequest.getUsePointAmount() : 0L;
-//        if (usePointAmount > 0) {
-//            // 가용 확인은 LedgerPointService에서 집계 기준으로 검증
-//            ledgerPointService.usePoints(buyerId, usePointAmount, order.getId(), "주문 포인트 사용", "user");
-//        }
-
-        // 3. 배송지 주소 조회 및 권한 체크, 배송 정보 설정
+        // 2. 배송지 주소 조회 및 권한 체크, 배송 정보 설정
         for (OrderItem orderItem : order.getOrderItems()) {
             Delivery delivery = createDeliveryWithAddressId(buyerId, orderRequest.getAddressId());
             delivery.setOrderItem(orderItem);
             orderItem.setDelivery(delivery);
         }
 
-        // 4. 결제 정보 설정 (총금액, 주문명, pgOrderId 등)
+        // 3. 결제 정보 설정 (총금액, 주문명, pgOrderId 등)
         setPaymentInfoFromOrderItems(order, order.getOrderItems(), order.getUsedPointAmount());
 
-        // 5. 재고 차감
+        // 4. 재고 차감
         reduceStockFromOrderItems(order.getOrderItems());
 
-        // 6. 주문 상태 주문 완료로 변경
+        // 5. 주문 상태 주문 완료로 변경
         order.setStatus(OrderStatus.PAID);
 
-        // 7. 포인트 적립 (최종 결제금액 기준)
+        // 6. 포인트 적립 (최종 결제금액 기준)
         // 만료 1년
         ledgerPointService.savePoints(buyerId,
                 Math.max(1L, Math.round(order.getTotalAmount() * 0.02)),
@@ -211,7 +204,7 @@ public class OrderService {
                 "결제 포인트 적립",
                 "system");
 
-        // 8. 장바구니가 존재하면 주문된 아이템 제거
+        // 7. 장바구니가 존재하면 주문된 아이템 제거
         Optional<Cart> optionalCart = cartRepository.findByBuyerId(buyerId);
         if (optionalCart.isPresent()) {
             Cart cart = optionalCart.get();
@@ -225,7 +218,7 @@ public class OrderService {
             log.info("주문자 {}의 장바구니가 없어 아이템 제거를 건너뜁니다.", buyerId);
         }
 
-        // 9. 최종 저장
+        // 8. 최종 저장
         orderRepository.save(order);
 
     }
