@@ -24,6 +24,10 @@ public class AdminService {
 
     private final BuyerRepository buyerRepository;
     private final SellerRepository sellerRepository;
+    private static final LocalDate MIN_DATE = LocalDate.of(1970, 1, 1);
+    private static final LocalDate MAX_DATE = LocalDate.of(9999, 12, 31);
+    // 드라이버 친화적인 일 마감 시각(밀리초 정밀도)
+    private static final LocalTime DAY_END = LocalTime.of(23, 59, 59, 999_000_000);
 
     public void expireUserById(String userType, Long userId) {
         switch (userType.toLowerCase()) {
@@ -246,8 +250,8 @@ public class AdminService {
                 end = d.atTime(LocalTime.MAX);
             }
 
-             if (start == null && end != null) start = LocalDate.MIN.atStartOfDay();
-             if (start != null && end == null) end = LocalDate.MAX.atTime(LocalTime.MAX);
+             if (start == null && end != null) start = MIN_DATE.atStartOfDay();
+             if (start != null && end == null) end =  MAX_DATE.atTime(DAY_END);
 
             if (start != null && start.isAfter(end)) {
                 LocalDateTime tmp = start; start = end; end = tmp;
