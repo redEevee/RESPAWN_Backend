@@ -1,6 +1,7 @@
 package com.shop.respawn.controller;
 
 import com.shop.respawn.dto.user.BuyerListDto;
+import com.shop.respawn.dto.user.PageResponse;
 import com.shop.respawn.dto.user.SellerListDto;
 import com.shop.respawn.dto.user.UserSummaryDto;
 import com.shop.respawn.service.AdminService;
@@ -110,7 +111,7 @@ public class AdminController {
 
     // ----- 구매자 조회 -----
     @GetMapping("/buyers/paged")
-    public ResponseEntity<Page<BuyerListDto>> getBuyersPaged(
+    public ResponseEntity<PageResponse<BuyerListDto>> getBuyersPaged(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "username") String sort,
@@ -119,12 +120,13 @@ public class AdminController {
             @RequestParam(required = false, defaultValue = "name") String field,
             @RequestParam(required = false) String dateRange
     ) {
-        return ResponseEntity.ok(adminService.findBuyersPaged(page, size, sort, dir, keyword, field, dateRange));
+        Page<BuyerListDto> buyersPaged = adminService.findBuyersPaged(page, size, sort, dir, keyword, field, dateRange);
+        return ResponseEntity.ok(PageResponse.from(buyersPaged));
     }
 
     // ----- 판매자 조회 -----
     @GetMapping("/sellers/paged")
-    public ResponseEntity<Page<SellerListDto>> getSellersPaged(
+    public ResponseEntity<PageResponse<SellerListDto>> getSellersPaged(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "username") String sort,
@@ -133,7 +135,8 @@ public class AdminController {
             @RequestParam(required = false, defaultValue = "name") String field,
             @RequestParam(required = false) String dateRange
     ) {
-        return ResponseEntity.ok(adminService.findSellersPaged(page, size, sort, dir, keyword, field, dateRange));
+        Page<SellerListDto> sellersPaged = adminService.findSellersPaged(page, size, sort, dir, keyword, field, dateRange);
+        return ResponseEntity.ok(PageResponse.from(sellersPaged));
     }
 
     @GetMapping("/{userType}/{userId}/summary")
