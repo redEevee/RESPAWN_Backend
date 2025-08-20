@@ -64,6 +64,13 @@ public class PointController {
             return ResponseEntity.badRequest().body("사용가능 포인트 부족");
         }
 
+        // 포인트 적용을 N번 누를 시
+        if(order.getUsedPointAmount() != 0L){
+            Long originalAmount = order.getOriginalAmount();
+            order.setTotalAmount(originalAmount);
+            order.setUsedPointAmount(0L);
+        }
+
         // 주문 엔티티에 포인트 사용만 저장
         Long originalAmount = order.getTotalAmount();
         order.setPointUsage(originalAmount, usePointAmount);
