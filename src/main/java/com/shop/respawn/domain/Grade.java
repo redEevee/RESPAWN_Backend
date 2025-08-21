@@ -1,6 +1,6 @@
 package com.shop.respawn.domain;
 
-public enum MembershipTier {
+public enum Grade {
     BASIC,
     VIP,
     VVIP,

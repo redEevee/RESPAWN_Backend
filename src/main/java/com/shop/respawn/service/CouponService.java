@@ -1,9 +1,9 @@
 package com.shop.respawn.service;
 
+import com.shop.respawn.domain.Grade;
 import com.shop.respawn.util.CouponPolicy;
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.domain.Coupon;
-import com.shop.respawn.domain.MembershipTier;
 import com.shop.respawn.repository.CouponRepository;
 import com.shop.respawn.repository.BuyerRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ public class CouponService {
     private final BuyerRepository buyerRepository;
 
     // 등급 변경 시 쿠폰 발급
-    public void issueTierCoupon(Long buyerId, MembershipTier tier) {
+    public void issueGradeCoupon(Long buyerId, Grade tier) {
         Buyer buyer = buyerRepository.findById(buyerId)
                 .orElseThrow(() -> new RuntimeException("구매자 없음: " + buyerId));
 

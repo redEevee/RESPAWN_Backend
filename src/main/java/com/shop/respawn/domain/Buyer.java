@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.shop.respawn.domain.MembershipTier.*;
+import static com.shop.respawn.domain.Grade.*;
 import static jakarta.persistence.EnumType.STRING;
 import static lombok.AccessLevel.*;
 
@@ -42,7 +42,7 @@ public class Buyer extends BaseTimeEntity {
     private Role role;
 
     @Enumerated(EnumType.STRING)
-    private MembershipTier membershipTier = BASIC;
+    private Grade grade = BASIC;
 
     @Builder.Default
     @OneToMany(mappedBy = "buyer")
@@ -117,8 +117,8 @@ public class Buyer extends BaseTimeEntity {
     }
 
     // 맴버십 변경
-    public void updateMembershipTier(MembershipTier tier) {
-        this.membershipTier = tier;
+    public void updateGrade(Grade grade) {
+        this.grade = grade;
     }
 
     // initData 용도

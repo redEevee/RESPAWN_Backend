@@ -1,6 +1,6 @@
 package com.shop.respawn.util;
 
-import com.shop.respawn.domain.MembershipTier;
+import com.shop.respawn.domain.Grade;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -11,10 +11,10 @@ public class GradePolicy {
     private static final long THRESHOLD_VVIP = 300_000L;  // 예시
     private static final long THRESHOLD_VVIP_PLUS = 500_000L; // 예시 (50 이상은 동일 취급)
 
-    public MembershipTier resolveTier(long monthlyAmount) {
-        if (monthlyAmount >= THRESHOLD_VVIP_PLUS) return MembershipTier.VVIP_PLUS;
-        if (monthlyAmount >= THRESHOLD_VVIP)      return MembershipTier.VVIP;
-        if (monthlyAmount >= THRESHOLD_VIP)       return MembershipTier.VIP;
-        return MembershipTier.BASIC;
+    public Grade resolveGrade(long monthlyAmount) {
+        if (monthlyAmount >= THRESHOLD_VVIP_PLUS) return Grade.VVIP_PLUS;
+        if (monthlyAmount >= THRESHOLD_VVIP)      return Grade.VVIP;
+        if (monthlyAmount >= THRESHOLD_VIP)       return Grade.VIP;
+        return Grade.BASIC;
     }
 }

@@ -2,7 +2,7 @@ package com.shop.respawn.service;
 
 import com.shop.respawn.util.GradePolicy;
 import com.shop.respawn.domain.Buyer;
-import com.shop.respawn.domain.MembershipTier;
+import com.shop.respawn.domain.Grade;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.PaymentRepository;
 import com.shop.respawn.util.MonthlyPeriodUtil;
@@ -27,9 +27,9 @@ public class UserGradeQueryService {
 
         LocalDateTime[] range = MonthlyPeriodUtil.previousMonthRange();
         Long amount = paymentRepository.sumMonthlyAmountByBuyer(buyerId, range[0], range[1]);
-        MembershipTier tier = gradePolicy.resolveTier(amount);
+        Grade tier = gradePolicy.resolveGrade(amount);
         return new Result(buyer, amount, range[0], range[1], tier);
     }
 
-    public record Result(Buyer buyer, Long amount, LocalDateTime start, LocalDateTime end, MembershipTier tier) {}
+    public record Result(Buyer buyer, Long amount, LocalDateTime start, LocalDateTime end, Grade tier) {}
 }
