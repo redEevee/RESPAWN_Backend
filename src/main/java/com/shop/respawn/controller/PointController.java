@@ -8,6 +8,7 @@ import com.shop.respawn.dto.point.PointLedgerDto;
 import com.shop.respawn.repository.OrderRepository;
 import com.shop.respawn.service.LedgerPointService;
 import com.shop.respawn.service.PointQueryService;
+import com.shop.respawn.util.SessionUtil;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -49,8 +50,10 @@ public class PointController {
     @PostMapping("/apply")
     public ResponseEntity<String> applyPoints(
             @RequestParam Long orderId,
-            @RequestParam Long buyerId,
-            @RequestParam Long usePointAmount) {
+            @RequestParam Long usePointAmount,
+            HttpSession session) {
+
+        Long buyerId = SessionUtil.getBuyerIdFromSession(session);
 
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("주문을 찾을 수 없습니다."));

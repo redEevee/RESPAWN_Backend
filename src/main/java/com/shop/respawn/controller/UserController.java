@@ -126,7 +126,7 @@ public class UserController {
             buyer.renewExpiryDate();
             buyerRepository.save(buyer);
             return ResponseEntity.ok(
-                    new UserDto(buyer.getName(), buyer.getUsername(), buyer.getEmail(), buyer.getPhoneNumber(), buyer.getProvider(), buyer.getRole())
+                    new UserDto(buyer.getName(), buyer.getUsername(), buyer.getEmail(), buyer.getPhoneNumber(), buyer.getProvider(), buyer.getRole(), buyer.getMembershipTier())
             );
         } else if (seller != null) {
             seller.renewExpiryDate();

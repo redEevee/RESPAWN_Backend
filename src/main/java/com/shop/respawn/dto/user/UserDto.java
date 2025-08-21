@@ -1,5 +1,6 @@
 package com.shop.respawn.dto.user;
 
+import com.shop.respawn.domain.MembershipTier;
 import com.shop.respawn.domain.Role;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,13 +31,16 @@ public class UserDto {
 
     private Role role;
 
-    public UserDto(String name, String username, String email, String phoneNumber, String provider, Role role) {
+    private MembershipTier membershipTier;
+
+    public UserDto(String name, String username, String email, String phoneNumber, String provider, Role role, MembershipTier membershipTier) {
         this.name = name;
         this.username = username;
         this.email = email;
         this.phoneNumber = phoneNumber;
         this.provider = provider;
         this.role = role;
+        this.membershipTier = membershipTier;
     }
 
     public UserDto(String name, String username, String email, String phoneNumber, Role role) {

@@ -25,6 +25,7 @@ public class UserSummaryDto {
     private String email;
     private String phoneNumber;
     private Role role;              // ROLE_USER / ROLE_SELLER
+    private LocalDateTime createdAt; // 가입일
 
     // AccountStatus 주요 필드
     private Boolean accountNonExpired;   // 만료 아님
@@ -69,7 +70,8 @@ public class UserSummaryDto {
                 .companyNumber(seller.getCompanyNumber())
                 .email(seller.getEmail())
                 .phoneNumber(seller.getPhoneNumber())
-                .role(seller.getRole());
+                .role(seller.getRole())
+                .createdAt(seller.getCreatedAt());
         applyStatus(userSummaryDtoBuilder, seller.getAccountStatus());
         return userSummaryDtoBuilder.build();
     }
@@ -83,7 +85,8 @@ public class UserSummaryDto {
                 .username(buyer.getUsername())
                 .email(buyer.getEmail())
                 .phoneNumber(buyer.getPhoneNumber())
-                .role(buyer.getRole());
+                .role(buyer.getRole())
+                .createdAt(buyer.getCreatedAt());
         applyStatus(userSummaryDtoBuilder, buyer.getAccountStatus());
         return userSummaryDtoBuilder.build();
     }
