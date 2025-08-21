@@ -2,6 +2,7 @@ package com.shop.respawn.security;
 
 import com.shop.respawn.exception.CustomAuthenticationFailureHandler;
 import com.shop.respawn.exception.CustomAuthenticationSuccessHandler;
+import com.shop.respawn.exception.CustomLogoutSuccessHandler;
 import com.shop.respawn.security.oauth.PrincipalOauth2UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +15,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -30,6 +33,7 @@ public class SecurityConfig {
     private final PrincipalOauth2UserService principalOauth2UserService;
     private final CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
     private final CustomAuthenticationFailureHandler customAuthenticationFailureHandler;
+    private final CustomLogoutSuccessHandler customLogoutSuccessHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -77,6 +81,7 @@ public class SecurityConfig {
         http //로그아웃
                 .logout(logout -> logout
                         .logoutUrl("/logout")                           // 로그아웃 요청 URL (기본값: "/logout")
+                        .logoutSuccessHandler(customLogoutSuccessHandler)
                         .logoutSuccessUrl("/logoutOk")                  // 로그아웃 성공 후 리다이렉트 URL (기본값: "/login?logout")
                         .invalidateHttpSession(true)                      // 세션 무효화 (기본값: true)
                         .deleteCookies("JSESSIONID")     // 쿠키 삭제
@@ -84,11 +89,10 @@ public class SecurityConfig {
 
         http
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.setContentType("application/json;charset=UTF-8");
-                            response.getWriter().write("{\"error\":\"Unauthorized\"}");
-                        })
+                        // 401 Unauthorized (인증이 안 된 상태로 보호된 API에 접근할 때)
+                        .authenticationEntryPoint(restAuthenticationEntryPoint())
+                        // 403 Forbidden (인증은 되었으나 권한(Role)이 부족할 때)
+                        .accessDeniedHandler(restAccessDeniedHandler())
                 );
 
         http
@@ -105,6 +109,16 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
+    }
+
+    @Bean
+    public AuthenticationEntryPoint restAuthenticationEntryPoint() {
+        return new RestAuthenticationEntryPoint();
+    }
+
+    @Bean
+    public AccessDeniedHandler restAccessDeniedHandler() {
+        return new RestAccessDeniedHandler();
     }
 
     @Bean

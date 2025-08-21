@@ -1,23 +1,26 @@
 package com.shop.respawn.service;
 
+import com.shop.respawn.domain.Admin;
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.domain.Role;
 import com.shop.respawn.domain.Seller;
+import com.shop.respawn.dto.user.LoginOkResponse;
 import com.shop.respawn.dto.user.UserDto;
 import com.shop.respawn.email.EmailService;
+import com.shop.respawn.repository.AdminRepository;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.SellerRepository;
 import com.shop.respawn.sms.SmsService;
 import com.shop.respawn.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-import static com.shop.respawn.util.MaskingUtil.*;
-
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -25,6 +28,7 @@ public class UserService {
 
     private final BuyerRepository buyerRepository;
     private final SellerRepository sellerRepository;
+    private final AdminRepository adminRepository;
     private final EmailService emailService;
     private final SmsService smsService;
     private final BCryptPasswordEncoder encoder;
@@ -40,7 +44,6 @@ public class UserService {
         String company = userDto.getCompany();
         Long companyNumber = userDto.getCompanyNumber();
         String password = encoder.encode(userDto.getPassword());
-        System.out.println("비밀번호 인코딩:" + password);
         String email = userDto.getEmail();
         String phoneNumber = userDto.getPhoneNumber();
 
@@ -53,6 +56,86 @@ public class UserService {
             seller.renewExpiryDate();
             sellerRepository.save(seller);
         }
+    }
+
+    /**
+     * loginOK 시 로그인유저의 데이터
+     */
+    public LoginOkResponse getUserData(String authorities, String username) {
+        String name = null;
+        Long userId = null;
+        Role role = null;
+
+        switch (authorities) {
+            case "[ROLE_USER]" -> {
+                Buyer buyer = buyerRepository.findByUsername(username);
+                if (buyer != null) {
+                    name = buyer.getName();
+                    userId = buyer.getId();
+                    role = buyer.getRole();
+                }
+            }
+            case "[ROLE_SELLER]" -> {
+                Seller seller = sellerRepository.findByUsername(username);
+                if (seller != null) {
+                    name = seller.getName();
+                    userId = seller.getId();
+                    role = seller.getRole();
+                }
+            }
+            case "[ROLE_ADMIN]" -> {
+                Admin admin = adminRepository.findByUsername(username);
+                if (admin != null) {
+                    name = admin.getName();
+                    userId = admin.getId();
+                    role = admin.getRole();
+                }
+            }
+        }
+
+        boolean due = isPasswordChangeDue(username);
+        System.out.println("due = " + due);
+        due = false;
+        boolean snoozed = isSnoozed(username);
+        System.out.println("snoozed = " + snoozed);
+        snoozed = true;
+        return new LoginOkResponse(name, username, authorities, role, due, snoozed, userId);
+    }
+
+    public UserDto getUserInfo(String username) {
+        // User 먼저 조회
+        Buyer buyer = getBuyerInfo(username);
+        Seller seller = getSellerInfo(username);
+
+        if (buyer != null) {
+            buyer.renewExpiryDate();
+            buyerRepository.save(buyer);
+            return new UserDto(buyer.getName(), buyer.getUsername(), buyer.getEmail(), buyer.getPhoneNumber(), buyer.getProvider(), buyer.getRole(), buyer.getGrade());
+        } else if (seller != null) {
+            seller.renewExpiryDate();
+            sellerRepository.save(seller);
+            return new UserDto(seller.getName(), seller.getUsername(), seller.getEmail(), seller.getPhoneNumber(), seller.getRole()
+            );
+        }
+        return null;
+    }
+
+    /**
+     * 비밀번호 확인
+     */
+    public boolean isMatchPassword(String username, String inputPassword) {
+        Buyer buyer = buyerRepository.findByUsername(username);
+        Seller seller = sellerRepository.findByUsername(username);
+
+        String encodedPassword = null;
+
+        if (buyer != null) {
+            encodedPassword = buyer.getPassword();
+        } else if (seller != null) {
+            encodedPassword = seller.getPassword();
+        }
+
+        return encoder.matches(inputPassword, encodedPassword);
     }
 
     public void updatePhoneNumber(String username, String newPhoneNumber) {
@@ -328,12 +411,5 @@ public class UserService {
      */
     public boolean checkEmailDuplicate(String email) {
         return buyerRepository.existsByEmail(email) || sellerRepository.existsByEmail(email);
-    }
-
-    /**
-     * 비밀번호 확인
-     */
-    public boolean passwordMatches(String rawPassword, String encodedPassword) {
-        return encoder.matches(rawPassword, encodedPassword);
     }
 }

@@ -1,4 +1,4 @@
-package com.shop.respawn.sms.api_payload.status_code;
+package com.shop.respawn.exception.status_code;
 
 import lombok.Getter;
 import org.springframework.http.HttpStatus;

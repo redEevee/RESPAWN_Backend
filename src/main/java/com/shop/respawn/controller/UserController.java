@@ -1,10 +1,9 @@
 package com.shop.respawn.controller;
 
-import com.shop.respawn.domain.Admin;
 import com.shop.respawn.domain.Buyer;
 import com.shop.respawn.domain.Seller;
+import com.shop.respawn.dto.user.LoginOkResponse;
 import com.shop.respawn.dto.user.UserDto;
-import com.shop.respawn.repository.AdminRepository;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.SellerRepository;
 import com.shop.respawn.security.auth.PrincipalDetails;
@@ -13,6 +12,7 @@ import com.shop.respawn.util.RedisUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -25,6 +25,7 @@ import java.util.UUID;
 
 import static com.shop.respawn.util.MaskingUtil.*;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class UserController {
@@ -32,79 +33,49 @@ public class UserController {
     private final UserService userService;
     private final BuyerRepository buyerRepository;
     private final SellerRepository sellerRepository;
-    private final AdminRepository adminRepository;
     private final RedisUtil redisUtil;
 
     @PostMapping("/join/{userType}")
     public ResponseEntity<?> join(@RequestBody UserDto userDto) {
-        System.out.println("회원가입 컨트롤러 실행" + userDto);
         userService.join(userDto);
-        System.out.println("회원가입 완료");
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok("회원가입이 완료되었습니다.");
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<LoginOkResponse> me(Authentication authentication) {
+        String username = authentication.getName();
+        String authorities = authentication.getAuthorities().toString();
+        return ResponseEntity.ok(userService.getUserData(authorities, username));
     }
 
     /**
      * 로그인 완료 처리
      */
     @GetMapping("/loginOk")
-    public ResponseEntity<Map<String, String>> loginOk(HttpServletRequest request) {
+    public ResponseEntity<LoginOkResponse> loginOk(HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
+        System.out.println("username = " + username);
         String authorities = authentication.getAuthorities().toString();
         System.out.println("authorities = " + authorities);
 
-        String name = null;
-        Long userId = null;
-
-        switch (authorities) {
-            case "[ROLE_USER]" -> {
-                Buyer buyer = buyerRepository.findByUsername(username);
-                if (buyer != null) {
-                    name = buyer.getName();
-                    userId = buyer.getId();
-                }
-            }
-            case "[ROLE_SELLER]" -> {
-                Seller seller = sellerRepository.findByUsername(username);
-                if (seller != null) {
-                    name = seller.getName();
-                    userId = seller.getId();
-                }
-            }
-            case "[ROLE_ADMIN]" -> {
-                Admin admin = adminRepository.findByUsername(username);
-                if (admin != null) {
-                    name = admin.getName();
-                    userId = admin.getId();
-                }
-            }
-        }
-
-        boolean due = userService.isPasswordChangeDue(username);
-        boolean snoozed = userService.isSnoozed(username);
+        LoginOkResponse loginOkResponse = userService.getUserData(authorities, username);
 
         HttpSession session = request.getSession();
-        session.setAttribute("userId", userId);
+        session.setAttribute("userId", loginOkResponse.getUserId());
+        System.out.println("session.getId() = " + session.getId());
+        System.out.println("loginOkResponse = " + loginOkResponse);
 
-        Map<String, String> userInfo = new HashMap<>();
-        userInfo.put("name", name);
-        userInfo.put("username", username);
-        userInfo.put("authorities", authorities);
-        userInfo.put("passwordChangeDue", String.valueOf(due));
-        userInfo.put("passwordChangeSnoozed", String.valueOf(snoozed));
-
-        return ResponseEntity.ok(userInfo);
+        return ResponseEntity.ok(loginOkResponse);
     }
 
     @GetMapping("/logoutOk")
     public ResponseEntity<?> logoutOk() {
-        System.out.println("로그아웃 성공");
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/admin")
     public ResponseEntity<?> getAdminPage() {
-        System.out.println("어드민 인증 성공");
         return ResponseEntity.ok().build();
     }
 
@@ -112,61 +83,17 @@ public class UserController {
      * 일반 유저 정보 조회
      */
     @GetMapping("/user")
-    public ResponseEntity<?> getUserPage() {
-        System.out.println("일반 인증 성공");
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-
-        // User 먼저 조회
-        Buyer buyer = userService.getBuyerInfo(username);
-        Seller seller = userService.getSellerInfo(username);
-
-        if (buyer != null) {
-            buyer.renewExpiryDate();
-            buyerRepository.save(buyer);
-            return ResponseEntity.ok(
-                    new UserDto(buyer.getName(), buyer.getUsername(), buyer.getEmail(), buyer.getPhoneNumber(), buyer.getProvider(), buyer.getRole(), buyer.getGrade())
-            );
-        } else if (seller != null) {
-            seller.renewExpiryDate();
-            sellerRepository.save(seller);
-            return ResponseEntity.ok(
-                    new UserDto(seller.getName(), seller.getUsername(), seller.getEmail(), seller.getPhoneNumber(), seller.getRole())
-            );
-        }
-        // 사용자 없을 경우
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<UserDto> getUserPage(Authentication authentication) {
+        return ResponseEntity.ok(userService.getUserInfo(authentication.getName()));
     }
 
     /**
      * 마이페이지에서 비밀번호가 일치하는지 검사하는 메서드
      */
     @PostMapping("/myPage/checkPassword")
-    public ResponseEntity<Boolean> checkPassword(@RequestBody Map<String, String> request) {
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-
-        String inputPassword = request.get("password");
-
-        Buyer buyer = buyerRepository.findByUsername(username);
-        Seller seller = sellerRepository.findByUsername(username);
-
-        String encodedPassword = null;
-
-        if (buyer != null) {
-            encodedPassword = buyer.getPassword();
-        } else if (seller != null) {
-            encodedPassword = seller.getPassword();
-        }
-
-        if (encodedPassword == null || inputPassword == null) {
-            return ResponseEntity.ok(false);
-        }
-
-        boolean match = userService.passwordMatches(inputPassword, encodedPassword);
-        return ResponseEntity.ok(match);
+    public ResponseEntity<Boolean> checkPassword(Authentication authentication,
+                                                 @RequestBody Map<String, String> password) {
+        return ResponseEntity.ok(userService.isMatchPassword(authentication.getName(), password.get("password")));
     }
 
     /**
@@ -469,8 +396,8 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "비밀번호가 성공적으로 변경되었습니다."));
     }
 
-    @GetMapping("/me")
-    public Map<String, Object> me(Authentication authentication) {
+    @GetMapping("/bring-me")
+    public Map<String, Object> bringMe(Authentication authentication) {
         Map<String, Object> result = new HashMap<>();
         if (authentication == null || !(authentication.getPrincipal() instanceof PrincipalDetails pd)) {
             result.put("authenticated", false);
