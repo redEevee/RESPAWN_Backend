@@ -41,11 +41,16 @@ public class UserController {
         return ResponseEntity.ok("회원가입이 완료되었습니다.");
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<LoginOkResponse> me(Authentication authentication) {
+    @GetMapping("//bring-me")
+    public ResponseEntity<LoginOkResponse> bringMe(Authentication authentication) {
         String username = authentication.getName();
         String authorities = authentication.getAuthorities().toString();
-        return ResponseEntity.ok(userService.getUserData(authorities, username));
+
+        LoginOkResponse data = userService.getUserData(authorities, username);
+        if (data == null /* 또는 data.isEmpty() 등 도메인 규칙 */) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(data);
     }
 
     /**
@@ -396,8 +401,8 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "비밀번호가 성공적으로 변경되었습니다."));
     }
 
-    @GetMapping("/bring-me")
-    public Map<String, Object> bringMe(Authentication authentication) {
+    @GetMapping("/me")
+    public Map<String, Object> me(Authentication authentication) {
         Map<String, Object> result = new HashMap<>();
         if (authentication == null || !(authentication.getPrincipal() instanceof PrincipalDetails pd)) {
             result.put("authenticated", false);
