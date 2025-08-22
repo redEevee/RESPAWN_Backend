@@ -30,12 +30,12 @@ public class MyService {
 
     public void initData() {
 
-        Buyer buyer = Buyer.createBuyerWithInitLists("강지원", "kkjjww1122", encoder.encode("kjw741147"), "kkjjww1122@naver.com", "01024466832", Role.ROLE_USER);
+        Buyer buyer = Buyer.createBuyerWithInitLists("강지원", "kkjjww1122", encoder.encode("kjw741147"), "kkjjww1122@naver.com", "01024466832", Role.ROLE_USER, Grade.BASIC);
         buyer.renewExpiryDate();
         buyerRepository.save(buyer);
         em.persist(buyer);
 
-        Buyer buyer1 = Buyer.createBuyerWithInitLists("test", "testUser", encoder.encode("testPassword"), "test@test.com", "01012345678", Role.ROLE_USER);
+        Buyer buyer1 = Buyer.createBuyerWithInitLists("test", "testUser", encoder.encode("testPassword"), "test@test.com", "01012345678", Role.ROLE_USER, Grade.BASIC);
         buyer1.renewExpiryDate();
         buyerRepository.save(buyer1);
         em.persist(buyer1);
