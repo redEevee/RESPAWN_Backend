@@ -1,16 +1,15 @@
 package com.shop.respawn.dto.user;
 
-import com.shop.respawn.domain.AccountStatus;
-import com.shop.respawn.domain.Buyer;
-import com.shop.respawn.domain.Role;
-import com.shop.respawn.domain.Seller;
+import com.shop.respawn.domain.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Data
 @Builder
 @NoArgsConstructor
@@ -26,6 +25,7 @@ public class UserSummaryDto {
     private String phoneNumber;
     private Role role;              // ROLE_USER / ROLE_SELLER
     private LocalDateTime createdAt; // 가입일
+    private Grade grade;
 
     // AccountStatus 주요 필드
     private Boolean accountNonExpired;   // 만료 아님
@@ -86,7 +86,8 @@ public class UserSummaryDto {
                 .email(buyer.getEmail())
                 .phoneNumber(buyer.getPhoneNumber())
                 .role(buyer.getRole())
-                .createdAt(buyer.getCreatedAt());
+                .createdAt(buyer.getCreatedAt())
+                .grade(buyer.getGrade());
         applyStatus(userSummaryDtoBuilder, buyer.getAccountStatus());
         return userSummaryDtoBuilder.build();
     }

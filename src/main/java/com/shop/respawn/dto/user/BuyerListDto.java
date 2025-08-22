@@ -1,6 +1,7 @@
 package com.shop.respawn.dto.user;
 
 import com.shop.respawn.domain.Buyer;
+import com.shop.respawn.domain.Grade;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,6 +20,7 @@ public class BuyerListDto {
     private String phoneNumber;  // 전화번호
     private String email;        // 이메일
     private LocalDateTime createdAt; // 가입일
+    private Grade grade;
 
     public static BuyerListDto from(Buyer buyer) {
         return BuyerListDto.builder()
@@ -28,6 +30,7 @@ public class BuyerListDto {
                 .phoneNumber(buyer.getPhoneNumber())
                 .email(buyer.getEmail())
                 .createdAt(buyer.getCreatedAt())
+                .grade(buyer.getGrade())
                 .build();
     }
 }
