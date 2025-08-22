@@ -64,7 +64,7 @@ public class Buyer extends BaseTimeEntity {
     @OneToMany(mappedBy = "buyer")
     private List<Order> orders = new ArrayList<>();
 
-    private Buyer(String name, String username, String password, String email, String phoneNumber, String provider, Role role) {
+    private Buyer(String name, String username, String password, String email, String phoneNumber, String provider, Role role, Grade grade) {
         this.name = name;
         this.username = username;
         this.password = password;
@@ -72,10 +72,11 @@ public class Buyer extends BaseTimeEntity {
         this.phoneNumber = phoneNumber;
         this.provider = provider;
         this.role = role;
+        this.grade = grade;
     }
 
     //정적 팩토리 메서드
-    public static Buyer createBuyer(String name, String username, String password, String email, String phoneNumber, String provider, Role role) {
+    public static Buyer createBuyer(String name, String username, String password, String email, String phoneNumber, String provider, Role role, Grade grade) {
         Buyer buyer = Buyer.builder()
                 .name(name)
                 .username(username)
@@ -84,6 +85,7 @@ public class Buyer extends BaseTimeEntity {
                 .phoneNumber(phoneNumber)
                 .provider(provider)
                 .role(role)
+                .grade(grade)
                 .accountStatus(new AccountStatus(true)) // 가입시 1년 만료일 자동 할당
                 .build();
         if (buyer.accountStatus.getLastPasswordChangedAt() == null) {
@@ -122,8 +124,8 @@ public class Buyer extends BaseTimeEntity {
     }
 
     // initData 용도
-    public static Buyer createBuyerWithInitLists(String name, String username, String password, String email, String phoneNumber, Role role) {
-        Buyer buyer = new Buyer(name, username, password, email, phoneNumber, "local", role);
+    public static Buyer createBuyerWithInitLists(String name, String username, String password, String email, String phoneNumber, Role role, Grade grade) {
+        Buyer buyer = new Buyer(name, username, password, email, phoneNumber, "local", role, grade);
         buyer.orders = new ArrayList<>();
         buyer.addresses = new ArrayList<>();
         buyer.cart = new ArrayList<>();
