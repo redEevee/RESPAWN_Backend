@@ -1,4 +1,4 @@
-package com.shop.respawn.dto;
+package com.shop.respawn.exception;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.shop.respawn.exception.status_code.BaseCode;
@@ -25,7 +25,7 @@ public class CommonResponse<T> {
         return new CommonResponse<>(true, code.getCode(), code.getMessage(), result);
     }
 
-    public static <T> CommonResponse<T> onFailure(String code, String message, T result) {
-        return new CommonResponse<>(false, code, message, result);
+    public static <T> CommonResponse<T> onFailure(BaseCode code, T result) {
+        return new CommonResponse<>(false, code.getCode(), code.getMessage(), result);
     }
 }

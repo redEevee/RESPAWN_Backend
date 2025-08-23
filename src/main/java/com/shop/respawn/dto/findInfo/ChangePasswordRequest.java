@@ -1,4 +1,4 @@
-package com.shop.respawn.dto.user;
+package com.shop.respawn.dto.findInfo;
 
 import lombok.Data;
 

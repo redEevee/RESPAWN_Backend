@@ -3,7 +3,7 @@ package com.shop.respawn.dto.findInfo;
 import lombok.Data;
 
 @Data
-public class findIdResponse {
+public class FindInfoResponse {
 
     private String maskedUsername;
     private String maskedEmail;
@@ -12,7 +12,7 @@ public class findIdResponse {
     private Long userId;
     private String error; // 추가
 
-    public findIdResponse(String maskedUsername, String maskedEmail, String maskedPhoneNumber, String token, Long userId) {
+    public FindInfoResponse(String maskedUsername, String maskedEmail, String maskedPhoneNumber, String token, Long userId) {
         this.maskedUsername = maskedUsername;
         this.maskedEmail = maskedEmail;
         this.maskedPhoneNumber = maskedPhoneNumber;
@@ -20,7 +20,13 @@ public class findIdResponse {
         this.userId = userId;
     }
 
-    public findIdResponse(String error) { // 에러 전용 생성자
+    public FindInfoResponse(String error) { // 에러 전용 생성자
         this.error = error;
+    }
+
+    public FindInfoResponse(String maskedEmail, String maskedPhoneNumber, Long userId) {
+        this.maskedEmail = maskedEmail;
+        this.maskedPhoneNumber = maskedPhoneNumber;
+        this.userId = userId;
     }
 }

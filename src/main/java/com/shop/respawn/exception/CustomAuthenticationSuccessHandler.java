@@ -27,24 +27,27 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
     @Override
     @Transactional
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
-                                        Authentication authentication) throws IOException, ServletException {
-        String username = authentication.getName();
-
-        Buyer buyer = buyerRepository.findByUsername(username);
-        if (buyer != null) {
-            buyer.getAccountStatus().resetFailedLoginAttempts();
-            buyerRepository.save(buyer);
-        } else {
-            Seller seller = sellerRepository.findByUsername(username);
-            if (seller != null) {
-                seller.getAccountStatus().resetFailedLoginAttempts();
-                sellerRepository.save(seller);
+                                        Authentication authentication) throws IOException {
+        switch (authentication.getAuthorities().toString()) {
+            case "[ROLE_USER]" -> {
+                Buyer buyer = buyerRepository.findByUsername(authentication.getName());
+                if (buyer != null) {
+                    buyer.getAccountStatus().resetFailedLoginAttempts();
+                    buyerRepository.save(buyer);
+                }
+            }
+            case "[ROLE_SELLER]" -> {
+                Seller seller = sellerRepository.findByUsername(authentication.getName());
+                if (seller != null) {
+                    seller.getAccountStatus().resetFailedLoginAttempts();
+                    sellerRepository.save(seller);
+                }
             }
         }
 
         // 추가: 비밀번호 변경 필요/스누즈 여부 자동 판정
-        boolean due = userService.isPasswordChangeDue(username);   // 3개월 기준[5][2]
-        boolean snoozed = userService.isSnoozed(username);         // 7일 억제 여부[5]
+        boolean due = userService.isPasswordChangeDue(authentication.getName());   // 3개월 기준[5][2]
+        boolean snoozed = userService.isSnoozed(authentication.getName());         // 7일 억제 여부[5]
 
         // 전달 방안 1: /loginOk 리다이렉트에 쿼리파라미터로 신호 전달
         String target = "/loginOk?pwdDue=" + due + "&pwdSnoozed=" + snoozed;

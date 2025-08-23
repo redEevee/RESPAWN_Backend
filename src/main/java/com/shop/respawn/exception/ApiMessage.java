@@ -1,4 +1,4 @@
-package com.shop.respawn.dto;
+package com.shop.respawn.exception;
 
 import com.shop.respawn.exception.status_code.BaseCode;
 

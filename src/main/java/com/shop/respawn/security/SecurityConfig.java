@@ -4,7 +4,6 @@ import com.shop.respawn.exception.CustomAuthenticationFailureHandler;
 import com.shop.respawn.exception.CustomAuthenticationSuccessHandler;
 import com.shop.respawn.exception.CustomLogoutSuccessHandler;
 import com.shop.respawn.security.oauth.PrincipalOauth2UserService;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -50,6 +49,7 @@ public class SecurityConfig {
          */
         http
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/bring-me").authenticated()
                         .requestMatchers("/user/**").authenticated()
                         .requestMatchers("/admin/**").hasAnyRole("ADMIN")
                         .anyRequest().permitAll()
