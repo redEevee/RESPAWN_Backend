@@ -1,5 +1,6 @@
 package com.shop.respawn.domain;
 
+import com.shop.respawn.config.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,7 +17,7 @@ import static lombok.AccessLevel.PROTECTED;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = PROTECTED)
-public class Seller {
+public class Seller extends BaseTimeEntity {
 
     @Id @GeneratedValue
     @Column(name = "seller_id")
@@ -46,7 +47,7 @@ public class Seller {
 
     //정적 팩토리 메서드
     public static Seller createSeller(String name, String username, String company, Long companyNumber, String password, String email, String phoneNumber, Role role) {
-        return Seller.builder()
+        Seller seller = Seller.builder()
                 .name(name)
                 .username(username)
                 .company(company)
@@ -57,6 +58,10 @@ public class Seller {
                 .role(role)
                 .accountStatus(new AccountStatus(true)) // 가입시 1년 만료일 자동 할당
                 .build();
+        if (seller.accountStatus.getLastPasswordChangedAt() == null) {
+            seller.accountStatus.setLastPasswordChangedAt(LocalDateTime.now());
+        }
+        return seller;
     }
 
     //연관 관계 편의 메서드
@@ -70,4 +75,10 @@ public class Seller {
         this.password = newPassword;
     }
 
+    @PrePersist
+    public void prePersist() {
+        if (this.accountStatus != null && this.accountStatus.getLastPasswordChangedAt() == null) {
+            this.accountStatus.setLastPasswordChangedAt(LocalDateTime.now());
+        }
+    }
 }

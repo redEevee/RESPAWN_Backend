@@ -1,8 +1,8 @@
 package com.shop.respawn.controller;
 
-import com.shop.respawn.dto.PaymentDto;
-import com.shop.respawn.dto.PrepareRequest;
-import com.shop.respawn.dto.VerifyRequest;
+import com.shop.respawn.dto.Payment.PaymentDto;
+import com.shop.respawn.dto.Payment.PrepareRequest;
+import com.shop.respawn.dto.Payment.VerifyRequest;
 import com.shop.respawn.service.OrderService;
 import com.shop.respawn.service.PaymentService;
 import com.siot.IamportRestClient.exception.IamportResponseException;

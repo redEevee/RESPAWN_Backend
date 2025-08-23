@@ -5,6 +5,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
 
-public interface ItemRepository extends MongoRepository<Item, String> {
+public interface ItemRepository extends MongoRepository<Item, String>, ItemRepositoryCustom {
     List<Item> findBySellerId(String sellerId);
+
 }

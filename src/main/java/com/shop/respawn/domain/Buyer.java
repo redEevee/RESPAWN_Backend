@@ -1,5 +1,6 @@
 package com.shop.respawn.domain;
 
+import com.shop.respawn.config.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -7,6 +8,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.shop.respawn.domain.Grade.*;
 import static jakarta.persistence.EnumType.STRING;
 import static lombok.AccessLevel.*;
 
@@ -15,7 +17,7 @@ import static lombok.AccessLevel.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = PROTECTED)
-public class Buyer {
+public class Buyer extends BaseTimeEntity {
 
     @Id @GeneratedValue
     @Column(name = "buyer_id")
@@ -39,9 +41,12 @@ public class Buyer {
     @Enumerated(STRING)
     private Role role;
 
+    @Enumerated(EnumType.STRING)
+    private Grade grade = BASIC;
+
     @Builder.Default
     @OneToMany(mappedBy = "buyer")
-    private List<Point> points = new ArrayList<>();
+    private List<PointLedger> pointLedgers = new ArrayList<>();
 
     // 계정 상태 필드 추가
     @Embedded
@@ -59,7 +64,7 @@ public class Buyer {
     @OneToMany(mappedBy = "buyer")
     private List<Order> orders = new ArrayList<>();
 
-    private Buyer(String name, String username, String password, String email, String phoneNumber, String provider, Role role) {
+    private Buyer(String name, String username, String password, String email, String phoneNumber, String provider, Role role, Grade grade) {
         this.name = name;
         this.username = username;
         this.password = password;
@@ -67,11 +72,12 @@ public class Buyer {
         this.phoneNumber = phoneNumber;
         this.provider = provider;
         this.role = role;
+        this.grade = grade;
     }
 
     //정적 팩토리 메서드
-    public static Buyer createBuyer(String name, String username, String password, String email, String phoneNumber, String provider, Role role) {
-        return Buyer.builder()
+    public static Buyer createBuyer(String name, String username, String password, String email, String phoneNumber, String provider, Role role, Grade grade) {
+        Buyer buyer = Buyer.builder()
                 .name(name)
                 .username(username)
                 .password(password)
@@ -79,8 +85,13 @@ public class Buyer {
                 .phoneNumber(phoneNumber)
                 .provider(provider)
                 .role(role)
+                .grade(grade)
                 .accountStatus(new AccountStatus(true)) // 가입시 1년 만료일 자동 할당
                 .build();
+        if (buyer.accountStatus.getLastPasswordChangedAt() == null) {
+            buyer.accountStatus.setLastPasswordChangedAt(LocalDateTime.now());
+        }
+        return buyer;
     }
 
     public void updatePhoneNumber(String newPhoneNumber) {
@@ -107,12 +118,24 @@ public class Buyer {
         }
     }
 
+    // 맴버십 변경
+    public void updateGrade(Grade grade) {
+        this.grade = grade;
+    }
+
     // initData 용도
-    public static Buyer createBuyerWithInitLists(String name, String username, String password, String email, String phoneNumber, Role role) {
-        Buyer buyer = new Buyer(name, username, password, email, phoneNumber, "local", role);
+    public static Buyer createBuyerWithInitLists(String name, String username, String password, String email, String phoneNumber, Role role, Grade grade) {
+        Buyer buyer = new Buyer(name, username, password, email, phoneNumber, "local", role, grade);
         buyer.orders = new ArrayList<>();
         buyer.addresses = new ArrayList<>();
         buyer.cart = new ArrayList<>();
         return buyer;
+    }
+
+    @PrePersist
+    public void prePersist() {
+        if (this.accountStatus != null && this.accountStatus.getLastPasswordChangedAt() == null) {
+            this.accountStatus.setLastPasswordChangedAt(LocalDateTime.now());
+        }
     }
 }

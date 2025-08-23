@@ -8,8 +8,6 @@ import com.shop.respawn.service.ItemService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -164,5 +162,62 @@ public class ItemController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    /**
+     * 아이템 검색 (키워드)
+     * 예: GET /api/items/search?query=아이폰
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<ItemDto>> searchItems(@RequestParam(name = "query", required = false) String query) {
+        List<Item> items = itemService.searchItems(query);
+        List<ItemDto> itemDtos = items.stream()
+                .map(item -> new ItemDto(
+                        item.getId(),
+                        item.getName(),
+                        item.getDescription(),
+                        item.getDeliveryType(),
+                        item.getDeliveryFee(),
+                        item.getCompany(),
+                        item.getCompanyNumber(),
+                        item.getPrice(),
+                        item.getStockQuantity(),
+                        item.getSellerId(),
+                        item.getImageUrl(),
+                        item.getCategoryIds(),
+                        item.getStatus()
+                ))
+                .toList();
+        return ResponseEntity.ok(itemDtos);
+    }
+
+    /**
+     * 아이템 검색 (키워드 + 카테고리 필터)
+     * 예: GET /api/items/search/advanced?query=아이폰&categoryIds=phone&categoryIds=apple
+     */
+    @GetMapping("/search/advanced")
+    public ResponseEntity<List<ItemDto>> searchItemsAdvanced(
+            @RequestParam(name = "query", required = false) String query,
+            @RequestParam(name = "categoryIds", required = false) List<String> categoryIds
+    ) {
+        List<Item> items = itemService.searchItemsByCategory(query, categoryIds);
+        List<ItemDto> itemDtos = items.stream()
+                .map(item -> new ItemDto(
+                        item.getId(),
+                        item.getName(),
+                        item.getDescription(),
+                        item.getDeliveryType(),
+                        item.getDeliveryFee(),
+                        item.getCompany(),
+                        item.getCompanyNumber(),
+                        item.getPrice(),
+                        item.getStockQuantity(),
+                        item.getSellerId(),
+                        item.getImageUrl(),
+                        item.getCategoryIds(),
+                        item.getStatus()
+                ))
+                .toList();
+        return ResponseEntity.ok(itemDtos);
     }
 }

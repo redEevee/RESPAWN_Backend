@@ -30,23 +30,28 @@ public class MyService {
 
     public void initData() {
 
-        Buyer buyer = Buyer.createBuyerWithInitLists("강지원", "kkjjww1122", encoder.encode("kjw741147"), "kkjjww1122@naver.com", "01024466832", Role.ROLE_USER);
+        Buyer buyer = Buyer.createBuyerWithInitLists("강지원", "kkjjww1122", encoder.encode("kjw741147"), "kkjjww1122@naver.com", "01024466832", Role.ROLE_USER, Grade.BASIC);
+        buyer.renewExpiryDate();
         buyerRepository.save(buyer);
         em.persist(buyer);
 
-        Buyer buyer1 = Buyer.createBuyerWithInitLists("test", "testUser", encoder.encode("testPassword"), "test@test.com", "01012345678", Role.ROLE_USER);
+        Buyer buyer1 = Buyer.createBuyerWithInitLists("test", "testUser", encoder.encode("testPassword"), "test@test.com", "01012345678", Role.ROLE_USER, Grade.BASIC);
+        buyer1.renewExpiryDate();
         buyerRepository.save(buyer1);
         em.persist(buyer1);
 
         Seller seller1 = Seller.createSeller("강지원", "b", "Fanatec", 1231212345L, encoder.encode("b"), "jiwon426@naver.com", "01023456789", Role.ROLE_SELLER);
+        seller1.renewExpiryDate();
         sellerRepository.save(seller1);
         em.persist(seller1);
 
         Seller seller2 = Seller.createSeller("유예슬", "c", "Creative", 1230946578L, encoder.encode("c"), "jiwon426@naver.com", "01098765432", Role.ROLE_SELLER);
+        seller2.renewExpiryDate();
         sellerRepository.save(seller2);
         em.persist(seller2);
 
         Seller seller3 = Seller.createSeller("로지텍", "d", "Logitech", 9876543211L, encoder.encode("d"), "logitech9876@gmail.com", "01055430909", Role.ROLE_SELLER);
+        seller3.renewExpiryDate();
         sellerRepository.save(seller3);
         em.persist(seller3);
 

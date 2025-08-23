@@ -16,6 +16,7 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @Service
@@ -67,7 +68,7 @@ public class PrincipalOauth2UserService extends DefaultOAuth2UserService {
         String username = provider + "_" + providerId; // google_10021320120
         String password = encoder.encode("겟인데어");
         String email = oAuth2UserInfo.getEmail();
-        String role = "ROLE_USER";
+        Role role = Role.ROLE_USER;
 
         Buyer buyer = buyerRepository.findByUsername(username);
 
@@ -78,7 +79,7 @@ public class PrincipalOauth2UserService extends DefaultOAuth2UserService {
                     .username(username)
                     .password(password)
                     .email(email)
-                    .role(Role.valueOf(role))
+                    .role(role)
                     .provider(provider)
                     .providerId(providerId)
                     .build();
