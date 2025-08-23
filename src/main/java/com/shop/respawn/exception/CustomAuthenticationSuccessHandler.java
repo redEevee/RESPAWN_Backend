@@ -5,7 +5,6 @@ import com.shop.respawn.domain.Seller;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.repository.SellerRepository;
 import com.shop.respawn.service.UserService;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
