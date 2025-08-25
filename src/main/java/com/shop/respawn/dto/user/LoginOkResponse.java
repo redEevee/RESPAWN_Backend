@@ -13,5 +13,20 @@ public class LoginOkResponse {
     private Role role;
     private boolean passwordChangeDue;
     private boolean passwordChangeSnoozed;
-    private Long userId;                  // 세션 저장용
+    private Long userId;
+
+    // 세션 저장용
+    public LoginOkResponse(String name, String username, String authorities, Role role, Long userId) {
+        this.name = name;
+        this.username = username;
+        this.authorities = authorities;
+        this.role = role;
+        this.userId = userId;
+    }
+
+    public LoginOkResponse(String name, Role role, Long userId) {
+        this.name = name;
+        this.role = role;
+        this.userId = userId;
+    }
 }

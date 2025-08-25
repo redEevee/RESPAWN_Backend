@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-public interface BuyerRepository extends JpaRepository<Buyer, Long> {
+public interface BuyerRepository extends JpaRepository<Buyer, Long>, BuyerRepositoryCustom {
 
     Buyer findByUsername(String username);
 
