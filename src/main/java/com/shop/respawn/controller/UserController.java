@@ -9,6 +9,7 @@ import com.shop.respawn.dto.findInfo.FindInfoResponse;
 import com.shop.respawn.dto.user.*;
 import com.shop.respawn.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,10 +56,12 @@ public class UserController {
      * 로그인 완료 처리
      */
     @GetMapping("/loginOk")
-    public ResponseEntity<LoginOkResponse> loginOk(Authentication authentication) {
-        return ResponseEntity.ok(
-                userService.getUserData(authentication.getName(),
-                authentication.getAuthorities().toString()));
+    public ResponseEntity<LoginOkResponse> loginOk(Authentication authentication,
+                                                   HttpSession session) {
+        LoginOkResponse userData = userService.getUserData(authentication.getName(),
+                authentication.getAuthorities().toString());
+        session.setAttribute("userId", userData.getUserId());
+        return ResponseEntity.ok(userData);
     }
 
     /**
