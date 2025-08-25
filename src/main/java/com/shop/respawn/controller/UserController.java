@@ -99,12 +99,12 @@ public class UserController {
      * 마이페이지에서 비밀번호가 일치하는지 검사하는 메서드
      */
     @PostMapping("/myPage/checkPassword")
-    public ResponseEntity<ApiMessage> checkPassword(Authentication authentication,
+    public ResponseEntity<CommonResponse<?>> checkPassword(Authentication authentication,
                                                  @Valid @RequestBody PasswordRequest request) {
         if(userService.isMatchPassword(authentication.getName(), authentication.getAuthorities().toString(), request.getPassword())) {
-            return ResponseEntity.ok(ApiMessage.of(_PASSWORD_CHECKED));
+            return ResponseEntity.ok(CommonResponse.ok(_PASSWORD_CHECKED));
         } else {
-            return ResponseEntity.badRequest().body(ApiMessage.of(_PASSWORD_MISMATCH));
+            return ResponseEntity.badRequest().body(CommonResponse.onFailure(_PASSWORD_MISMATCH, null));
         }
     }
 
