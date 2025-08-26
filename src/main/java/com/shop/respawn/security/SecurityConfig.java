@@ -3,6 +3,7 @@ package com.shop.respawn.security;
 import com.shop.respawn.exception.CustomAuthenticationFailureHandler;
 import com.shop.respawn.exception.CustomAuthenticationSuccessHandler;
 import com.shop.respawn.exception.CustomLogoutSuccessHandler;
+import com.shop.respawn.exception.OAuth2AuthenticationFailureJsonHandler;
 import com.shop.respawn.security.oauth.PrincipalOauth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -32,6 +33,7 @@ public class SecurityConfig {
     private final PrincipalOauth2UserService principalOauth2UserService;
     private final CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
     private final CustomAuthenticationFailureHandler customAuthenticationFailureHandler;
+    private final OAuth2AuthenticationFailureJsonHandler oAuth2FailureHandler;
     private final CustomLogoutSuccessHandler customLogoutSuccessHandler;
 
     @Bean
@@ -74,6 +76,7 @@ public class SecurityConfig {
                                 .userService(principalOauth2UserService)
                         )
                         .defaultSuccessUrl("http://localhost:3000/loginOk")
+                        .failureHandler(oAuth2FailureHandler)
                         .permitAll()
                 );
 

@@ -48,4 +48,13 @@ public interface BaseRepository {
             EnumPath<R> rolePath,
             StringPath usernamePath,
             String username);
+
+    <E> boolean existsUserIdentityConflict(
+            EntityPathBase<E> root,
+            StringPath emailPath,
+            StringPath phoneNumberPath,
+            StringPath usernamePath,
+            String email,
+            String phoneNumber,
+            String username);
 }

@@ -17,4 +17,6 @@ public interface BuyerRepositoryCustom {
     FailureResultDto increaseFailedAttemptsAndGetStatus(String username);
 
     Role findUserDtoRoleByUsername(String username);
+
+    boolean existsUserIdentityConflict(String email, String phoneNumber, String username);
 }

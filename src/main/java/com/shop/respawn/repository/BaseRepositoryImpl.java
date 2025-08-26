@@ -135,4 +135,41 @@ public class BaseRepositoryImpl implements BaseRepository {
                 .where(usernamePath.eq(username))
                 .fetchOne();
     }
+
+    @Override
+    public <E> boolean existsUserIdentityConflict(
+            EntityPathBase<E> root,
+            StringPath emailPath,
+            StringPath phoneNumberPath,
+            StringPath usernamePath,
+            String email,
+            String phoneNumber,
+            String username
+    ) {
+        Integer one = queryFactory
+                .selectOne()
+                .from(root)
+                .where(
+                        anyOf(
+                                eqIfPresent(emailPath, email),
+                                eqIfPresent(phoneNumberPath, phoneNumber),
+                                eqIfPresent(usernamePath, username)
+                        )
+                )
+                .fetchFirst();
+        return one != null; // 하나라도 매칭되면 존재 [7][6]
+    }
+
+    private <T> BooleanExpression eqIfPresent(SimpleExpression<T> path, T value) {
+        return value != null ? path.eq(value) : null; // null은 where에서 무시 [2][4]
+    }
+
+    private BooleanExpression anyOf(BooleanExpression... express) {
+        BooleanExpression combined = null;
+        for (BooleanExpression e : express) {
+            if (e == null) continue;
+            combined = (combined == null) ? e : combined.or(e);
+        }
+        return combined;
+    }
 }

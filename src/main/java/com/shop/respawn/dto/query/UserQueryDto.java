@@ -23,4 +23,5 @@ public class UserQueryDto {
         this.name = name;
         this.role = role;
     }
+
 }

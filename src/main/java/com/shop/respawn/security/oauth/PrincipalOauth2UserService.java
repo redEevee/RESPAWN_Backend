@@ -1,6 +1,7 @@
 package com.shop.respawn.security.oauth;
 
 import com.shop.respawn.domain.Buyer;
+import com.shop.respawn.domain.Grade;
 import com.shop.respawn.domain.Role;
 import com.shop.respawn.repository.BuyerRepository;
 import com.shop.respawn.security.auth.PrincipalDetails;
@@ -13,10 +14,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 @Service
@@ -24,18 +25,14 @@ import java.util.Map;
 public class PrincipalOauth2UserService extends DefaultOAuth2UserService {
 
     private final BuyerRepository buyerRepository;
-
     private final BCryptPasswordEncoder encoder;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-        System.out.println("getClientRegistration = " + userRequest.getClientRegistration()); // registrationId로 어떤 OAuth로 로그인 했는지 확인 가능
-        System.out.println("getAccessToken = " + userRequest.getAccessToken().getTokenValue());
-
+        // registrationId로 어떤 OAuth로 로그인 했는지 확인 가능
         OAuth2User oAuth2User = super.loadUser(userRequest);
         // 구글로그인 버튼 클릭 -> 구글로그인창 -> 로그인을 완료 -> code를 리턴(OAuth2-Client 라이브러리) -> AccessToken 요청
         // userRequest 정보 -> 회원 프로필 받아야함(loadUser함수 호출) -> 구글로부터 회원프로필 받아준다.
-        System.out.println("getAttributes = " + oAuth2User.getAttributes());
 
         OAuth2UserInfo oAuth2UserInfo = null;
         switch (userRequest.getClientRegistration().getRegistrationId()) {
@@ -68,27 +65,38 @@ public class PrincipalOauth2UserService extends DefaultOAuth2UserService {
         String username = provider + "_" + providerId; // google_10021320120
         String password = encoder.encode("겟인데어");
         String email = oAuth2UserInfo.getEmail();
+        String phoneNumber = oAuth2UserInfo.getPhoneNumber();
         Role role = Role.ROLE_USER;
+        Grade grade = Grade.BASIC;
 
         Buyer buyer = buyerRepository.findByUsername(username);
-
         if (buyer == null) {
-            System.out.println("소셜 로그인이 최초입니다.");
-            buyer = Buyer.builder()
-                    .name(name)
-                    .username(username)
-                    .password(password)
-                    .email(email)
-                    .role(role)
-                    .provider(provider)
-                    .providerId(providerId)
-                    .build();
-            buyerRepository.save(buyer);
+            if(!buyerRepository.existsUserIdentityConflict(email, phoneNumber, username)){
+                Buyer newBuyer = Buyer.builder()
+                        .name(name)
+                        .username(username)
+                        .password(password)
+                        .email(email)
+                        .role(role)
+                        .grade(grade)
+                        .provider(provider)
+                        .providerId(providerId)
+                        .build();
+                // 비번 기준 시각 초기화 보정
+                if (newBuyer.getAccountStatus().getLastPasswordChangedAt() == null) {
+                    newBuyer.getAccountStatus().markPasswordChangedNow();
+                }
+                newBuyer.renewExpiryDate(); // 정책에 따라 유지
+                buyerRepository.save(newBuyer);
+                return new PrincipalDetails(newBuyer, oAuth2User.getAttributes());
+            } else {
+                throw new OAuth2AuthenticationException(
+                        new OAuth2Error("social_id_conflict"),
+                        "해당 이메일 또는 전화번호로 가입된 아이디가 있습니다."
+                );
+            }
         } else {
-            System.out.println("소셜 로그인을 이미 한적이 있습니다. 당신은 자동회원가입이 되어 있습니다.");
+            return new PrincipalDetails(buyer, oAuth2User.getAttributes());
         }
-
-        // 회원 가입을 강제로 진행해볼 예정
-        return new PrincipalDetails(buyer, oAuth2User.getAttributes());
     }
 }

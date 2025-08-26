@@ -60,4 +60,17 @@ public class BuyerRepositoryImpl implements BuyerRepositoryCustom {
                 5
         );
     }
+
+    @Override
+    public boolean existsUserIdentityConflict(String email, String phoneNumber, String username) {
+        return base.existsUserIdentityConflict(
+                buyer,
+                buyer.email,
+                buyer.phoneNumber,
+                buyer.username,
+                email,
+                phoneNumber,
+                username
+        );
+    }
 }

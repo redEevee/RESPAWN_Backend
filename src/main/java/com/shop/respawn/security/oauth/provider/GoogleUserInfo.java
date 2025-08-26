@@ -2,12 +2,10 @@ package com.shop.respawn.security.oauth.provider;
 
 import java.util.Map;
 
-public class GoogleUserInfo implements OAuth2UserInfo{
-
-    private final Map<String, Object> attributes; // getAttributes()
-    public GoogleUserInfo(Map<String, Object> attributes) {
-        this.attributes = attributes;
-    }
+/**
+ * @param attributes getAttributes()
+ */
+public record GoogleUserInfo(Map<String, Object> attributes) implements OAuth2UserInfo {
 
     @Override
     public String getProvider() {
@@ -27,5 +25,10 @@ public class GoogleUserInfo implements OAuth2UserInfo{
     @Override
     public String getName() {
         return (String) attributes.get("name");
+    }
+
+    @Override
+    public String getPhoneNumber() {
+        return (String) attributes.get("phone_number");
     }
 }
