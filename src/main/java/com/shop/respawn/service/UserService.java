@@ -4,8 +4,10 @@ import com.shop.respawn.domain.*;
 import com.shop.respawn.dto.findInfo.FindInfoRequest;
 import com.shop.respawn.dto.findInfo.FindInfoResponse;
 import com.shop.respawn.dto.findInfo.ResetPasswordRequest;
+import com.shop.respawn.dto.query.UserQueryDto;
 import com.shop.respawn.dto.user.LoginOkResponse;
 import com.shop.respawn.dto.user.MeResponse;
+import com.shop.respawn.dto.user.ProfileUpdateRequest;
 import com.shop.respawn.dto.user.UserDto;
 import com.shop.respawn.email.EmailService;
 import com.shop.respawn.repository.AdminRepository;
@@ -17,14 +19,17 @@ import com.shop.respawn.util.RedisUtil;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.UUID;
 
 import static com.shop.respawn.util.MaskingUtil.*;
@@ -73,13 +78,28 @@ public class UserService {
      */
     public LoginOkResponse getUserData(String username, String authorities) {
 
+        LoginOkResponse userData = getSimpleUserData(username, authorities);
+
+        boolean due = isPasswordChangeDue(username);
+        boolean snoozed = isSnoozed(username);
+        return new LoginOkResponse(userData.getName(), username, authorities, userData.getRole(), due, snoozed, userData.getUserId());
+    }
+
+    public LoginOkResponse getBringMe(String username, String authorities) {
+
+        LoginOkResponse userData = getSimpleUserData(username, authorities);
+        return new LoginOkResponse(userData.getName(), username, authorities, userData.getRole(), userData.getUserId());
+    }
+
+    @NotNull
+    private LoginOkResponse getSimpleUserData(String username, String authorities) {
         String name = null;
         Long userId = null;
         Role role = null;
 
         switch (authorities) {
             case "[ROLE_USER]" -> {
-                Buyer buyer = buyerRepository.findByUsername(username);
+                UserQueryDto buyer = buyerRepository.findUserDtoByUsername(username);
                 if (buyer != null) {
                     name = buyer.getName();
                     userId = buyer.getId();
@@ -87,7 +107,7 @@ public class UserService {
                 }
             }
             case "[ROLE_SELLER]" -> {
-                Seller seller = sellerRepository.findByUsername(username);
+                UserQueryDto seller = sellerRepository.findUserDtoByUsername(username);
                 if (seller != null) {
                     name = seller.getName();
                     userId = seller.getId();
@@ -95,7 +115,7 @@ public class UserService {
                 }
             }
             case "[ROLE_ADMIN]" -> {
-                Admin admin = adminRepository.findByUsername(username);
+                UserQueryDto admin = adminRepository.findUserDtoByUsername(username);
                 if (admin != null) {
                     name = admin.getName();
                     userId = admin.getId();
@@ -103,10 +123,7 @@ public class UserService {
                 }
             }
         }
-
-        boolean due = isPasswordChangeDue(username);
-        boolean snoozed = isSnoozed(username);
-        return new LoginOkResponse(name, username, authorities, role, due, snoozed, userId);
+        return new LoginOkResponse(name, role, userId);
     }
 
     public LoginOkResponse bringMe(Authentication authentication) {
@@ -117,7 +134,7 @@ public class UserService {
         String authorities = authentication.getAuthorities() != null
                 ? authentication.getAuthorities().toString()
                 : "[]";
-        LoginOkResponse data = getUserData(username, authorities);
+        LoginOkResponse data = getBringMe(username, authorities);
         if (data == null) {
             throw new RuntimeException("세션 정보가 유효하지 않습니다.");
         }
@@ -225,13 +242,25 @@ public class UserService {
     }
 
     public boolean isPasswordChangeDue(String username) {
-        Buyer buyer = buyerRepository.findByUsername(username);
-        if (buyer != null && buyer.getAccountStatus() != null) {
-            return buyer.getAccountStatus().isPasswordChangeDue(3);
+        final int months = 3;
+        LocalDateTime now = LocalDateTime.now();
+
+        // 1) Buyer에서 단일 컬럼 조회
+        Optional<LocalDateTime> buyerChangedAtOpt =
+                buyerRepository.findLastPasswordChangedAtByUsername(username);
+
+        if (buyerChangedAtOpt.isPresent()) {
+            LocalDateTime due = buyerChangedAtOpt.get().plusMonths(months);
+            return !due.isAfter(now);
         }
-        Seller seller = sellerRepository.findByUsername(username);
-        if (seller != null && seller.getAccountStatus() != null) {
-            return seller.getAccountStatus().isPasswordChangeDue(3);
+
+        // 2) Seller에서 단일 컬럼 조회
+        Optional<LocalDateTime> sellerChangedAtOpt =
+                sellerRepository.findLastPasswordChangedAtByUsername(username);
+
+        if (sellerChangedAtOpt.isPresent()) {
+            LocalDateTime due = sellerChangedAtOpt.get().plusMonths(months);
+            return !due.isAfter(now);
         }
         return false;
     }
@@ -677,4 +706,63 @@ public class UserService {
 
         return new MeResponse(true, due, snoozed);
     }
+
+    @Transactional
+    public void updateProfile(Authentication authentication, ProfileUpdateRequest request) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof PrincipalDetails principal)) {
+            throw new RuntimeException("인증 필요");
+        }
+        String authorities = authentication.getAuthorities() != null
+                ? authentication.getAuthorities().toString()
+                : "[]";
+        String username = principal.getUsername();
+
+        switch (authorities) {
+            case "[ROLE_USER]" -> {
+                Buyer buyer = buyerRepository.findByUsername(username);
+                if (buyer == null) throw new RuntimeException("구매자 정보가 없습니다.");
+                Long buyerId = buyer.getId();
+
+                // 이메일 중복 검사 (자기 자신 제외)
+                if (request.getEmail() != null) {
+                    boolean dup = buyerRepository.existsByEmailAndIdNot(request.getEmail(), buyerId)
+                            || sellerRepository.existsByEmail(request.getEmail());
+                    if (dup) throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+                    buyer.updateEmail(request.getEmail());
+                }
+                // 전화번호 중복 검사 (자기 자신 제외)
+                if (request.getPhoneNumber() != null) {
+                    boolean dup = buyerRepository.existsByPhoneNumberAndIdNot(request.getPhoneNumber(), buyerId)
+                            || sellerRepository.existsByPhoneNumber(request.getPhoneNumber());
+                    if (dup) throw new IllegalArgumentException("이미 사용 중인 전화번호입니다.");
+                    buyer.updatePhoneNumber(request.getPhoneNumber());
+                }
+                if (request.getName() != null) buyer.updateName(request.getName());
+                // 변경감지로 저장
+            }
+
+            case "[ROLE_SELLER]" -> {
+                Seller seller = sellerRepository.findByUsername(username);
+                if (seller == null) throw new RuntimeException("판매자 정보가 없습니다.");
+                Long sellerId = seller.getId();
+
+                if (request.getEmail() != null) {
+                    boolean dup = sellerRepository.existsByEmailAndIdNot(request.getEmail(), sellerId)
+                            || buyerRepository.existsByEmail(request.getEmail());
+                    if (dup) throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+                    seller.updateEmail(request.getEmail());
+                }
+                if (request.getPhoneNumber() != null) {
+                    boolean dup = sellerRepository.existsByPhoneNumberAndIdNot(request.getPhoneNumber(), sellerId)
+                            || buyerRepository.existsByPhoneNumber(request.getPhoneNumber());
+                    if (dup) throw new IllegalArgumentException("이미 사용 중인 전화번호입니다.");
+                    seller.updatePhoneNumber(request.getPhoneNumber());
+                }
+                if (request.getName() != null) seller.updateName(request.getName());
+            }
+
+            default -> throw new RuntimeException("지원하지 않는 역할입니다.");
+        }
+    }
+
 }

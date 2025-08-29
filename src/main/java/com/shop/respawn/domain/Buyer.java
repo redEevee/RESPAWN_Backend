@@ -50,6 +50,7 @@ public class Buyer extends BaseTimeEntity {
 
     // 계정 상태 필드 추가
     @Embedded
+    @Builder.Default
     private AccountStatus accountStatus = new AccountStatus();
 
     @Builder.Default
@@ -97,6 +98,12 @@ public class Buyer extends BaseTimeEntity {
     public void updatePhoneNumber(String newPhoneNumber) {
         this.phoneNumber = newPhoneNumber;
     }
+    public void updateName(String newName) {
+        this.name = newName;
+    }
+    public void updateEmail(String newEmail) {
+        this.email = newEmail;
+    }
 
     public void updatePassword(String newPassword) {
         this.password = newPassword;
@@ -134,7 +141,10 @@ public class Buyer extends BaseTimeEntity {
 
     @PrePersist
     public void prePersist() {
-        if (this.accountStatus != null && this.accountStatus.getLastPasswordChangedAt() == null) {
+        if (this.accountStatus == null) {
+            this.accountStatus = new AccountStatus(true);
+        }
+        if (this.accountStatus.getLastPasswordChangedAt() == null) {
             this.accountStatus.setLastPasswordChangedAt(LocalDateTime.now());
         }
     }

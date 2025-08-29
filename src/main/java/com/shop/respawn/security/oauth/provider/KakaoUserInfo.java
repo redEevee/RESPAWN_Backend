@@ -1,14 +1,11 @@
 package com.shop.respawn.security.oauth.provider;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class KakaoUserInfo implements OAuth2UserInfo{
-
-    private final Map<String, Object> attributes; // getAttributes()
-    public KakaoUserInfo(Map<String, Object> attributes) {
-        this.attributes = attributes;
-    }
+/**
+ * @param attributes getAttributes()
+ */
+public record KakaoUserInfo(Map<String, Object> attributes) implements OAuth2UserInfo {
 
     @Override
     public String getProvider() {
@@ -34,5 +31,10 @@ public class KakaoUserInfo implements OAuth2UserInfo{
     @Override
     public String getName() {
         return (String) attributes.get("name");
+    }
+
+    @Override
+    public String getPhoneNumber() {
+        return (String) attributes.get("phone_number");
     }
 }

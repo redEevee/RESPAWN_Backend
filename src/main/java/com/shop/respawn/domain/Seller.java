@@ -74,6 +74,15 @@ public class Seller extends BaseTimeEntity {
     public void updatePassword(String newPassword) {
         this.password = newPassword;
     }
+    public void updateName(String newName) {
+        this.name = newName;
+    }
+    public void updateEmail(String newEmail) {
+        this.email = newEmail;
+    }
+    public void updatePhoneNumber(String newPhoneNumber) {
+        this.phoneNumber = newPhoneNumber;
+    }
 
     @PrePersist
     public void prePersist() {

@@ -9,6 +9,7 @@ import com.shop.respawn.dto.findInfo.FindInfoResponse;
 import com.shop.respawn.dto.user.*;
 import com.shop.respawn.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,10 +56,12 @@ public class UserController {
      * 로그인 완료 처리
      */
     @GetMapping("/loginOk")
-    public ResponseEntity<LoginOkResponse> loginOk(Authentication authentication) {
-        return ResponseEntity.ok(
-                userService.getUserData(authentication.getName(),
-                authentication.getAuthorities().toString()));
+    public ResponseEntity<LoginOkResponse> loginOk(Authentication authentication,
+                                                   HttpSession session) {
+        LoginOkResponse userData = userService.getUserData(authentication.getName(),
+                authentication.getAuthorities().toString());
+        session.setAttribute("userId", userData.getUserId());
+        return ResponseEntity.ok(userData);
     }
 
     /**
@@ -96,12 +99,12 @@ public class UserController {
      * 마이페이지에서 비밀번호가 일치하는지 검사하는 메서드
      */
     @PostMapping("/myPage/checkPassword")
-    public ResponseEntity<ApiMessage> checkPassword(Authentication authentication,
+    public ResponseEntity<CommonResponse<?>> checkPassword(Authentication authentication,
                                                  @Valid @RequestBody PasswordRequest request) {
         if(userService.isMatchPassword(authentication.getName(), authentication.getAuthorities().toString(), request.getPassword())) {
-            return ResponseEntity.ok(ApiMessage.of(_PASSWORD_CHECKED));
+            return ResponseEntity.ok(CommonResponse.ok(_PASSWORD_CHECKED));
         } else {
-            return ResponseEntity.badRequest().body(ApiMessage.of(_PASSWORD_MISMATCH));
+            return ResponseEntity.badRequest().body(CommonResponse.onFailure(_PASSWORD_MISMATCH, null));
         }
     }
 
@@ -228,6 +231,18 @@ public class UserController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiMessage.of(e.getMessage()));
         }
+    }
+
+    @PostMapping("/profile/update")
+    public ResponseEntity<?> updateProfile(Authentication authentication,
+                                           @RequestBody ProfileUpdateRequest request) {
+        // 최소 1개 필드 제공 검증
+        if (request.getName() == null && request.getPhoneNumber() == null && request.getEmail() == null) {
+            return ResponseEntity.badRequest().body(ApiMessage.of("최소 1개 이상의 필드를 입력하세요."));
+        }
+
+        userService.updateProfile(authentication, request);
+        return ResponseEntity.ok(ApiMessage.of("NO_CONTENT","프로필이 업데이트되었습니다."));
     }
 
     /**
