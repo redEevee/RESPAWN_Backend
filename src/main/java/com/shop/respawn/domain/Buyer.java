@@ -98,6 +98,12 @@ public class Buyer extends BaseTimeEntity {
     public void updatePhoneNumber(String newPhoneNumber) {
         this.phoneNumber = newPhoneNumber;
     }
+    public void updateName(String newName) {
+        this.name = newName;
+    }
+    public void updateEmail(String newEmail) {
+        this.email = newEmail;
+    }
 
     public void updatePassword(String newPassword) {
         this.password = newPassword;

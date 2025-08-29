@@ -29,6 +29,6 @@ public record NaverUserInfo(Map<String, Object> attributes) implements OAuth2Use
 
     @Override
     public String getPhoneNumber() {
-        return (String) attributes.get("phone_Number");
+        return (String) attributes.get("mobile");
     }
 }

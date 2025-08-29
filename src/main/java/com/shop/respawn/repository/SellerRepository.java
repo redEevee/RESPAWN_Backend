@@ -43,4 +43,7 @@ public interface SellerRepository extends JpaRepository<Seller, Long>, SellerRep
 
     Page<Seller> findByPhoneNumberContainingAndCreatedAtBetween(String keyword, LocalDateTime start, LocalDateTime end, Pageable pageable);
 
+    boolean existsByEmailAndIdNot(String email, Long id);
+
+    boolean existsByPhoneNumberAndIdNot(String phoneNumber, Long id);
 }

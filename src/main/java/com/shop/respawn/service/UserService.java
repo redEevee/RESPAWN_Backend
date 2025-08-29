@@ -7,6 +7,7 @@ import com.shop.respawn.dto.findInfo.ResetPasswordRequest;
 import com.shop.respawn.dto.query.UserQueryDto;
 import com.shop.respawn.dto.user.LoginOkResponse;
 import com.shop.respawn.dto.user.MeResponse;
+import com.shop.respawn.dto.user.ProfileUpdateRequest;
 import com.shop.respawn.dto.user.UserDto;
 import com.shop.respawn.email.EmailService;
 import com.shop.respawn.repository.AdminRepository;
@@ -705,4 +706,63 @@ public class UserService {
 
         return new MeResponse(true, due, snoozed);
     }
+
+    @Transactional
+    public void updateProfile(Authentication authentication, ProfileUpdateRequest request) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof PrincipalDetails principal)) {
+            throw new RuntimeException("인증 필요");
+        }
+        String authorities = authentication.getAuthorities() != null
+                ? authentication.getAuthorities().toString()
+                : "[]";
+        String username = principal.getUsername();
+
+        switch (authorities) {
+            case "[ROLE_USER]" -> {
+                Buyer buyer = buyerRepository.findByUsername(username);
+                if (buyer == null) throw new RuntimeException("구매자 정보가 없습니다.");
+                Long buyerId = buyer.getId();
+
+                // 이메일 중복 검사 (자기 자신 제외)
+                if (request.getEmail() != null) {
+                    boolean dup = buyerRepository.existsByEmailAndIdNot(request.getEmail(), buyerId)
+                            || sellerRepository.existsByEmail(request.getEmail());
+                    if (dup) throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+                    buyer.updateEmail(request.getEmail());
+                }
+                // 전화번호 중복 검사 (자기 자신 제외)
+                if (request.getPhoneNumber() != null) {
+                    boolean dup = buyerRepository.existsByPhoneNumberAndIdNot(request.getPhoneNumber(), buyerId)
+                            || sellerRepository.existsByPhoneNumber(request.getPhoneNumber());
+                    if (dup) throw new IllegalArgumentException("이미 사용 중인 전화번호입니다.");
+                    buyer.updatePhoneNumber(request.getPhoneNumber());
+                }
+                if (request.getName() != null) buyer.updateName(request.getName());
+                // 변경감지로 저장
+            }
+
+            case "[ROLE_SELLER]" -> {
+                Seller seller = sellerRepository.findByUsername(username);
+                if (seller == null) throw new RuntimeException("판매자 정보가 없습니다.");
+                Long sellerId = seller.getId();
+
+                if (request.getEmail() != null) {
+                    boolean dup = sellerRepository.existsByEmailAndIdNot(request.getEmail(), sellerId)
+                            || buyerRepository.existsByEmail(request.getEmail());
+                    if (dup) throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+                    seller.updateEmail(request.getEmail());
+                }
+                if (request.getPhoneNumber() != null) {
+                    boolean dup = sellerRepository.existsByPhoneNumberAndIdNot(request.getPhoneNumber(), sellerId)
+                            || buyerRepository.existsByPhoneNumber(request.getPhoneNumber());
+                    if (dup) throw new IllegalArgumentException("이미 사용 중인 전화번호입니다.");
+                    seller.updatePhoneNumber(request.getPhoneNumber());
+                }
+                if (request.getName() != null) seller.updateName(request.getName());
+            }
+
+            default -> throw new RuntimeException("지원하지 않는 역할입니다.");
+        }
+    }
+
 }

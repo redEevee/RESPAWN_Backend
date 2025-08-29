@@ -233,6 +233,18 @@ public class UserController {
         }
     }
 
+    @PostMapping("/profile/update")
+    public ResponseEntity<?> updateProfile(Authentication authentication,
+                                           @RequestBody ProfileUpdateRequest request) {
+        // 최소 1개 필드 제공 검증
+        if (request.getName() == null && request.getPhoneNumber() == null && request.getEmail() == null) {
+            return ResponseEntity.badRequest().body(ApiMessage.of("최소 1개 이상의 필드를 입력하세요."));
+        }
+
+        userService.updateProfile(authentication, request);
+        return ResponseEntity.ok(ApiMessage.of("NO_CONTENT","프로필이 업데이트되었습니다."));
+    }
+
     /**
      * username 중복 체크
      */
